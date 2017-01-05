@@ -3,7 +3,7 @@
         "module": "amd",
         "noImplicitAny": false,
         "outFile": "app/index.js",
-        "sourceMap": true,
+        "sourceMap": false,
         "jsx": "react",
         "moduleResolution": "node",
         "experimentalDecorators": true

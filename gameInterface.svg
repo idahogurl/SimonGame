@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 744.09448819 1052.3622047"
+   width="500"
+   height="500"
+   viewBox="0 0 500.00001 500.00001"
    id="svg2"
    version="1.1"
    inkscape:version="0.91 r13725"
@@ -35,7 +35,8 @@
      inkscape:window-height="933"
      inkscape:window-x="0"
      inkscape:window-y="1"
-     inkscape:window-maximized="1" />
+     inkscape:window-maximized="1"
+     units="px" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -44,14 +45,15 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(0,-552.36215)">
     <path
        sodipodi:type="inkscape:offset"
        inkscape:radius="0"
@@ -59,7 +61,7 @@
        style="fill:#a02c2c"
        id="path3346"
        d="m 44.285156,673.79102 a 357.14285,357.14285 0 0 0 104.605464,252.5371 357.14285,357.14285 0 0 0 252.53711,104.60548 l 0,-357.14258 -357.142574,0 z"
-       transform="matrix(0,-1,1,0,-297.21989,884.64723)" />
+       transform="matrix(0,-0.64192436,0.64192436,0,-173.1617,1051.6469)" />
     <path
        d="m 44.285156,673.79102 a 357.14285,357.14285 0 0 0 104.605464,252.5371 357.14285,357.14285 0 0 0 252.53711,104.60548 l 0,-357.14258 -357.142574,0 z"
        id="path3348"
@@ -67,7 +69,7 @@
        inkscape:original="M 44.285156 673.79102 A 357.14285 357.14285 0 0 0 148.89062 926.32812 A 357.14285 357.14285 0 0 0 401.42773 1030.9336 L 401.42773 673.79102 L 44.285156 673.79102 z "
        inkscape:radius="0"
        sodipodi:type="inkscape:offset"
-       transform="matrix(-1,0,0,-1,775.99887,1159.5818)" />
+       transform="matrix(-0.64192436,0,0,-0.64192436,515.76356,1228.1342)" />
     <path
        sodipodi:type="inkscape:offset"
        inkscape:radius="0"
@@ -75,7 +77,7 @@
        style="fill:#44aa00"
        id="path3350"
        d="m 44.285156,673.79102 a 357.14285,357.14285 0 0 0 104.605464,252.5371 357.14285,357.14285 0 0 0 252.53711,104.60548 l 0,-357.14258 -357.142574,0 z"
-       transform="matrix(0,1,-1,0,1049.5045,84.363038)" />
+       transform="matrix(0,0.64192436,-0.64192436,0,691.33351,537.925)" />
     <path
        d="m 44.285156,673.79102 a 357.14285,357.14285 0 0 0 104.605464,252.5371 357.14285,357.14285 0 0 0 252.53711,104.60548 l 0,-357.14258 -357.142574,0 z"
        id="path3352"
@@ -83,6 +85,6 @@
        inkscape:original="M 44.285156 673.79102 A 357.14285 357.14285 0 0 0 148.89062 926.32812 A 357.14285 357.14285 0 0 0 401.42773 1030.9336 L 401.42773 673.79102 L 44.285156 673.79102 z "
        inkscape:radius="0"
        sodipodi:type="inkscape:offset"
-       transform="translate(-25.714278,-190.57152)" />
+       transform="matrix(0.64192436,0,0,0.64192436,1.1243583,361.43782)" />
   </g>
 </svg>
