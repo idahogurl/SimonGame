@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "module": "amd",
+        "noImplicitAny": false,
+        "outFile": "app/index.js",
+        "sourceMap": true,
+        "jsx": "react",
+        "moduleResolution": "node",
+        "experimentalDecorators": true
+    },
+    "include": [
+        "typescript"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "raphael": "^2.2.7",
+    "react": "^15.4.1",
+    "react-dom": "^15.4.1"
+  }
+}
