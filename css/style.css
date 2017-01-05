@@ -1,0 +1,8 @@
+.pie {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 1em;
+    background: #eee;
+    border-radius: 100%;
+    fill: #1b75bb;
+}
