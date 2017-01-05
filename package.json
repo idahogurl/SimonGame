@@ -1,7 +1,11 @@
 {
   "devDependencies": {
+    "howler": "^2.0.2",
+    "jquery": "^3.1.1",
+    "mobx-react": "^4.0.4",
     "raphael": "^2.2.7",
     "react": "^15.4.1",
     "react-dom": "^15.4.1"
-  }
+  },
+  "dependencies": {}
 }
