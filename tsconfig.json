@@ -1,8 +1,7 @@
 {
     "compilerOptions": {
-        "module": "amd",
+        "module": "commonjs",
         "noImplicitAny": false,
-        "outFile": "app/index.js",
         "sourceMap": false,
         "jsx": "react",
         "moduleResolution": "node",

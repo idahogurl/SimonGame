@@ -17,59 +17,100 @@ define("index", ["require", "exports", "react"], function (require, exports, rea
     var $ = require("jQuery");
     var React = require("react");
     var ReactDOM = require("react-dom");
-    var Raphael = require("raphael");
-    var HowlerGlobal = require("howler");
-    var SimonButton = (function (_super) {
-        __extends(SimonButton, _super);
-        function SimonButton(props) {
-            var _this = _super.call(this, props) || this;
-            debugger;
-            var button = _this.props.gameInput.canvas.path(_this.props.path)
-                .attr({ "type": "path", "stroke": "none", "fill": _this.props.color })
-                .mousedown(_this.props.mousedown)
-                .mouseup(_this.props.mouseup);
-            _this.props.gameInput.buttons.push(button);
-            var id = parseInt(_this.props.id) + 1;
-            _this.sound = new HowlerGlobal();
-            return _this;
+    var RaphaelJs = require("raphael");
+    //import {observable} from "mobx";
+    //import {observer} from "mobx-react";
+    var GamePadButton = (function () {
+        function GamePadButton(canvas, props) {
+            this.path = canvas.path(props.path);
+            this.path.attr({ "type": "path", "stroke": "none", "fill": props.color })
+                .mousedown(props.mousedown)
+                .mouseup(props.mouseup);
+            this.props.gameInput.buttons.push(this.path);
+            var id = parseInt(this.props.id) + 1;
+            var howlProps = { src: "https://s3.amazonaws.com/freecodecamp/simonSound" + id + ".mp3" };
+            this.sound = new Howl(howlProps);
         }
-        SimonButton.prototype.render = function () {
+        GamePadButton.prototype.lightUp = function () {
+            this.path.animate({ opacity: .5 }, 1000);
+        };
+        GamePadButton.prototype.lightOff = function () {
+            this.path.animate({ opacity: 1 }, 1000);
+        };
+        GamePadButton.prototype.playSound = function () {
+        };
+        GamePadButton.prototype.render = function () {
             return (React.createElement("div", null));
         };
-        return SimonButton;
-    }(react_1.Component));
+        return GamePadButton;
+    }());
     var SimonGame = (function (_super) {
         __extends(SimonGame, _super);
         function SimonGame() {
             var _this = _super.call(this) || this;
             _this.mouseUp.bind(_this);
             _this.mouseDown.bind(_this);
-            _this.gameInput = new GameInput();
+            _this.gamePad = new GamePad();
+            debugger;
+            var props = [];
+            var buttonProps = {
+                path: "M 300 300 L 300 30 A 270 270 0 0 1 570 300 L 300 300 A 0 0 0 0 0 300 300",
+                color: "#ad1313",
+                mouseup: _this.mouseUp,
+                mousedown: _this.mouseDown
+            };
+            props.push(buttonProps);
+            buttonProps = {
+                path: "M 300 300 L 30 300 A 270 270 0 0 1 300 30 L 300 300 A 0 0 0 0 0 300 300",
+                color: "#34b521",
+                mouseup: _this.mouseUp,
+                mousedown: _this.mouseDown
+            };
+            props.push(buttonProps);
+            buttonProps = {
+                path: "M 300 300 L 300 570 A 270 270 0 0 1 30 300 L 300 300 A 0 0 0 0 0 300 300",
+                color: "#d9d132",
+                mouseup: _this.mouseUp,
+                mousedown: _this.mouseDown
+            };
+            props.push(buttonProps);
+            buttonProps = {
+                path: "M 300 300 L 570 300 A 270 270 0 0 1 300 570 L 300 300 A 0 0 0 0 0 300 300",
+                color: "#58c2e8",
+                mouseup: _this.mouseUp,
+                mousedown: _this.mouseDown
+            };
+            props.push(buttonProps);
+            _this.addButtons(props);
             return _this;
         }
+        SimonGame.prototype.addButtons = function (buttonProps) {
+            var _this = this;
+            buttonProps.map(function (props) {
+                var button = new GamePadButton(_this.gamePad.canvas, props);
+                _this.gamePad.buttons.push(button);
+            });
+        };
         SimonGame.prototype.mouseDown = function (e) {
-            $(e.target).animate({ opacity: .5 });
-            alert($(e.target)[0].raphaelid);
-            this.gameInput.buttons[0].sound.play();
+            //alert($(e.target)[0].raphaelid);
+            this.gamePad.buttons[0].lightUp();
+            this.gamePad.buttons[0].sound.play();
         };
         SimonGame.prototype.mouseUp = function (e) {
-            $(e.target).animate({ opacity: 1 });
+            this.gamePad.buttons[0].lightOff();
+            this.gamePad.buttons[0].sound.play();
         };
         SimonGame.prototype.render = function () {
-            return (React.createElement("div", null,
-                React.createElement(SimonButton, { id: "0", gameInput: this.gameInput, path: "M 300 300 L 300 30 A 270 270 0 0 1 570 300 L 300 300 A 0 0 0 0 0 300 300", color: "#ad1313", mouseup: this.mouseUp, mousedown: this.mouseDown }),
-                React.createElement(SimonButton, { id: "1", gameInput: this.gameInput, path: "M 300 300 L 30 300 A 270 270 0 0 1 300 30 L 300 300 A 0 0 0 0 0 300 300", color: "#34b521", mouseup: this.mouseUp, mousedown: this.mouseDown }),
-                React.createElement(SimonButton, { id: "2", gameInput: this.gameInput, path: "M 300 300 L 300 570 A 270 270 0 0 1 30 300 L 300 300 A 0 0 0 0 0 300 300", color: "#d9d132", mouseup: this.mouseUp, mousedown: this.mouseDown }),
-                React.createElement(SimonButton, { id: "3", gameInput: this.gameInput, path: "M 300 300 L 570 300 A 270 270 0 0 1 300 570 L 300 300 A 0 0 0 0 0 300 300", color: "#58c2e8", mouseup: this.mouseUp, mousedown: this.mouseDown })));
+            return (React.createElement("div", null));
         };
         return SimonGame;
     }(react_1.Component));
-    var GameInput = (function () {
-        function GameInput() {
-            this.canvas = new Raphael("gameCanvas", 600, 600);
+    var GamePad = (function () {
+        function GamePad() {
+            this.canvas = Raphael("", 600, 600);
             this.buttons = [];
         }
-        return GameInput;
+        return GamePad;
     }());
     var Player = (function () {
         function Player() {

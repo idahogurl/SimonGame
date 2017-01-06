@@ -1,7 +1,7 @@
 // In webpack.config.js
 module.exports = {
   entry: [
-    './app/index.js'
+    './typescript/index.js'
   ],
   module: {
     loaders: [
