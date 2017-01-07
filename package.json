@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "chance": "^1.0.4",
     "howler": "^2.0.2",
     "html-webpack-plugin": "^2.26.0",
     "jquery": "^3.1.1",
@@ -12,6 +13,7 @@
   },
   "dependencies": {
     "@types/howler": "^2.0.0",
+    "@types/html-webpack-plugin": "^2.11.1",
     "@types/jquery": "^2.0.39",
     "@types/raphael": "^2.1.30",
     "@types/react": "^0.14.56",

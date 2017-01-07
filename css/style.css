@@ -1,8 +1,9 @@
-.pie {
-    display: inline-block;
-    vertical-align: middle;
-    margin: 1em;
-    background: #eee;
-    border-radius: 100%;
-    fill: #1b75bb;
+body {
+    font: 16pt 'Roboto Condensed', sans-serif;
+    text-transform: uppercase;    
+}
+
+h1 {    
+    font: 56pt 'Alfa Slab One', serif;
+    text-transform: none;
 }
