@@ -1,9 +1,36 @@
 body {
     font: 16pt 'Roboto Condensed', sans-serif;
-    text-transform: uppercase;    
+    text-transform: uppercase;
+    background-image: url("../11.jpg"); 
+    margin: 20px;
 }
 
 h1 {    
     font: 56pt 'Alfa Slab One', serif;
     text-transform: none;
+}
+
+#gameControls {
+    position: absolute;
+    border-radius: 50%;
+    width:350px;
+    height:350px;
+    background-color: snow;
+    top: 27%;
+    left: 50%;
+}
+
+#count {
+    background-color: black;
+    color: red;
+    width: 75px;
+    height: 75px;
+    text-align: center;
+    font-size: 36pt;
+}
+
+#gameCanvas {
+    width: 800px;
+    height: 800px;
+    margin: auto;
 }

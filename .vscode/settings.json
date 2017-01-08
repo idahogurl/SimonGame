@@ -1,4 +1,6 @@
 // Place your settings in this file to overwrite default and user settings.
 {
-    "typescript.check.workspaceVersion": false
+    "typescript.check.workspaceVersion": false,
+    "editor.fontFamily": "'Courier New', monospace",
+    "editor.fontSize": 20
 }

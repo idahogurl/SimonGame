@@ -27,7 +27,7 @@ var GamePadButton = (function () {
         this.path = canvas.path(props.path);
         this.pathId = this.path.id;
         this.props = props;
-        this.path.attr({ "type": "path", "stroke": "#333333", "stroke-width": "30", "fill": props.color })
+        this.path.attr({ "type": "path", "stroke": "#333333", "stroke-width": "15", "fill": props.color })
             .mousedown(props.mousedown)
             .mouseup(props.mouseup);
         var howlProps = { src: "https://s3.amazonaws.com/freecodecamp/" + props.soundFile, volume: 0.25 };
@@ -103,7 +103,7 @@ var SimonGame = (function (_super) {
     SimonGame.prototype.addButtons = function (buttonProps) {
         var _this = this;
         buttonProps.map(function (props) {
-            var button = new GamePadButton(_this.gamePad.canvas, props);
+            var button = new GamePadButton(_this.gamePad.gameCanvas, props);
             _this.gamePad.buttons.push(button);
         });
     };
@@ -143,7 +143,10 @@ var SimonGame = (function (_super) {
 var GamePad = (function () {
     function GamePad() {
         debugger;
-        this.canvas = Raphael("gameCanvas", 600, 600);
+        this.gameCanvas = Raphael("gameCanvas");
+        this.gameCanvas.setViewBox(0, 0, 400, 400, true); //decrease numbers to increase size
+        this.gameCanvas.canvas.setAttribute('preserveAspectRatio', 'none');
+        this.gameCanvas.circle(300, 300, 275).glow();
         this.buttons = [];
     }
     return GamePad;

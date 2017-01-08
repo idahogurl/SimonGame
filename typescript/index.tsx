@@ -38,7 +38,7 @@ class GamePadButton {
         this.pathId = this.path.id;
         this.props = props;
 
-        this.path.attr({"type":"path","stroke":"#333333","stroke-width":"30","fill":props.color})
+        this.path.attr({"type":"path","stroke":"#333333","stroke-width":"15","fill":props.color})
                 .mousedown(props.mousedown)
                 .mouseup(props.mouseup);
         
@@ -131,7 +131,7 @@ class SimonGame extends Component<any,any> {
 
     addButtons(buttonProps: ISimonButtonProps[]) {
         buttonProps.map(props => {
-            let button: GamePadButton = new GamePadButton(this.gamePad.canvas, props);
+            let button: GamePadButton = new GamePadButton(this.gamePad.gameCanvas, props);
             this.gamePad.buttons.push(button);
         });
     }
@@ -195,13 +195,17 @@ interface ISimonButtonProps
 }
 
 class GamePad {
-    canvas: any;
+    gameCanvas: any;
     buttons: GamePadButton[];
     sequence: number[];
 
     constructor() {
         debugger;
-        this.canvas = Raphael("gameCanvas", 600, 600);
+        this.gameCanvas = Raphael("gameCanvas");
+        this.gameCanvas.setViewBox(0, 0, 400, 400, true); //decrease numbers to increase size
+        this.gameCanvas.canvas.setAttribute('preserveAspectRatio', 'none');
+        this.gameCanvas.circle(300,300,275).glow();
+    
         this.buttons = [];
     }
 
