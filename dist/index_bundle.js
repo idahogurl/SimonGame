@@ -53,11 +53,6 @@
 
 	// User Story: I am presented with a random series of button presses.
 	"use strict";
-	var __extends = (this && this.__extends) || function (d, b) {
-	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-	    function __() { this.constructor = d; }
-	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	};
 	// User Story: Each time I input a series of button presses correctly, I see the same series of button presses but with an additional step.
 	// User Story: I hear a sound that corresponds to each button both when the series of button presses plays, and when I personally press a button.
 	// User Story: If I press the wrong button, I am notified that I have done so, and that series of button presses starts again to remind me of the pattern so I can try again.
@@ -66,58 +61,70 @@
 	// User Story: I can play in strict mode where if I get a button press wrong, it notifies me that I have done so, and the game restarts at a new random series of button presses.
 	// User Story: I can win the game by getting a series of 20 steps correct. I am notified of my victory, then the game starts over.
 	// Hint: Here are mp3s you can use for each button: https://s3.amazonaws.com/freecodecamp/simonSound1.mp3, https://s3.amazonaws.com/freecodecamp/simonSound2.mp3, https://s3.amazonaws.com/freecodecamp/simonSound3.mp3, https://s3.amazonaws.com/freecodecamp/simonSound4.mp3.
-	var $ = __webpack_require__(2);
-	var React = __webpack_require__(3);
-	var ReactDOM = __webpack_require__(34);
-	var Howler = __webpack_require__(180);
-	var Raphael = __webpack_require__(181);
-	var react_1 = __webpack_require__(3);
+	const $ = __webpack_require__(2);
+	const React = __webpack_require__(3);
+	const ReactDOM = __webpack_require__(34);
+	const Howler = __webpack_require__(180);
+	const Raphael = __webpack_require__(181);
+	const Chance = __webpack_require__(182);
+	const react_1 = __webpack_require__(3);
 	//import {observable} from "mobx";
 	//import {observer} from "mobx-react";
-	var GamePadButton = (function () {
-	    function GamePadButton(canvas, props) {
-	        debugger;
+	class GamePadButton {
+	    constructor(canvas, props) {
 	        this.path = canvas.path(props.path);
 	        this.pathId = this.path.id;
 	        this.props = props;
 	        this.path.attr({ "type": "path", "stroke": "#333333", "stroke-width": "15", "fill": props.color })
-	            .mousedown(props.mousedown)
-	            .mouseup(props.mouseup);
-	        var howlProps = { src: "https://s3.amazonaws.com/freecodecamp/" + props.soundFile, volume: 0.25 };
+	            .mousedown(props.mousedown);
+	        //.mouseup(props.mouseup);
+	        let self = this;
+	        let howlProps = {
+	            src: "https://s3.amazonaws.com/freecodecamp/" + props.soundFile,
+	            volume: 0.25,
+	            onend: function () {
+	                self.release();
+	            }
+	        };
 	        this.sound = new Howl(howlProps);
 	    }
-	    GamePadButton.prototype.lightUp = function () {
+	    push(callback = undefined) {
 	        debugger;
 	        this.path.animate({ fill: this.props.clickColor }, 0);
 	        this.sound.play();
-	    };
-	    GamePadButton.prototype.lightOff = function () {
-	        this.path.animate({ fill: this.props.color }, 0);
-	    };
-	    GamePadButton.prototype.playSound = function () {
-	    };
-	    GamePadButton.prototype.render = function () {
-	        return (React.createElement("div", null));
-	    };
-	    return GamePadButton;
-	}());
-	var SimonGame = (function (_super) {
-	    __extends(SimonGame, _super);
-	    function SimonGame() {
-	        var _this = _super.call(this) || this;
-	        _this.mouseUp = _this.mouseUp.bind(_this);
-	        _this.mouseDown = _this.mouseDown.bind(_this);
-	        _this.gamePad = new GamePad();
+	        if (callback !== undefined) {
+	            this.callback = callback;
+	        }
+	    }
+	    release() {
 	        debugger;
-	        var props = [];
+	        this.path.animate({ fill: this.props.color }, 0);
+	        if (this.callback !== undefined) {
+	            this.callback();
+	        }
+	    }
+	    render() {
+	        return (React.createElement("div", null));
+	    }
+	}
+	class SimonGame extends react_1.Component {
+	    constructor() {
+	        super();
+	        this.mouseUp = this.mouseUp.bind(this);
+	        this.mouseDown = this.mouseDown.bind(this);
+	        this.gamePad = new GamePad();
+	        this.game = new Game();
+	        this.start = this.start.bind(this);
+	        let props = [];
 	        //green
-	        var buttonProps = {
+	        let buttonProps = {
 	            soundFile: "simonSound1.mp3",
 	            path: "M 300 300 L 30 300 A 270 270 0 0 1 300 30 L 300 300 A 0 0 0 0 0 300 300",
 	            color: "#00a74a",
 	            clickColor: "#13FF7C",
-	            mouseup: _this.mouseUp,
-	            mousedown: _this.mouseDown
+	            mouseup: this.mouseUp,
+	            mousedown: this.mouseDown,
+	            index: 0
 	        };
 	        props.push(buttonProps);
 	        //red
@@ -126,8 +133,9 @@
 	            path: "M 300 300 L 300 30 A 270 270 0 0 1 570 300 L 300 300 A 0 0 0 0 0 300 300",
 	            color: "#9f0f17",
 	            clickColor: "#FF4C4C",
-	            mouseup: _this.mouseUp,
-	            mousedown: _this.mouseDown
+	            mouseup: this.mouseUp,
+	            mousedown: this.mouseDown,
+	            index: 1
 	        };
 	        props.push(buttonProps);
 	        //yellow
@@ -136,8 +144,9 @@
 	            path: "M 300 300 L 300 570 A 270 270 0 0 1 30 300 L 300 300 A 0 0 0 0 0 300 300",
 	            color: "#cca707",
 	            clickColor: "#FED93F",
-	            mouseup: _this.mouseUp,
-	            mousedown: _this.mouseDown
+	            mouseup: this.mouseUp,
+	            mousedown: this.mouseDown,
+	            index: 2
 	        };
 	        props.push(buttonProps);
 	        //blue
@@ -146,69 +155,124 @@
 	            path: "M 300 300 L 570 300 A 270 270 0 0 1 300 570 L 300 300 A 0 0 0 0 0 300 300",
 	            color: "#094a8f",
 	            clickColor: "#1C8CFF",
-	            mouseup: _this.mouseUp,
-	            mousedown: _this.mouseDown
+	            mouseup: this.mouseUp,
+	            mousedown: this.mouseDown,
+	            index: 3
 	        };
 	        props.push(buttonProps);
-	        _this.addButtons(props);
-	        return _this;
+	        this.addButtons(props);
 	    }
-	    SimonGame.prototype.addButtons = function (buttonProps) {
-	        var _this = this;
-	        buttonProps.map(function (props) {
-	            var button = new GamePadButton(_this.gamePad.gameCanvas, props);
-	            _this.gamePad.buttons.push(button);
+	    addButtons(buttonProps) {
+	        buttonProps.map(props => {
+	            let button = new GamePadButton(this.gamePad.gameCanvas, props);
+	            this.gamePad.buttons.push(button);
 	        });
-	    };
-	    SimonGame.prototype.findButton = function (id) {
-	        var button = this.gamePad.buttons.filter(function (button) {
+	    }
+	    findButton(id) {
+	        let button = this.gamePad.buttons.filter(button => {
 	            return button.pathId === id;
 	        });
 	        return button[0];
-	    };
-	    SimonGame.prototype.mouseDown = function (e) {
-	        var id = $(e.target)[0].raphaelid;
-	        var button = this.findButton(id);
-	        button.lightUp();
-	        button.sound.play();
-	    };
-	    SimonGame.prototype.mouseUp = function (e) {
-	        var id = $(e.target)[0].raphaelid;
-	        var button = this.findButton(id);
-	        button.lightOff();
-	    };
-	    SimonGame.prototype.render = function () {
+	    }
+	    start() {
+	        this.playSequence();
+	    }
+	    playSequence(index = -1) {
+	        index += 1;
+	        let buttonIndex = this.game.sequence[index];
+	        if (index < this.game.sequence.length - 1) {
+	            let self = this;
+	            let callback = function () {
+	                self.playSequence(index);
+	            };
+	            this.gamePad.buttons[buttonIndex].push(callback);
+	        }
+	        else {
+	            buttonIndex = this.game.addStep();
+	            this.gamePad.buttons[buttonIndex].push();
+	        }
+	    }
+	    mouseDown(e) {
+	        let id = $(e.target)[0].raphaelid;
+	        let self = this;
+	        let callback = function () {
+	            self.mouseUp(id);
+	        };
+	        let button = this.findButton(id);
+	        button.push(callback);
+	    }
+	    mouseUp(buttonId) {
+	        debugger;
+	        let button = this.findButton(buttonId);
+	        this.game.addUserInput(button.props.index);
+	        //hit 20 then win
+	        if (this.game.sequence.length === this.game.userInput.length) {
+	            if (this.game.isCorrect()) {
+	                this.game.addStep();
+	            }
+	            else {
+	                alert("Wrong!");
+	            }
+	            let self = this;
+	            setTimeout(function () {
+	                self.playSequence();
+	            }, 2000);
+	        }
+	        //strict mode?
+	    }
+	    render() {
 	        return (React.createElement("div", null,
 	            React.createElement("h1", null, "Simon"),
 	            React.createElement("div", null, "Count"),
 	            React.createElement("div", null),
 	            React.createElement("div", null, "Strict Mode"),
 	            React.createElement("div", { className: "btn-group", role: "group", "aria-label": "Strict Mode" },
-	                React.createElement("button", { type: "button", className: "btn btn-default" }, "On"),
+	                React.createElement("button", { type: "button", className: "btn btn-default", onClick: this.start }, "On"),
 	                React.createElement("button", { type: "button", className: "btn btn-default" }, "Off")),
 	            React.createElement("div", { className: "btn-group", role: "group", "aria-label": "Strict Mode" },
 	                React.createElement("button", { type: "button", className: "btn btn-default" }, "On"),
 	                React.createElement("button", { type: "button", className: "btn btn-default" }, "Off")),
 	            React.createElement("span", { className: "fa fa-undo fa-2x" }, "Restart")));
-	    };
-	    return SimonGame;
-	}(react_1.Component));
-	var GamePad = (function () {
-	    function GamePad() {
-	        debugger;
+	    }
+	}
+	class GamePad {
+	    constructor() {
 	        this.gameCanvas = Raphael("gameCanvas");
 	        this.gameCanvas.setViewBox(0, 0, 400, 400, true); //decrease numbers to increase size
 	        this.gameCanvas.canvas.setAttribute('preserveAspectRatio', 'none');
 	        this.gameCanvas.circle(300, 300, 275).glow();
 	        this.buttons = [];
 	    }
-	    return GamePad;
-	}());
-	var Player = (function () {
-	    function Player() {
+	}
+	class Game {
+	    constructor() {
+	        this.sequence = [];
+	        this.userInput = [];
 	    }
-	    return Player;
-	}());
+	    countDisplay() {
+	        let count = this.sequence.length;
+	        return "00".substring(0, count) + count;
+	    }
+	    addStep() {
+	        let chance = new Chance();
+	        let randomNum = chance.integer({ min: 0, max: 3 });
+	        this.sequence.push(randomNum);
+	        return randomNum;
+	    }
+	    addUserInput(buttonIndex) {
+	        this.userInput.push(buttonIndex);
+	    }
+	    isCorrect() {
+	        let diff = this.difference();
+	        return diff.length === 0;
+	    }
+	    difference() {
+	        var differences = this.sequence.filter((item) => {
+	            return this.userInput.indexOf(item) < 0;
+	        });
+	        return differences;
+	    }
+	}
 	ReactDOM.render(React.createElement(SimonGame, null), document.getElementById("gameControls"));
 
 
@@ -34635,6 +34699,6976 @@
 	!function t(e,r){ true?module.exports=r():"function"==typeof define&&define.amd?define([],r):"object"==typeof exports?exports.Raphael=r():e.Raphael=r()}(this,function(){return function(t){function e(i){if(r[i])return r[i].exports;var n=r[i]={exports:{},id:i,loaded:!1};return t[i].call(n.exports,n,n.exports,e),n.loaded=!0,n.exports}var r={};return e.m=t,e.c=r,e.p="",e(0)}([function(t,e,r){var i,n;i=[r(1),r(3),r(4)],n=function(t){return t}.apply(e,i),!(void 0!==n&&(t.exports=n))},function(t,e,r){var i,n;i=[r(2)],n=function(t){function e(r){if(e.is(r,"function"))return w?r():t.on("raphael.DOMload",r);if(e.is(r,Q))return e._engine.create[z](e,r.splice(0,3+e.is(r[0],$))).add(r);var i=Array.prototype.slice.call(arguments,0);if(e.is(i[i.length-1],"function")){var n=i.pop();return w?n.call(e._engine.create[z](e,i)):t.on("raphael.DOMload",function(){n.call(e._engine.create[z](e,i))})}return e._engine.create[z](e,arguments)}function r(t){if("function"==typeof t||Object(t)!==t)return t;var e=new t.constructor;for(var i in t)t[A](i)&&(e[i]=r(t[i]));return e}function i(t,e){for(var r=0,i=t.length;r<i;r++)if(t[r]===e)return t.push(t.splice(r,1)[0])}function n(t,e,r){function n(){var a=Array.prototype.slice.call(arguments,0),s=a.join("␀"),o=n.cache=n.cache||{},l=n.count=n.count||[];return o[A](s)?(i(l,s),r?r(o[s]):o[s]):(l.length>=1e3&&delete o[l.shift()],l.push(s),o[s]=t[z](e,a),r?r(o[s]):o[s])}return n}function a(){return this.hex}function s(t,e){for(var r=[],i=0,n=t.length;n-2*!e>i;i+=2){var a=[{x:+t[i-2],y:+t[i-1]},{x:+t[i],y:+t[i+1]},{x:+t[i+2],y:+t[i+3]},{x:+t[i+4],y:+t[i+5]}];e?i?n-4==i?a[3]={x:+t[0],y:+t[1]}:n-2==i&&(a[2]={x:+t[0],y:+t[1]},a[3]={x:+t[2],y:+t[3]}):a[0]={x:+t[n-2],y:+t[n-1]}:n-4==i?a[3]=a[2]:i||(a[0]={x:+t[i],y:+t[i+1]}),r.push(["C",(-a[0].x+6*a[1].x+a[2].x)/6,(-a[0].y+6*a[1].y+a[2].y)/6,(a[1].x+6*a[2].x-a[3].x)/6,(a[1].y+6*a[2].y-a[3].y)/6,a[2].x,a[2].y])}return r}function o(t,e,r,i,n){var a=-3*e+9*r-9*i+3*n,s=t*a+6*e-12*r+6*i;return t*s-3*e+3*r}function l(t,e,r,i,n,a,s,l,h){null==h&&(h=1),h=h>1?1:h<0?0:h;for(var u=h/2,c=12,f=[-.1252,.1252,-.3678,.3678,-.5873,.5873,-.7699,.7699,-.9041,.9041,-.9816,.9816],p=[.2491,.2491,.2335,.2335,.2032,.2032,.1601,.1601,.1069,.1069,.0472,.0472],d=0,g=0;g<c;g++){var v=u*f[g]+u,x=o(v,t,r,n,s),y=o(v,e,i,a,l),m=x*x+y*y;d+=p[g]*Y.sqrt(m)}return u*d}function h(t,e,r,i,n,a,s,o,h){if(!(h<0||l(t,e,r,i,n,a,s,o)<h)){var u=1,c=u/2,f=u-c,p,d=.01;for(p=l(t,e,r,i,n,a,s,o,f);H(p-h)>d;)c/=2,f+=(p<h?1:-1)*c,p=l(t,e,r,i,n,a,s,o,f);return f}}function u(t,e,r,i,n,a,s,o){if(!(W(t,r)<G(n,s)||G(t,r)>W(n,s)||W(e,i)<G(a,o)||G(e,i)>W(a,o))){var l=(t*i-e*r)*(n-s)-(t-r)*(n*o-a*s),h=(t*i-e*r)*(a-o)-(e-i)*(n*o-a*s),u=(t-r)*(a-o)-(e-i)*(n-s);if(u){var c=l/u,f=h/u,p=+c.toFixed(2),d=+f.toFixed(2);if(!(p<+G(t,r).toFixed(2)||p>+W(t,r).toFixed(2)||p<+G(n,s).toFixed(2)||p>+W(n,s).toFixed(2)||d<+G(e,i).toFixed(2)||d>+W(e,i).toFixed(2)||d<+G(a,o).toFixed(2)||d>+W(a,o).toFixed(2)))return{x:c,y:f}}}}function c(t,e){return p(t,e)}function f(t,e){return p(t,e,1)}function p(t,r,i){var n=e.bezierBBox(t),a=e.bezierBBox(r);if(!e.isBBoxIntersect(n,a))return i?0:[];for(var s=l.apply(0,t),o=l.apply(0,r),h=W(~~(s/5),1),c=W(~~(o/5),1),f=[],p=[],d={},g=i?0:[],v=0;v<h+1;v++){var x=e.findDotsAtSegment.apply(e,t.concat(v/h));f.push({x:x.x,y:x.y,t:v/h})}for(v=0;v<c+1;v++)x=e.findDotsAtSegment.apply(e,r.concat(v/c)),p.push({x:x.x,y:x.y,t:v/c});for(v=0;v<h;v++)for(var y=0;y<c;y++){var m=f[v],b=f[v+1],_=p[y],w=p[y+1],k=H(b.x-m.x)<.001?"y":"x",B=H(w.x-_.x)<.001?"y":"x",C=u(m.x,m.y,b.x,b.y,_.x,_.y,w.x,w.y);if(C){if(d[C.x.toFixed(4)]==C.y.toFixed(4))continue;d[C.x.toFixed(4)]=C.y.toFixed(4);var S=m.t+H((C[k]-m[k])/(b[k]-m[k]))*(b.t-m.t),A=_.t+H((C[B]-_[B])/(w[B]-_[B]))*(w.t-_.t);S>=0&&S<=1.001&&A>=0&&A<=1.001&&(i?g++:g.push({x:C.x,y:C.y,t1:G(S,1),t2:G(A,1)}))}}return g}function d(t,r,i){t=e._path2curve(t),r=e._path2curve(r);for(var n,a,s,o,l,h,u,c,f,d,g=i?0:[],v=0,x=t.length;v<x;v++){var y=t[v];if("M"==y[0])n=l=y[1],a=h=y[2];else{"C"==y[0]?(f=[n,a].concat(y.slice(1)),n=f[6],a=f[7]):(f=[n,a,n,a,l,h,l,h],n=l,a=h);for(var m=0,b=r.length;m<b;m++){var _=r[m];if("M"==_[0])s=u=_[1],o=c=_[2];else{"C"==_[0]?(d=[s,o].concat(_.slice(1)),s=d[6],o=d[7]):(d=[s,o,s,o,u,c,u,c],s=u,o=c);var w=p(f,d,i);if(i)g+=w;else{for(var k=0,B=w.length;k<B;k++)w[k].segment1=v,w[k].segment2=m,w[k].bez1=f,w[k].bez2=d;g=g.concat(w)}}}}}return g}function g(t,e,r,i,n,a){null!=t?(this.a=+t,this.b=+e,this.c=+r,this.d=+i,this.e=+n,this.f=+a):(this.a=1,this.b=0,this.c=0,this.d=1,this.e=0,this.f=0)}function v(){return this.x+j+this.y}function x(){return this.x+j+this.y+j+this.width+" × "+this.height}function y(t,e,r,i,n,a){function s(t){return((c*t+u)*t+h)*t}function o(t,e){var r=l(t,e);return((d*r+p)*r+f)*r}function l(t,e){var r,i,n,a,o,l;for(n=t,l=0;l<8;l++){if(a=s(n)-t,H(a)<e)return n;if(o=(3*c*n+2*u)*n+h,H(o)<1e-6)break;n-=a/o}if(r=0,i=1,n=t,n<r)return r;if(n>i)return i;for(;r<i;){if(a=s(n),H(a-t)<e)return n;t>a?r=n:i=n,n=(i-r)/2+r}return n}var h=3*e,u=3*(i-e)-h,c=1-h-u,f=3*r,p=3*(n-r)-f,d=1-f-p;return o(t,1/(200*a))}function m(t,e){var r=[],i={};if(this.ms=e,this.times=1,t){for(var n in t)t[A](n)&&(i[ht(n)]=t[n],r.push(ht(n)));r.sort(Bt)}this.anim=i,this.top=r[r.length-1],this.percents=r}function b(r,i,n,a,s,o){n=ht(n);var l,h,u,c=[],f,p,d,v=r.ms,x={},m={},b={};if(a)for(w=0,B=Ee.length;w<B;w++){var _=Ee[w];if(_.el.id==i.id&&_.anim==r){_.percent!=n?(Ee.splice(w,1),u=1):h=_,i.attr(_.totalOrigin);break}}else a=+m;for(var w=0,B=r.percents.length;w<B;w++){if(r.percents[w]==n||r.percents[w]>a*r.top){n=r.percents[w],p=r.percents[w-1]||0,v=v/r.top*(n-p),f=r.percents[w+1],l=r.anim[n];break}a&&i.attr(r.anim[r.percents[w]])}if(l){if(h)h.initstatus=a,h.start=new Date-h.ms*a;else{for(var C in l)if(l[A](C)&&(pt[A](C)||i.paper.customAttributes[A](C)))switch(x[C]=i.attr(C),null==x[C]&&(x[C]=ft[C]),m[C]=l[C],pt[C]){case $:b[C]=(m[C]-x[C])/v;break;case"colour":x[C]=e.getRGB(x[C]);var S=e.getRGB(m[C]);b[C]={r:(S.r-x[C].r)/v,g:(S.g-x[C].g)/v,b:(S.b-x[C].b)/v};break;case"path":var T=Qt(x[C],m[C]),E=T[1];for(x[C]=T[0],b[C]=[],w=0,B=x[C].length;w<B;w++){b[C][w]=[0];for(var M=1,N=x[C][w].length;M<N;M++)b[C][w][M]=(E[w][M]-x[C][w][M])/v}break;case"transform":var L=i._,z=le(L[C],m[C]);if(z)for(x[C]=z.from,m[C]=z.to,b[C]=[],b[C].real=!0,w=0,B=x[C].length;w<B;w++)for(b[C][w]=[x[C][w][0]],M=1,N=x[C][w].length;M<N;M++)b[C][w][M]=(m[C][w][M]-x[C][w][M])/v;else{var F=i.matrix||new g,R={_:{transform:L.transform},getBBox:function(){return i.getBBox(1)}};x[C]=[F.a,F.b,F.c,F.d,F.e,F.f],se(R,m[C]),m[C]=R._.transform,b[C]=[(R.matrix.a-F.a)/v,(R.matrix.b-F.b)/v,(R.matrix.c-F.c)/v,(R.matrix.d-F.d)/v,(R.matrix.e-F.e)/v,(R.matrix.f-F.f)/v]}break;case"csv":var j=I(l[C])[q](k),D=I(x[C])[q](k);if("clip-rect"==C)for(x[C]=D,b[C]=[],w=D.length;w--;)b[C][w]=(j[w]-x[C][w])/v;m[C]=j;break;default:for(j=[][P](l[C]),D=[][P](x[C]),b[C]=[],w=i.paper.customAttributes[C].length;w--;)b[C][w]=((j[w]||0)-(D[w]||0))/v}var V=l.easing,O=e.easing_formulas[V];if(!O)if(O=I(V).match(st),O&&5==O.length){var Y=O;O=function(t){return y(t,+Y[1],+Y[2],+Y[3],+Y[4],v)}}else O=St;if(d=l.start||r.start||+new Date,_={anim:r,percent:n,timestamp:d,start:d+(r.del||0),status:0,initstatus:a||0,stop:!1,ms:v,easing:O,from:x,diff:b,to:m,el:i,callback:l.callback,prev:p,next:f,repeat:o||r.times,origin:i.attr(),totalOrigin:s},Ee.push(_),a&&!h&&!u&&(_.stop=!0,_.start=new Date-v*a,1==Ee.length))return Ne();u&&(_.start=new Date-_.ms*a),1==Ee.length&&Me(Ne)}t("raphael.anim.start."+i.id,i,r)}}function _(t){for(var e=0;e<Ee.length;e++)Ee[e].el.paper==t&&Ee.splice(e--,1)}e.version="2.2.0",e.eve=t;var w,k=/[, ]+/,B={circle:1,rect:1,path:1,ellipse:1,text:1,image:1},C=/\{(\d+)\}/g,S="prototype",A="hasOwnProperty",T={doc:document,win:window},E={was:Object.prototype[A].call(T.win,"Raphael"),is:T.win.Raphael},M=function(){this.ca=this.customAttributes={}},N,L="appendChild",z="apply",P="concat",F="ontouchstart"in T.win||T.win.DocumentTouch&&T.doc instanceof DocumentTouch,R="",j=" ",I=String,q="split",D="click dblclick mousedown mousemove mouseout mouseover mouseup touchstart touchmove touchend touchcancel"[q](j),V={mousedown:"touchstart",mousemove:"touchmove",mouseup:"touchend"},O=I.prototype.toLowerCase,Y=Math,W=Y.max,G=Y.min,H=Y.abs,X=Y.pow,U=Y.PI,$="number",Z="string",Q="array",J="toString",K="fill",tt=Object.prototype.toString,et={},rt="push",it=e._ISURL=/^url\(['"]?(.+?)['"]?\)$/i,nt=/^\s*((#[a-f\d]{6})|(#[a-f\d]{3})|rgba?\(\s*([\d\.]+%?\s*,\s*[\d\.]+%?\s*,\s*[\d\.]+%?(?:\s*,\s*[\d\.]+%?)?)\s*\)|hsba?\(\s*([\d\.]+(?:deg|\xb0|%)?\s*,\s*[\d\.]+%?\s*,\s*[\d\.]+(?:%?\s*,\s*[\d\.]+)?)%?\s*\)|hsla?\(\s*([\d\.]+(?:deg|\xb0|%)?\s*,\s*[\d\.]+%?\s*,\s*[\d\.]+(?:%?\s*,\s*[\d\.]+)?)%?\s*\))\s*$/i,at={NaN:1,Infinity:1,"-Infinity":1},st=/^(?:cubic-)?bezier\(([^,]+),([^,]+),([^,]+),([^\)]+)\)/,ot=Y.round,lt="setAttribute",ht=parseFloat,ut=parseInt,ct=I.prototype.toUpperCase,ft=e._availableAttrs={"arrow-end":"none","arrow-start":"none",blur:0,"clip-rect":"0 0 1e9 1e9",cursor:"default",cx:0,cy:0,fill:"#fff","fill-opacity":1,font:'10px "Arial"',"font-family":'"Arial"',"font-size":"10","font-style":"normal","font-weight":400,gradient:0,height:0,href:"http://raphaeljs.com/","letter-spacing":0,opacity:1,path:"M0,0",r:0,rx:0,ry:0,src:"",stroke:"#000","stroke-dasharray":"","stroke-linecap":"butt","stroke-linejoin":"butt","stroke-miterlimit":0,"stroke-opacity":1,"stroke-width":1,target:"_blank","text-anchor":"middle",title:"Raphael",transform:"",width:0,x:0,y:0,"class":""},pt=e._availableAnimAttrs={blur:$,"clip-rect":"csv",cx:$,cy:$,fill:"colour","fill-opacity":$,"font-size":$,height:$,opacity:$,path:"path",r:$,rx:$,ry:$,stroke:"colour","stroke-opacity":$,"stroke-width":$,transform:"transform",width:$,x:$,y:$},dt=/[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]/g,gt=/[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*,[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*/,vt={hs:1,rg:1},xt=/,?([achlmqrstvxz]),?/gi,yt=/([achlmrqstvz])[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029,]*((-?\d*\.?\d*(?:e[\-+]?\d+)?[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*,?[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*)+)/gi,mt=/([rstm])[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029,]*((-?\d*\.?\d*(?:e[\-+]?\d+)?[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*,?[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*)+)/gi,bt=/(-?\d*\.?\d*(?:e[\-+]?\d+)?)[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*,?[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*/gi,_t=e._radial_gradient=/^r(?:\(([^,]+?)[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*,[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*([^\)]+?)\))?/,wt={},kt=function(t,e){return t.key-e.key},Bt=function(t,e){return ht(t)-ht(e)},Ct=function(){},St=function(t){return t},At=e._rectPath=function(t,e,r,i,n){return n?[["M",t+n,e],["l",r-2*n,0],["a",n,n,0,0,1,n,n],["l",0,i-2*n],["a",n,n,0,0,1,-n,n],["l",2*n-r,0],["a",n,n,0,0,1,-n,-n],["l",0,2*n-i],["a",n,n,0,0,1,n,-n],["z"]]:[["M",t,e],["l",r,0],["l",0,i],["l",-r,0],["z"]]},Tt=function(t,e,r,i){return null==i&&(i=r),[["M",t,e],["m",0,-i],["a",r,i,0,1,1,0,2*i],["a",r,i,0,1,1,0,-2*i],["z"]]},Et=e._getPath={path:function(t){return t.attr("path")},circle:function(t){var e=t.attrs;return Tt(e.cx,e.cy,e.r)},ellipse:function(t){var e=t.attrs;return Tt(e.cx,e.cy,e.rx,e.ry)},rect:function(t){var e=t.attrs;return At(e.x,e.y,e.width,e.height,e.r)},image:function(t){var e=t.attrs;return At(e.x,e.y,e.width,e.height)},text:function(t){var e=t._getBBox();return At(e.x,e.y,e.width,e.height)},set:function(t){var e=t._getBBox();return At(e.x,e.y,e.width,e.height)}},Mt=e.mapPath=function(t,e){if(!e)return t;var r,i,n,a,s,o,l;for(t=Qt(t),n=0,s=t.length;n<s;n++)for(l=t[n],a=1,o=l.length;a<o;a+=2)r=e.x(l[a],l[a+1]),i=e.y(l[a],l[a+1]),l[a]=r,l[a+1]=i;return t};if(e._g=T,e.type=T.win.SVGAngle||T.doc.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure","1.1")?"SVG":"VML","VML"==e.type){var Nt=T.doc.createElement("div"),Lt;if(Nt.innerHTML='<v:shape adj="1"/>',Lt=Nt.firstChild,Lt.style.behavior="url(#default#VML)",!Lt||"object"!=typeof Lt.adj)return e.type=R;Nt=null}e.svg=!(e.vml="VML"==e.type),e._Paper=M,e.fn=N=M.prototype=e.prototype,e._id=0,e.is=function(t,e){return e=O.call(e),"finite"==e?!at[A](+t):"array"==e?t instanceof Array:"null"==e&&null===t||e==typeof t&&null!==t||"object"==e&&t===Object(t)||"array"==e&&Array.isArray&&Array.isArray(t)||tt.call(t).slice(8,-1).toLowerCase()==e},e.angle=function(t,r,i,n,a,s){if(null==a){var o=t-i,l=r-n;return o||l?(180+180*Y.atan2(-l,-o)/U+360)%360:0}return e.angle(t,r,a,s)-e.angle(i,n,a,s)},e.rad=function(t){return t%360*U/180},e.deg=function(t){return Math.round(180*t/U%360*1e3)/1e3},e.snapTo=function(t,r,i){if(i=e.is(i,"finite")?i:10,e.is(t,Q)){for(var n=t.length;n--;)if(H(t[n]-r)<=i)return t[n]}else{t=+t;var a=r%t;if(a<i)return r-a;if(a>t-i)return r-a+t}return r};var zt=e.createUUID=function(t,e){return function(){return"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(t,e).toUpperCase()}}(/[xy]/g,function(t){var e=16*Y.random()|0,r="x"==t?e:3&e|8;return r.toString(16)});e.setWindow=function(r){t("raphael.setWindow",e,T.win,r),T.win=r,T.doc=T.win.document,e._engine.initWin&&e._engine.initWin(T.win)};var Pt=function(t){if(e.vml){var r=/^\s+|\s+$/g,i;try{var a=new ActiveXObject("htmlfile");a.write("<body>"),a.close(),i=a.body}catch(s){i=createPopup().document.body}var o=i.createTextRange();Pt=n(function(t){try{i.style.color=I(t).replace(r,R);var e=o.queryCommandValue("ForeColor");return e=(255&e)<<16|65280&e|(16711680&e)>>>16,"#"+("000000"+e.toString(16)).slice(-6)}catch(n){return"none"}})}else{var l=T.doc.createElement("i");l.title="Raphaël Colour Picker",l.style.display="none",T.doc.body.appendChild(l),Pt=n(function(t){return l.style.color=t,T.doc.defaultView.getComputedStyle(l,R).getPropertyValue("color")})}return Pt(t)},Ft=function(){return"hsb("+[this.h,this.s,this.b]+")"},Rt=function(){return"hsl("+[this.h,this.s,this.l]+")"},jt=function(){return this.hex},It=function(t,r,i){if(null==r&&e.is(t,"object")&&"r"in t&&"g"in t&&"b"in t&&(i=t.b,r=t.g,t=t.r),null==r&&e.is(t,Z)){var n=e.getRGB(t);t=n.r,r=n.g,i=n.b}return(t>1||r>1||i>1)&&(t/=255,r/=255,i/=255),[t,r,i]},qt=function(t,r,i,n){t*=255,r*=255,i*=255;var a={r:t,g:r,b:i,hex:e.rgb(t,r,i),toString:jt};return e.is(n,"finite")&&(a.opacity=n),a};e.color=function(t){var r;return e.is(t,"object")&&"h"in t&&"s"in t&&"b"in t?(r=e.hsb2rgb(t),t.r=r.r,t.g=r.g,t.b=r.b,t.hex=r.hex):e.is(t,"object")&&"h"in t&&"s"in t&&"l"in t?(r=e.hsl2rgb(t),t.r=r.r,t.g=r.g,t.b=r.b,t.hex=r.hex):(e.is(t,"string")&&(t=e.getRGB(t)),e.is(t,"object")&&"r"in t&&"g"in t&&"b"in t?(r=e.rgb2hsl(t),t.h=r.h,t.s=r.s,t.l=r.l,r=e.rgb2hsb(t),t.v=r.b):(t={hex:"none"},t.r=t.g=t.b=t.h=t.s=t.v=t.l=-1)),t.toString=jt,t},e.hsb2rgb=function(t,e,r,i){this.is(t,"object")&&"h"in t&&"s"in t&&"b"in t&&(r=t.b,e=t.s,i=t.o,t=t.h),t*=360;var n,a,s,o,l;return t=t%360/60,l=r*e,o=l*(1-H(t%2-1)),n=a=s=r-l,t=~~t,n+=[l,o,0,0,o,l][t],a+=[o,l,l,o,0,0][t],s+=[0,0,o,l,l,o][t],qt(n,a,s,i)},e.hsl2rgb=function(t,e,r,i){this.is(t,"object")&&"h"in t&&"s"in t&&"l"in t&&(r=t.l,e=t.s,t=t.h),(t>1||e>1||r>1)&&(t/=360,e/=100,r/=100),t*=360;var n,a,s,o,l;return t=t%360/60,l=2*e*(r<.5?r:1-r),o=l*(1-H(t%2-1)),n=a=s=r-l/2,t=~~t,n+=[l,o,0,0,o,l][t],a+=[o,l,l,o,0,0][t],s+=[0,0,o,l,l,o][t],qt(n,a,s,i)},e.rgb2hsb=function(t,e,r){r=It(t,e,r),t=r[0],e=r[1],r=r[2];var i,n,a,s;return a=W(t,e,r),s=a-G(t,e,r),i=0==s?null:a==t?(e-r)/s:a==e?(r-t)/s+2:(t-e)/s+4,i=(i+360)%6*60/360,n=0==s?0:s/a,{h:i,s:n,b:a,toString:Ft}},e.rgb2hsl=function(t,e,r){r=It(t,e,r),t=r[0],e=r[1],r=r[2];var i,n,a,s,o,l;return s=W(t,e,r),o=G(t,e,r),l=s-o,i=0==l?null:s==t?(e-r)/l:s==e?(r-t)/l+2:(t-e)/l+4,i=(i+360)%6*60/360,a=(s+o)/2,n=0==l?0:a<.5?l/(2*a):l/(2-2*a),{h:i,s:n,l:a,toString:Rt}},e._path2string=function(){return this.join(",").replace(xt,"$1")};var Dt=e._preload=function(t,e){var r=T.doc.createElement("img");r.style.cssText="position:absolute;left:-9999em;top:-9999em",r.onload=function(){e.call(this),this.onload=null,T.doc.body.removeChild(this)},r.onerror=function(){T.doc.body.removeChild(this)},T.doc.body.appendChild(r),r.src=t};e.getRGB=n(function(t){if(!t||(t=I(t)).indexOf("-")+1)return{r:-1,g:-1,b:-1,hex:"none",error:1,toString:a};if("none"==t)return{r:-1,g:-1,b:-1,hex:"none",toString:a};!(vt[A](t.toLowerCase().substring(0,2))||"#"==t.charAt())&&(t=Pt(t));var r,i,n,s,o,l,h,u=t.match(nt);return u?(u[2]&&(s=ut(u[2].substring(5),16),n=ut(u[2].substring(3,5),16),i=ut(u[2].substring(1,3),16)),u[3]&&(s=ut((l=u[3].charAt(3))+l,16),n=ut((l=u[3].charAt(2))+l,16),i=ut((l=u[3].charAt(1))+l,16)),u[4]&&(h=u[4][q](gt),i=ht(h[0]),"%"==h[0].slice(-1)&&(i*=2.55),n=ht(h[1]),"%"==h[1].slice(-1)&&(n*=2.55),s=ht(h[2]),"%"==h[2].slice(-1)&&(s*=2.55),"rgba"==u[1].toLowerCase().slice(0,4)&&(o=ht(h[3])),h[3]&&"%"==h[3].slice(-1)&&(o/=100)),u[5]?(h=u[5][q](gt),i=ht(h[0]),"%"==h[0].slice(-1)&&(i*=2.55),n=ht(h[1]),"%"==h[1].slice(-1)&&(n*=2.55),s=ht(h[2]),"%"==h[2].slice(-1)&&(s*=2.55),("deg"==h[0].slice(-3)||"°"==h[0].slice(-1))&&(i/=360),"hsba"==u[1].toLowerCase().slice(0,4)&&(o=ht(h[3])),h[3]&&"%"==h[3].slice(-1)&&(o/=100),e.hsb2rgb(i,n,s,o)):u[6]?(h=u[6][q](gt),i=ht(h[0]),"%"==h[0].slice(-1)&&(i*=2.55),n=ht(h[1]),"%"==h[1].slice(-1)&&(n*=2.55),s=ht(h[2]),"%"==h[2].slice(-1)&&(s*=2.55),("deg"==h[0].slice(-3)||"°"==h[0].slice(-1))&&(i/=360),"hsla"==u[1].toLowerCase().slice(0,4)&&(o=ht(h[3])),h[3]&&"%"==h[3].slice(-1)&&(o/=100),e.hsl2rgb(i,n,s,o)):(u={r:i,g:n,b:s,toString:a},u.hex="#"+(16777216|s|n<<8|i<<16).toString(16).slice(1),e.is(o,"finite")&&(u.opacity=o),u)):{r:-1,g:-1,b:-1,hex:"none",error:1,toString:a}},e),e.hsb=n(function(t,r,i){return e.hsb2rgb(t,r,i).hex}),e.hsl=n(function(t,r,i){return e.hsl2rgb(t,r,i).hex}),e.rgb=n(function(t,e,r){function i(t){return t+.5|0}return"#"+(16777216|i(r)|i(e)<<8|i(t)<<16).toString(16).slice(1)}),e.getColor=function(t){var e=this.getColor.start=this.getColor.start||{h:0,s:1,b:t||.75},r=this.hsb2rgb(e.h,e.s,e.b);return e.h+=.075,e.h>1&&(e.h=0,e.s-=.2,e.s<=0&&(this.getColor.start={h:0,s:1,b:e.b})),r.hex},e.getColor.reset=function(){delete this.start},e.parsePathString=function(t){if(!t)return null;var r=Vt(t);if(r.arr)return Yt(r.arr);var i={a:7,c:6,h:1,l:2,m:2,r:4,q:4,s:4,t:2,v:1,z:0},n=[];return e.is(t,Q)&&e.is(t[0],Q)&&(n=Yt(t)),n.length||I(t).replace(yt,function(t,e,r){var a=[],s=e.toLowerCase();if(r.replace(bt,function(t,e){e&&a.push(+e)}),"m"==s&&a.length>2&&(n.push([e][P](a.splice(0,2))),s="l",e="m"==e?"l":"L"),"r"==s)n.push([e][P](a));else for(;a.length>=i[s]&&(n.push([e][P](a.splice(0,i[s]))),i[s]););}),n.toString=e._path2string,r.arr=Yt(n),n},e.parseTransformString=n(function(t){if(!t)return null;var r={r:3,s:4,t:2,m:6},i=[];return e.is(t,Q)&&e.is(t[0],Q)&&(i=Yt(t)),i.length||I(t).replace(mt,function(t,e,r){var n=[],a=O.call(e);r.replace(bt,function(t,e){e&&n.push(+e)}),i.push([e][P](n))}),i.toString=e._path2string,i});var Vt=function(t){var e=Vt.ps=Vt.ps||{};return e[t]?e[t].sleep=100:e[t]={sleep:100},setTimeout(function(){for(var r in e)e[A](r)&&r!=t&&(e[r].sleep--,!e[r].sleep&&delete e[r])}),e[t]};e.findDotsAtSegment=function(t,e,r,i,n,a,s,o,l){var h=1-l,u=X(h,3),c=X(h,2),f=l*l,p=f*l,d=u*t+3*c*l*r+3*h*l*l*n+p*s,g=u*e+3*c*l*i+3*h*l*l*a+p*o,v=t+2*l*(r-t)+f*(n-2*r+t),x=e+2*l*(i-e)+f*(a-2*i+e),y=r+2*l*(n-r)+f*(s-2*n+r),m=i+2*l*(a-i)+f*(o-2*a+i),b=h*t+l*r,_=h*e+l*i,w=h*n+l*s,k=h*a+l*o,B=90-180*Y.atan2(v-y,x-m)/U;return(v>y||x<m)&&(B+=180),{x:d,y:g,m:{x:v,y:x},n:{x:y,y:m},start:{x:b,y:_},end:{x:w,y:k},alpha:B}},e.bezierBBox=function(t,r,i,n,a,s,o,l){e.is(t,"array")||(t=[t,r,i,n,a,s,o,l]);var h=Zt.apply(null,t);return{x:h.min.x,y:h.min.y,x2:h.max.x,y2:h.max.y,width:h.max.x-h.min.x,height:h.max.y-h.min.y}},e.isPointInsideBBox=function(t,e,r){return e>=t.x&&e<=t.x2&&r>=t.y&&r<=t.y2},e.isBBoxIntersect=function(t,r){var i=e.isPointInsideBBox;return i(r,t.x,t.y)||i(r,t.x2,t.y)||i(r,t.x,t.y2)||i(r,t.x2,t.y2)||i(t,r.x,r.y)||i(t,r.x2,r.y)||i(t,r.x,r.y2)||i(t,r.x2,r.y2)||(t.x<r.x2&&t.x>r.x||r.x<t.x2&&r.x>t.x)&&(t.y<r.y2&&t.y>r.y||r.y<t.y2&&r.y>t.y)},e.pathIntersection=function(t,e){return d(t,e)},e.pathIntersectionNumber=function(t,e){return d(t,e,1)},e.isPointInsidePath=function(t,r,i){var n=e.pathBBox(t);return e.isPointInsideBBox(n,r,i)&&d(t,[["M",r,i],["H",n.x2+10]],1)%2==1},e._removedFactory=function(e){return function(){t("raphael.log",null,"Raphaël: you are calling to method “"+e+"” of removed object",e)}};var Ot=e.pathBBox=function(t){var e=Vt(t);if(e.bbox)return r(e.bbox);if(!t)return{x:0,y:0,width:0,height:0,x2:0,y2:0};t=Qt(t);for(var i=0,n=0,a=[],s=[],o,l=0,h=t.length;l<h;l++)if(o=t[l],"M"==o[0])i=o[1],n=o[2],a.push(i),s.push(n);else{var u=Zt(i,n,o[1],o[2],o[3],o[4],o[5],o[6]);a=a[P](u.min.x,u.max.x),s=s[P](u.min.y,u.max.y),i=o[5],n=o[6]}var c=G[z](0,a),f=G[z](0,s),p=W[z](0,a),d=W[z](0,s),g=p-c,v=d-f,x={x:c,y:f,x2:p,y2:d,width:g,height:v,cx:c+g/2,cy:f+v/2};return e.bbox=r(x),x},Yt=function(t){var i=r(t);return i.toString=e._path2string,i},Wt=e._pathToRelative=function(t){var r=Vt(t);if(r.rel)return Yt(r.rel);e.is(t,Q)&&e.is(t&&t[0],Q)||(t=e.parsePathString(t));var i=[],n=0,a=0,s=0,o=0,l=0;"M"==t[0][0]&&(n=t[0][1],a=t[0][2],s=n,o=a,l++,i.push(["M",n,a]));for(var h=l,u=t.length;h<u;h++){var c=i[h]=[],f=t[h];if(f[0]!=O.call(f[0]))switch(c[0]=O.call(f[0]),c[0]){case"a":c[1]=f[1],c[2]=f[2],c[3]=f[3],c[4]=f[4],c[5]=f[5],c[6]=+(f[6]-n).toFixed(3),c[7]=+(f[7]-a).toFixed(3);break;case"v":c[1]=+(f[1]-a).toFixed(3);break;case"m":s=f[1],o=f[2];default:for(var p=1,d=f.length;p<d;p++)c[p]=+(f[p]-(p%2?n:a)).toFixed(3)}else{c=i[h]=[],"m"==f[0]&&(s=f[1]+n,o=f[2]+a);for(var g=0,v=f.length;g<v;g++)i[h][g]=f[g]}var x=i[h].length;switch(i[h][0]){case"z":n=s,a=o;break;case"h":n+=+i[h][x-1];break;case"v":a+=+i[h][x-1];break;default:n+=+i[h][x-2],a+=+i[h][x-1]}}return i.toString=e._path2string,r.rel=Yt(i),i},Gt=e._pathToAbsolute=function(t){var r=Vt(t);if(r.abs)return Yt(r.abs);if(e.is(t,Q)&&e.is(t&&t[0],Q)||(t=e.parsePathString(t)),!t||!t.length)return[["M",0,0]];var i=[],n=0,a=0,o=0,l=0,h=0;"M"==t[0][0]&&(n=+t[0][1],a=+t[0][2],o=n,l=a,h++,i[0]=["M",n,a]);for(var u=3==t.length&&"M"==t[0][0]&&"R"==t[1][0].toUpperCase()&&"Z"==t[2][0].toUpperCase(),c,f,p=h,d=t.length;p<d;p++){if(i.push(c=[]),f=t[p],f[0]!=ct.call(f[0]))switch(c[0]=ct.call(f[0]),c[0]){case"A":c[1]=f[1],c[2]=f[2],c[3]=f[3],c[4]=f[4],c[5]=f[5],c[6]=+(f[6]+n),c[7]=+(f[7]+a);break;case"V":c[1]=+f[1]+a;break;case"H":c[1]=+f[1]+n;break;case"R":for(var g=[n,a][P](f.slice(1)),v=2,x=g.length;v<x;v++)g[v]=+g[v]+n,g[++v]=+g[v]+a;i.pop(),i=i[P](s(g,u));break;case"M":o=+f[1]+n,l=+f[2]+a;default:for(v=1,x=f.length;v<x;v++)c[v]=+f[v]+(v%2?n:a)}else if("R"==f[0])g=[n,a][P](f.slice(1)),i.pop(),i=i[P](s(g,u)),c=["R"][P](f.slice(-2));else for(var y=0,m=f.length;y<m;y++)c[y]=f[y];switch(c[0]){case"Z":n=o,a=l;break;case"H":n=c[1];break;case"V":a=c[1];break;case"M":o=c[c.length-2],l=c[c.length-1];default:n=c[c.length-2],a=c[c.length-1]}}return i.toString=e._path2string,r.abs=Yt(i),i},Ht=function(t,e,r,i){return[t,e,r,i,r,i]},Xt=function(t,e,r,i,n,a){var s=1/3,o=2/3;return[s*t+o*r,s*e+o*i,s*n+o*r,s*a+o*i,n,a]},Ut=function(t,e,r,i,a,s,o,l,h,u){var c=120*U/180,f=U/180*(+a||0),p=[],d,g=n(function(t,e,r){var i=t*Y.cos(r)-e*Y.sin(r),n=t*Y.sin(r)+e*Y.cos(r);return{x:i,y:n}});if(u)S=u[0],A=u[1],B=u[2],C=u[3];else{d=g(t,e,-f),t=d.x,e=d.y,d=g(l,h,-f),l=d.x,h=d.y;var v=Y.cos(U/180*a),x=Y.sin(U/180*a),y=(t-l)/2,m=(e-h)/2,b=y*y/(r*r)+m*m/(i*i);b>1&&(b=Y.sqrt(b),r=b*r,i=b*i);var _=r*r,w=i*i,k=(s==o?-1:1)*Y.sqrt(H((_*w-_*m*m-w*y*y)/(_*m*m+w*y*y))),B=k*r*m/i+(t+l)/2,C=k*-i*y/r+(e+h)/2,S=Y.asin(((e-C)/i).toFixed(9)),A=Y.asin(((h-C)/i).toFixed(9));S=t<B?U-S:S,A=l<B?U-A:A,S<0&&(S=2*U+S),A<0&&(A=2*U+A),o&&S>A&&(S-=2*U),!o&&A>S&&(A-=2*U)}var T=A-S;if(H(T)>c){var E=A,M=l,N=h;A=S+c*(o&&A>S?1:-1),l=B+r*Y.cos(A),h=C+i*Y.sin(A),p=Ut(l,h,r,i,a,0,o,M,N,[A,E,B,C])}T=A-S;var L=Y.cos(S),z=Y.sin(S),F=Y.cos(A),R=Y.sin(A),j=Y.tan(T/4),I=4/3*r*j,D=4/3*i*j,V=[t,e],O=[t+I*z,e-D*L],W=[l+I*R,h-D*F],G=[l,h];if(O[0]=2*V[0]-O[0],O[1]=2*V[1]-O[1],u)return[O,W,G][P](p);p=[O,W,G][P](p).join()[q](",");for(var X=[],$=0,Z=p.length;$<Z;$++)X[$]=$%2?g(p[$-1],p[$],f).y:g(p[$],p[$+1],f).x;return X},$t=function(t,e,r,i,n,a,s,o,l){var h=1-l;return{x:X(h,3)*t+3*X(h,2)*l*r+3*h*l*l*n+X(l,3)*s,y:X(h,3)*e+3*X(h,2)*l*i+3*h*l*l*a+X(l,3)*o}},Zt=n(function(t,e,r,i,n,a,s,o){var l=n-2*r+t-(s-2*n+r),h=2*(r-t)-2*(n-r),u=t-r,c=(-h+Y.sqrt(h*h-4*l*u))/2/l,f=(-h-Y.sqrt(h*h-4*l*u))/2/l,p=[e,o],d=[t,s],g;return H(c)>"1e12"&&(c=.5),H(f)>"1e12"&&(f=.5),c>0&&c<1&&(g=$t(t,e,r,i,n,a,s,o,c),d.push(g.x),p.push(g.y)),f>0&&f<1&&(g=$t(t,e,r,i,n,a,s,o,f),d.push(g.x),p.push(g.y)),l=a-2*i+e-(o-2*a+i),h=2*(i-e)-2*(a-i),u=e-i,c=(-h+Y.sqrt(h*h-4*l*u))/2/l,f=(-h-Y.sqrt(h*h-4*l*u))/2/l,H(c)>"1e12"&&(c=.5),H(f)>"1e12"&&(f=.5),c>0&&c<1&&(g=$t(t,e,r,i,n,a,s,o,c),d.push(g.x),p.push(g.y)),f>0&&f<1&&(g=$t(t,e,r,i,n,a,s,o,f),d.push(g.x),p.push(g.y)),{min:{x:G[z](0,d),y:G[z](0,p)},max:{x:W[z](0,d),y:W[z](0,p)}}}),Qt=e._path2curve=n(function(t,e){var r=!e&&Vt(t);if(!e&&r.curve)return Yt(r.curve);for(var i=Gt(t),n=e&&Gt(e),a={x:0,y:0,bx:0,by:0,X:0,Y:0,qx:null,qy:null},s={x:0,y:0,bx:0,by:0,X:0,Y:0,qx:null,qy:null},o=(function(t,e,r){var i,n,a={T:1,Q:1};if(!t)return["C",e.x,e.y,e.x,e.y,e.x,e.y];switch(!(t[0]in a)&&(e.qx=e.qy=null),t[0]){case"M":e.X=t[1],e.Y=t[2];break;case"A":t=["C"][P](Ut[z](0,[e.x,e.y][P](t.slice(1))));break;case"S":"C"==r||"S"==r?(i=2*e.x-e.bx,n=2*e.y-e.by):(i=e.x,n=e.y),t=["C",i,n][P](t.slice(1));break;case"T":"Q"==r||"T"==r?(e.qx=2*e.x-e.qx,e.qy=2*e.y-e.qy):(e.qx=e.x,e.qy=e.y),t=["C"][P](Xt(e.x,e.y,e.qx,e.qy,t[1],t[2]));break;case"Q":e.qx=t[1],e.qy=t[2],t=["C"][P](Xt(e.x,e.y,t[1],t[2],t[3],t[4]));break;case"L":t=["C"][P](Ht(e.x,e.y,t[1],t[2]));break;case"H":t=["C"][P](Ht(e.x,e.y,t[1],e.y));break;case"V":t=["C"][P](Ht(e.x,e.y,e.x,t[1]));break;case"Z":t=["C"][P](Ht(e.x,e.y,e.X,e.Y))}return t}),l=function(t,e){if(t[e].length>7){t[e].shift();for(var r=t[e];r.length;)u[e]="A",n&&(c[e]="A"),t.splice(e++,0,["C"][P](r.splice(0,6)));t.splice(e,1),g=W(i.length,n&&n.length||0)}},h=function(t,e,r,a,s){t&&e&&"M"==t[s][0]&&"M"!=e[s][0]&&(e.splice(s,0,["M",a.x,a.y]),r.bx=0,r.by=0,r.x=t[s][1],r.y=t[s][2],g=W(i.length,n&&n.length||0))},u=[],c=[],f="",p="",d=0,g=W(i.length,n&&n.length||0);d<g;d++){i[d]&&(f=i[d][0]),"C"!=f&&(u[d]=f,d&&(p=u[d-1])),i[d]=o(i[d],a,p),"A"!=u[d]&&"C"==f&&(u[d]="C"),l(i,d),n&&(n[d]&&(f=n[d][0]),"C"!=f&&(c[d]=f,d&&(p=c[d-1])),n[d]=o(n[d],s,p),"A"!=c[d]&&"C"==f&&(c[d]="C"),l(n,d)),h(i,n,a,s,d),h(n,i,s,a,d);var v=i[d],x=n&&n[d],y=v.length,m=n&&x.length;a.x=v[y-2],a.y=v[y-1],a.bx=ht(v[y-4])||a.x,a.by=ht(v[y-3])||a.y,s.bx=n&&(ht(x[m-4])||s.x),s.by=n&&(ht(x[m-3])||s.y),s.x=n&&x[m-2],s.y=n&&x[m-1]}return n||(r.curve=Yt(i)),n?[i,n]:i},null,Yt),Jt=e._parseDots=n(function(t){for(var r=[],i=0,n=t.length;i<n;i++){var a={},s=t[i].match(/^([^:]*):?([\d\.]*)/);if(a.color=e.getRGB(s[1]),a.color.error)return null;a.opacity=a.color.opacity,a.color=a.color.hex,s[2]&&(a.offset=s[2]+"%"),r.push(a)}for(i=1,n=r.length-1;i<n;i++)if(!r[i].offset){for(var o=ht(r[i-1].offset||0),l=0,h=i+1;h<n;h++)if(r[h].offset){l=r[h].offset;break}l||(l=100,h=n),l=ht(l);for(var u=(l-o)/(h-i+1);i<h;i++)o+=u,r[i].offset=o+"%"}return r}),Kt=e._tear=function(t,e){t==e.top&&(e.top=t.prev),t==e.bottom&&(e.bottom=t.next),t.next&&(t.next.prev=t.prev),t.prev&&(t.prev.next=t.next)},te=e._tofront=function(t,e){e.top!==t&&(Kt(t,e),t.next=null,t.prev=e.top,e.top.next=t,e.top=t)},ee=e._toback=function(t,e){e.bottom!==t&&(Kt(t,e),t.next=e.bottom,t.prev=null,e.bottom.prev=t,e.bottom=t)},re=e._insertafter=function(t,e,r){Kt(t,r),e==r.top&&(r.top=t),e.next&&(e.next.prev=t),t.next=e.next,t.prev=e,e.next=t},ie=e._insertbefore=function(t,e,r){Kt(t,r),e==r.bottom&&(r.bottom=t),e.prev&&(e.prev.next=t),t.prev=e.prev,e.prev=t,t.next=e},ne=e.toMatrix=function(t,e){var r=Ot(t),i={_:{transform:R},getBBox:function(){return r}};return se(i,e),i.matrix},ae=e.transformPath=function(t,e){return Mt(t,ne(t,e))},se=e._extractTransform=function(t,r){if(null==r)return t._.transform;r=I(r).replace(/\.{3}|\u2026/g,t._.transform||R);var i=e.parseTransformString(r),n=0,a=0,s=0,o=1,l=1,h=t._,u=new g;if(h.transform=i||[],i)for(var c=0,f=i.length;c<f;c++){var p=i[c],d=p.length,v=I(p[0]).toLowerCase(),x=p[0]!=v,y=x?u.invert():0,m,b,_,w,k;"t"==v&&3==d?x?(m=y.x(0,0),b=y.y(0,0),_=y.x(p[1],p[2]),w=y.y(p[1],p[2]),u.translate(_-m,w-b)):u.translate(p[1],p[2]):"r"==v?2==d?(k=k||t.getBBox(1),u.rotate(p[1],k.x+k.width/2,k.y+k.height/2),n+=p[1]):4==d&&(x?(_=y.x(p[2],p[3]),w=y.y(p[2],p[3]),u.rotate(p[1],_,w)):u.rotate(p[1],p[2],p[3]),n+=p[1]):"s"==v?2==d||3==d?(k=k||t.getBBox(1),u.scale(p[1],p[d-1],k.x+k.width/2,k.y+k.height/2),o*=p[1],l*=p[d-1]):5==d&&(x?(_=y.x(p[3],p[4]),w=y.y(p[3],p[4]),u.scale(p[1],p[2],_,w)):u.scale(p[1],p[2],p[3],p[4]),o*=p[1],l*=p[2]):"m"==v&&7==d&&u.add(p[1],p[2],p[3],p[4],p[5],p[6]),h.dirtyT=1,t.matrix=u}t.matrix=u,h.sx=o,h.sy=l,h.deg=n,h.dx=a=u.e,h.dy=s=u.f,1==o&&1==l&&!n&&h.bbox?(h.bbox.x+=+a,h.bbox.y+=+s):h.dirtyT=1},oe=function(t){var e=t[0];switch(e.toLowerCase()){case"t":return[e,0,0];case"m":return[e,1,0,0,1,0,0];case"r":return 4==t.length?[e,0,t[2],t[3]]:[e,0];case"s":return 5==t.length?[e,1,1,t[3],t[4]]:3==t.length?[e,1,1]:[e,1]}},le=e._equaliseTransform=function(t,r){r=I(r).replace(/\.{3}|\u2026/g,t),t=e.parseTransformString(t)||[],r=e.parseTransformString(r)||[];for(var i=W(t.length,r.length),n=[],a=[],s=0,o,l,h,u;s<i;s++){if(h=t[s]||oe(r[s]),u=r[s]||oe(h),h[0]!=u[0]||"r"==h[0].toLowerCase()&&(h[2]!=u[2]||h[3]!=u[3])||"s"==h[0].toLowerCase()&&(h[3]!=u[3]||h[4]!=u[4]))return;for(n[s]=[],a[s]=[],o=0,l=W(h.length,u.length);o<l;o++)o in h&&(n[s][o]=h[o]),o in u&&(a[s][o]=u[o])}return{from:n,to:a}};e._getContainer=function(t,r,i,n){var a;if(a=null!=n||e.is(t,"object")?t:T.doc.getElementById(t),null!=a)return a.tagName?null==r?{container:a,width:a.style.pixelWidth||a.offsetWidth,height:a.style.pixelHeight||a.offsetHeight}:{container:a,width:r,height:i}:{container:1,x:t,y:r,width:i,height:n}},e.pathToRelative=Wt,e._engine={},e.path2curve=Qt,e.matrix=function(t,e,r,i,n,a){return new g(t,e,r,i,n,a)},function(t){function r(t){return t[0]*t[0]+t[1]*t[1]}function i(t){var e=Y.sqrt(r(t));t[0]&&(t[0]/=e),t[1]&&(t[1]/=e)}t.add=function(t,e,r,i,n,a){var s=[[],[],[]],o=[[this.a,this.c,this.e],[this.b,this.d,this.f],[0,0,1]],l=[[t,r,n],[e,i,a],[0,0,1]],h,u,c,f;for(t&&t instanceof g&&(l=[[t.a,t.c,t.e],[t.b,t.d,t.f],[0,0,1]]),h=0;h<3;h++)for(u=0;u<3;u++){for(f=0,c=0;c<3;c++)f+=o[h][c]*l[c][u];s[h][u]=f}this.a=s[0][0],this.b=s[1][0],this.c=s[0][1],this.d=s[1][1],this.e=s[0][2],this.f=s[1][2]},t.invert=function(){var t=this,e=t.a*t.d-t.b*t.c;return new g(t.d/e,-t.b/e,-t.c/e,t.a/e,(t.c*t.f-t.d*t.e)/e,(t.b*t.e-t.a*t.f)/e)},t.clone=function(){return new g(this.a,this.b,this.c,this.d,this.e,this.f)},t.translate=function(t,e){
 	this.add(1,0,0,1,t,e)},t.scale=function(t,e,r,i){null==e&&(e=t),(r||i)&&this.add(1,0,0,1,r,i),this.add(t,0,0,e,0,0),(r||i)&&this.add(1,0,0,1,-r,-i)},t.rotate=function(t,r,i){t=e.rad(t),r=r||0,i=i||0;var n=+Y.cos(t).toFixed(9),a=+Y.sin(t).toFixed(9);this.add(n,a,-a,n,r,i),this.add(1,0,0,1,-r,-i)},t.x=function(t,e){return t*this.a+e*this.c+this.e},t.y=function(t,e){return t*this.b+e*this.d+this.f},t.get=function(t){return+this[I.fromCharCode(97+t)].toFixed(4)},t.toString=function(){return e.svg?"matrix("+[this.get(0),this.get(1),this.get(2),this.get(3),this.get(4),this.get(5)].join()+")":[this.get(0),this.get(2),this.get(1),this.get(3),0,0].join()},t.toFilter=function(){return"progid:DXImageTransform.Microsoft.Matrix(M11="+this.get(0)+", M12="+this.get(2)+", M21="+this.get(1)+", M22="+this.get(3)+", Dx="+this.get(4)+", Dy="+this.get(5)+", sizingmethod='auto expand')"},t.offset=function(){return[this.e.toFixed(4),this.f.toFixed(4)]},t.split=function(){var t={};t.dx=this.e,t.dy=this.f;var n=[[this.a,this.c],[this.b,this.d]];t.scalex=Y.sqrt(r(n[0])),i(n[0]),t.shear=n[0][0]*n[1][0]+n[0][1]*n[1][1],n[1]=[n[1][0]-n[0][0]*t.shear,n[1][1]-n[0][1]*t.shear],t.scaley=Y.sqrt(r(n[1])),i(n[1]),t.shear/=t.scaley;var a=-n[0][1],s=n[1][1];return s<0?(t.rotate=e.deg(Y.acos(s)),a<0&&(t.rotate=360-t.rotate)):t.rotate=e.deg(Y.asin(a)),t.isSimple=!(+t.shear.toFixed(9)||t.scalex.toFixed(9)!=t.scaley.toFixed(9)&&t.rotate),t.isSuperSimple=!+t.shear.toFixed(9)&&t.scalex.toFixed(9)==t.scaley.toFixed(9)&&!t.rotate,t.noRotation=!+t.shear.toFixed(9)&&!t.rotate,t},t.toTransformString=function(t){var e=t||this[q]();return e.isSimple?(e.scalex=+e.scalex.toFixed(4),e.scaley=+e.scaley.toFixed(4),e.rotate=+e.rotate.toFixed(4),(e.dx||e.dy?"t"+[e.dx,e.dy]:R)+(1!=e.scalex||1!=e.scaley?"s"+[e.scalex,e.scaley,0,0]:R)+(e.rotate?"r"+[e.rotate,0,0]:R)):"m"+[this.get(0),this.get(1),this.get(2),this.get(3),this.get(4),this.get(5)]}}(g.prototype);for(var he=function(){this.returnValue=!1},ue=function(){return this.originalEvent.preventDefault()},ce=function(){this.cancelBubble=!0},fe=function(){return this.originalEvent.stopPropagation()},pe=function(t){var e=T.doc.documentElement.scrollTop||T.doc.body.scrollTop,r=T.doc.documentElement.scrollLeft||T.doc.body.scrollLeft;return{x:t.clientX+r,y:t.clientY+e}},de=function(){return T.doc.addEventListener?function(t,e,r,i){var n=function(t){var e=pe(t);return r.call(i,t,e.x,e.y)};if(t.addEventListener(e,n,!1),F&&V[e]){var a=function(e){for(var n=pe(e),a=e,s=0,o=e.targetTouches&&e.targetTouches.length;s<o;s++)if(e.targetTouches[s].target==t){e=e.targetTouches[s],e.originalEvent=a,e.preventDefault=ue,e.stopPropagation=fe;break}return r.call(i,e,n.x,n.y)};t.addEventListener(V[e],a,!1)}return function(){return t.removeEventListener(e,n,!1),F&&V[e]&&t.removeEventListener(V[e],a,!1),!0}}:T.doc.attachEvent?function(t,e,r,i){var n=function(t){t=t||T.win.event;var e=T.doc.documentElement.scrollTop||T.doc.body.scrollTop,n=T.doc.documentElement.scrollLeft||T.doc.body.scrollLeft,a=t.clientX+n,s=t.clientY+e;return t.preventDefault=t.preventDefault||he,t.stopPropagation=t.stopPropagation||ce,r.call(i,t,a,s)};t.attachEvent("on"+e,n);var a=function(){return t.detachEvent("on"+e,n),!0};return a}:void 0}(),ge=[],ve=function(e){for(var r=e.clientX,i=e.clientY,n=T.doc.documentElement.scrollTop||T.doc.body.scrollTop,a=T.doc.documentElement.scrollLeft||T.doc.body.scrollLeft,s,o=ge.length;o--;){if(s=ge[o],F&&e.touches){for(var l=e.touches.length,h;l--;)if(h=e.touches[l],h.identifier==s.el._drag.id){r=h.clientX,i=h.clientY,(e.originalEvent?e.originalEvent:e).preventDefault();break}}else e.preventDefault();var u=s.el.node,c,f=u.nextSibling,p=u.parentNode,d=u.style.display;T.win.opera&&p.removeChild(u),u.style.display="none",c=s.el.paper.getElementByPoint(r,i),u.style.display=d,T.win.opera&&(f?p.insertBefore(u,f):p.appendChild(u)),c&&t("raphael.drag.over."+s.el.id,s.el,c),r+=a,i+=n,t("raphael.drag.move."+s.el.id,s.move_scope||s.el,r-s.el._drag.x,i-s.el._drag.y,r,i,e)}},xe=function(r){e.unmousemove(ve).unmouseup(xe);for(var i=ge.length,n;i--;)n=ge[i],n.el._drag={},t("raphael.drag.end."+n.el.id,n.end_scope||n.start_scope||n.move_scope||n.el,r);ge=[]},ye=e.el={},me=D.length;me--;)!function(t){e[t]=ye[t]=function(r,i){return e.is(r,"function")&&(this.events=this.events||[],this.events.push({name:t,f:r,unbind:de(this.shape||this.node||T.doc,t,r,i||this)})),this},e["un"+t]=ye["un"+t]=function(r){for(var i=this.events||[],n=i.length;n--;)i[n].name!=t||!e.is(r,"undefined")&&i[n].f!=r||(i[n].unbind(),i.splice(n,1),!i.length&&delete this.events);return this}}(D[me]);ye.data=function(r,i){var n=wt[this.id]=wt[this.id]||{};if(0==arguments.length)return n;if(1==arguments.length){if(e.is(r,"object")){for(var a in r)r[A](a)&&this.data(a,r[a]);return this}return t("raphael.data.get."+this.id,this,n[r],r),n[r]}return n[r]=i,t("raphael.data.set."+this.id,this,i,r),this},ye.removeData=function(t){return null==t?wt[this.id]={}:wt[this.id]&&delete wt[this.id][t],this},ye.getData=function(){return r(wt[this.id]||{})},ye.hover=function(t,e,r,i){return this.mouseover(t,r).mouseout(e,i||r)},ye.unhover=function(t,e){return this.unmouseover(t).unmouseout(e)};var be=[];ye.drag=function(r,i,n,a,s,o){function l(l){(l.originalEvent||l).preventDefault();var h=l.clientX,u=l.clientY,c=T.doc.documentElement.scrollTop||T.doc.body.scrollTop,f=T.doc.documentElement.scrollLeft||T.doc.body.scrollLeft;if(this._drag.id=l.identifier,F&&l.touches)for(var p=l.touches.length,d;p--;)if(d=l.touches[p],this._drag.id=d.identifier,d.identifier==this._drag.id){h=d.clientX,u=d.clientY;break}this._drag.x=h+f,this._drag.y=u+c,!ge.length&&e.mousemove(ve).mouseup(xe),ge.push({el:this,move_scope:a,start_scope:s,end_scope:o}),i&&t.on("raphael.drag.start."+this.id,i),r&&t.on("raphael.drag.move."+this.id,r),n&&t.on("raphael.drag.end."+this.id,n),t("raphael.drag.start."+this.id,s||a||this,l.clientX+f,l.clientY+c,l)}return this._drag={},be.push({el:this,start:l}),this.mousedown(l),this},ye.onDragOver=function(e){e?t.on("raphael.drag.over."+this.id,e):t.unbind("raphael.drag.over."+this.id)},ye.undrag=function(){for(var r=be.length;r--;)be[r].el==this&&(this.unmousedown(be[r].start),be.splice(r,1),t.unbind("raphael.drag.*."+this.id));!be.length&&e.unmousemove(ve).unmouseup(xe),ge=[]},N.circle=function(t,r,i){var n=e._engine.circle(this,t||0,r||0,i||0);return this.__set__&&this.__set__.push(n),n},N.rect=function(t,r,i,n,a){var s=e._engine.rect(this,t||0,r||0,i||0,n||0,a||0);return this.__set__&&this.__set__.push(s),s},N.ellipse=function(t,r,i,n){var a=e._engine.ellipse(this,t||0,r||0,i||0,n||0);return this.__set__&&this.__set__.push(a),a},N.path=function(t){t&&!e.is(t,Z)&&!e.is(t[0],Q)&&(t+=R);var r=e._engine.path(e.format[z](e,arguments),this);return this.__set__&&this.__set__.push(r),r},N.image=function(t,r,i,n,a){var s=e._engine.image(this,t||"about:blank",r||0,i||0,n||0,a||0);return this.__set__&&this.__set__.push(s),s},N.text=function(t,r,i){var n=e._engine.text(this,t||0,r||0,I(i));return this.__set__&&this.__set__.push(n),n},N.set=function(t){!e.is(t,"array")&&(t=Array.prototype.splice.call(arguments,0,arguments.length));var r=new ze(t);return this.__set__&&this.__set__.push(r),r.paper=this,r.type="set",r},N.setStart=function(t){this.__set__=t||this.set()},N.setFinish=function(t){var e=this.__set__;return delete this.__set__,e},N.getSize=function(){var t=this.canvas.parentNode;return{width:t.offsetWidth,height:t.offsetHeight}},N.setSize=function(t,r){return e._engine.setSize.call(this,t,r)},N.setViewBox=function(t,r,i,n,a){return e._engine.setViewBox.call(this,t,r,i,n,a)},N.top=N.bottom=null,N.raphael=e;var _e=function(t){var e=t.getBoundingClientRect(),r=t.ownerDocument,i=r.body,n=r.documentElement,a=n.clientTop||i.clientTop||0,s=n.clientLeft||i.clientLeft||0,o=e.top+(T.win.pageYOffset||n.scrollTop||i.scrollTop)-a,l=e.left+(T.win.pageXOffset||n.scrollLeft||i.scrollLeft)-s;return{y:o,x:l}};N.getElementByPoint=function(t,e){var r=this,i=r.canvas,n=T.doc.elementFromPoint(t,e);if(T.win.opera&&"svg"==n.tagName){var a=_e(i),s=i.createSVGRect();s.x=t-a.x,s.y=e-a.y,s.width=s.height=1;var o=i.getIntersectionList(s,null);o.length&&(n=o[o.length-1])}if(!n)return null;for(;n.parentNode&&n!=i.parentNode&&!n.raphael;)n=n.parentNode;return n==r.canvas.parentNode&&(n=i),n=n&&n.raphael?r.getById(n.raphaelid):null},N.getElementsByBBox=function(t){var r=this.set();return this.forEach(function(i){e.isBBoxIntersect(i.getBBox(),t)&&r.push(i)}),r},N.getById=function(t){for(var e=this.bottom;e;){if(e.id==t)return e;e=e.next}return null},N.forEach=function(t,e){for(var r=this.bottom;r;){if(t.call(e,r)===!1)return this;r=r.next}return this},N.getElementsByPoint=function(t,e){var r=this.set();return this.forEach(function(i){i.isPointInside(t,e)&&r.push(i)}),r},ye.isPointInside=function(t,r){var i=this.realPath=Et[this.type](this);return this.attr("transform")&&this.attr("transform").length&&(i=e.transformPath(i,this.attr("transform"))),e.isPointInsidePath(i,t,r)},ye.getBBox=function(t){if(this.removed)return{};var e=this._;return t?(!e.dirty&&e.bboxwt||(this.realPath=Et[this.type](this),e.bboxwt=Ot(this.realPath),e.bboxwt.toString=x,e.dirty=0),e.bboxwt):((e.dirty||e.dirtyT||!e.bbox)&&(!e.dirty&&this.realPath||(e.bboxwt=0,this.realPath=Et[this.type](this)),e.bbox=Ot(Mt(this.realPath,this.matrix)),e.bbox.toString=x,e.dirty=e.dirtyT=0),e.bbox)},ye.clone=function(){if(this.removed)return null;var t=this.paper[this.type]().attr(this.attr());return this.__set__&&this.__set__.push(t),t},ye.glow=function(t){if("text"==this.type)return null;t=t||{};var e={width:(t.width||10)+(+this.attr("stroke-width")||1),fill:t.fill||!1,opacity:null==t.opacity?.5:t.opacity,offsetx:t.offsetx||0,offsety:t.offsety||0,color:t.color||"#000"},r=e.width/2,i=this.paper,n=i.set(),a=this.realPath||Et[this.type](this);a=this.matrix?Mt(a,this.matrix):a;for(var s=1;s<r+1;s++)n.push(i.path(a).attr({stroke:e.color,fill:e.fill?e.color:"none","stroke-linejoin":"round","stroke-linecap":"round","stroke-width":+(e.width/r*s).toFixed(3),opacity:+(e.opacity/r).toFixed(3)}));return n.insertBefore(this).translate(e.offsetx,e.offsety)};var we={},ke=function(t,r,i,n,a,s,o,u,c){return null==c?l(t,r,i,n,a,s,o,u):e.findDotsAtSegment(t,r,i,n,a,s,o,u,h(t,r,i,n,a,s,o,u,c))},Be=function(t,r){return function(i,n,a){i=Qt(i);for(var s,o,l,h,u="",c={},f,p=0,d=0,g=i.length;d<g;d++){if(l=i[d],"M"==l[0])s=+l[1],o=+l[2];else{if(h=ke(s,o,l[1],l[2],l[3],l[4],l[5],l[6]),p+h>n){if(r&&!c.start){if(f=ke(s,o,l[1],l[2],l[3],l[4],l[5],l[6],n-p),u+=["C"+f.start.x,f.start.y,f.m.x,f.m.y,f.x,f.y],a)return u;c.start=u,u=["M"+f.x,f.y+"C"+f.n.x,f.n.y,f.end.x,f.end.y,l[5],l[6]].join(),p+=h,s=+l[5],o=+l[6];continue}if(!t&&!r)return f=ke(s,o,l[1],l[2],l[3],l[4],l[5],l[6],n-p),{x:f.x,y:f.y,alpha:f.alpha}}p+=h,s=+l[5],o=+l[6]}u+=l.shift()+l}return c.end=u,f=t?p:r?c:e.findDotsAtSegment(s,o,l[0],l[1],l[2],l[3],l[4],l[5],1),f.alpha&&(f={x:f.x,y:f.y,alpha:f.alpha}),f}},Ce=Be(1),Se=Be(),Ae=Be(0,1);e.getTotalLength=Ce,e.getPointAtLength=Se,e.getSubpath=function(t,e,r){if(this.getTotalLength(t)-r<1e-6)return Ae(t,e).end;var i=Ae(t,r,1);return e?Ae(i,e).end:i},ye.getTotalLength=function(){var t=this.getPath();if(t)return this.node.getTotalLength?this.node.getTotalLength():Ce(t)},ye.getPointAtLength=function(t){var e=this.getPath();if(e)return Se(e,t)},ye.getPath=function(){var t,r=e._getPath[this.type];if("text"!=this.type&&"set"!=this.type)return r&&(t=r(this)),t},ye.getSubpath=function(t,r){var i=this.getPath();if(i)return e.getSubpath(i,t,r)};var Te=e.easing_formulas={linear:function(t){return t},"<":function(t){return X(t,1.7)},">":function(t){return X(t,.48)},"<>":function(t){var e=.48-t/1.04,r=Y.sqrt(.1734+e*e),i=r-e,n=X(H(i),1/3)*(i<0?-1:1),a=-r-e,s=X(H(a),1/3)*(a<0?-1:1),o=n+s+.5;return 3*(1-o)*o*o+o*o*o},backIn:function(t){var e=1.70158;return t*t*((e+1)*t-e)},backOut:function(t){t-=1;var e=1.70158;return t*t*((e+1)*t+e)+1},elastic:function(t){return t==!!t?t:X(2,-10*t)*Y.sin((t-.075)*(2*U)/.3)+1},bounce:function(t){var e=7.5625,r=2.75,i;return t<1/r?i=e*t*t:t<2/r?(t-=1.5/r,i=e*t*t+.75):t<2.5/r?(t-=2.25/r,i=e*t*t+.9375):(t-=2.625/r,i=e*t*t+.984375),i}};Te.easeIn=Te["ease-in"]=Te["<"],Te.easeOut=Te["ease-out"]=Te[">"],Te.easeInOut=Te["ease-in-out"]=Te["<>"],Te["back-in"]=Te.backIn,Te["back-out"]=Te.backOut;var Ee=[],Me=window.requestAnimationFrame||window.webkitRequestAnimationFrame||window.mozRequestAnimationFrame||window.oRequestAnimationFrame||window.msRequestAnimationFrame||function(t){setTimeout(t,16)},Ne=function(){for(var r=+new Date,i=0;i<Ee.length;i++){var n=Ee[i];if(!n.el.removed&&!n.paused){var a=r-n.start,s=n.ms,o=n.easing,l=n.from,h=n.diff,u=n.to,c=n.t,f=n.el,p={},d,g={},v;if(n.initstatus?(a=(n.initstatus*n.anim.top-n.prev)/(n.percent-n.prev)*s,n.status=n.initstatus,delete n.initstatus,n.stop&&Ee.splice(i--,1)):n.status=(n.prev+(n.percent-n.prev)*(a/s))/n.anim.top,!(a<0))if(a<s){var x=o(a/s);for(var y in l)if(l[A](y)){switch(pt[y]){case $:d=+l[y]+x*s*h[y];break;case"colour":d="rgb("+[Le(ot(l[y].r+x*s*h[y].r)),Le(ot(l[y].g+x*s*h[y].g)),Le(ot(l[y].b+x*s*h[y].b))].join(",")+")";break;case"path":d=[];for(var m=0,_=l[y].length;m<_;m++){d[m]=[l[y][m][0]];for(var w=1,k=l[y][m].length;w<k;w++)d[m][w]=+l[y][m][w]+x*s*h[y][m][w];d[m]=d[m].join(j)}d=d.join(j);break;case"transform":if(h[y].real)for(d=[],m=0,_=l[y].length;m<_;m++)for(d[m]=[l[y][m][0]],w=1,k=l[y][m].length;w<k;w++)d[m][w]=l[y][m][w]+x*s*h[y][m][w];else{var B=function(t){return+l[y][t]+x*s*h[y][t]};d=[["m",B(0),B(1),B(2),B(3),B(4),B(5)]]}break;case"csv":if("clip-rect"==y)for(d=[],m=4;m--;)d[m]=+l[y][m]+x*s*h[y][m];break;default:var C=[][P](l[y]);for(d=[],m=f.paper.customAttributes[y].length;m--;)d[m]=+C[m]+x*s*h[y][m]}p[y]=d}f.attr(p),function(e,r,i){setTimeout(function(){t("raphael.anim.frame."+e,r,i)})}(f.id,f,n.anim)}else{if(function(r,i,n){setTimeout(function(){t("raphael.anim.frame."+i.id,i,n),t("raphael.anim.finish."+i.id,i,n),e.is(r,"function")&&r.call(i)})}(n.callback,f,n.anim),f.attr(u),Ee.splice(i--,1),n.repeat>1&&!n.next){for(v in u)u[A](v)&&(g[v]=n.totalOrigin[v]);n.el.attr(g),b(n.anim,n.el,n.anim.percents[0],null,n.totalOrigin,n.repeat-1)}n.next&&!n.stop&&b(n.anim,n.el,n.next,null,n.totalOrigin,n.repeat)}}}Ee.length&&Me(Ne)},Le=function(t){return t>255?255:t<0?0:t};ye.animateWith=function(t,r,i,n,a,s){var o=this;if(o.removed)return s&&s.call(o),o;var l=i instanceof m?i:e.animation(i,n,a,s),h,u;b(l,o,l.percents[0],null,o.attr());for(var c=0,f=Ee.length;c<f;c++)if(Ee[c].anim==r&&Ee[c].el==t){Ee[f-1].start=Ee[c].start;break}return o},ye.onAnimation=function(e){return e?t.on("raphael.anim.frame."+this.id,e):t.unbind("raphael.anim.frame."+this.id),this},m.prototype.delay=function(t){var e=new m(this.anim,this.ms);return e.times=this.times,e.del=+t||0,e},m.prototype.repeat=function(t){var e=new m(this.anim,this.ms);return e.del=this.del,e.times=Y.floor(W(t,0))||1,e},e.animation=function(t,r,i,n){if(t instanceof m)return t;!e.is(i,"function")&&i||(n=n||i||null,i=null),t=Object(t),r=+r||0;var a={},s,o;for(o in t)t[A](o)&&ht(o)!=o&&ht(o)+"%"!=o&&(s=!0,a[o]=t[o]);if(s)return i&&(a.easing=i),n&&(a.callback=n),new m({100:a},r);if(n){var l=0;for(var h in t){var u=ut(h);t[A](h)&&u>l&&(l=u)}l+="%",!t[l].callback&&(t[l].callback=n)}return new m(t,r)},ye.animate=function(t,r,i,n){var a=this;if(a.removed)return n&&n.call(a),a;var s=t instanceof m?t:e.animation(t,r,i,n);return b(s,a,s.percents[0],null,a.attr()),a},ye.setTime=function(t,e){return t&&null!=e&&this.status(t,G(e,t.ms)/t.ms),this},ye.status=function(t,e){var r=[],i=0,n,a;if(null!=e)return b(t,this,-1,G(e,1)),this;for(n=Ee.length;i<n;i++)if(a=Ee[i],a.el.id==this.id&&(!t||a.anim==t)){if(t)return a.status;r.push({anim:a.anim,status:a.status})}return t?0:r},ye.pause=function(e){for(var r=0;r<Ee.length;r++)Ee[r].el.id!=this.id||e&&Ee[r].anim!=e||t("raphael.anim.pause."+this.id,this,Ee[r].anim)!==!1&&(Ee[r].paused=!0);return this},ye.resume=function(e){for(var r=0;r<Ee.length;r++)if(Ee[r].el.id==this.id&&(!e||Ee[r].anim==e)){var i=Ee[r];t("raphael.anim.resume."+this.id,this,i.anim)!==!1&&(delete i.paused,this.status(i.anim,i.status))}return this},ye.stop=function(e){for(var r=0;r<Ee.length;r++)Ee[r].el.id!=this.id||e&&Ee[r].anim!=e||t("raphael.anim.stop."+this.id,this,Ee[r].anim)!==!1&&Ee.splice(r--,1);return this},t.on("raphael.remove",_),t.on("raphael.clear",_),ye.toString=function(){return"Raphaël’s object"};var ze=function(t){if(this.items=[],this.length=0,this.type="set",t)for(var e=0,r=t.length;e<r;e++)!t[e]||t[e].constructor!=ye.constructor&&t[e].constructor!=ze||(this[this.items.length]=this.items[this.items.length]=t[e],this.length++)},Pe=ze.prototype;Pe.push=function(){for(var t,e,r=0,i=arguments.length;r<i;r++)t=arguments[r],!t||t.constructor!=ye.constructor&&t.constructor!=ze||(e=this.items.length,this[e]=this.items[e]=t,this.length++);return this},Pe.pop=function(){return this.length&&delete this[this.length--],this.items.pop()},Pe.forEach=function(t,e){for(var r=0,i=this.items.length;r<i;r++)if(t.call(e,this.items[r],r)===!1)return this;return this};for(var Fe in ye)ye[A](Fe)&&(Pe[Fe]=function(t){return function(){var e=arguments;return this.forEach(function(r){r[t][z](r,e)})}}(Fe));return Pe.attr=function(t,r){if(t&&e.is(t,Q)&&e.is(t[0],"object"))for(var i=0,n=t.length;i<n;i++)this.items[i].attr(t[i]);else for(var a=0,s=this.items.length;a<s;a++)this.items[a].attr(t,r);return this},Pe.clear=function(){for(;this.length;)this.pop()},Pe.splice=function(t,e,r){t=t<0?W(this.length+t,0):t,e=W(0,G(this.length-t,e));var i=[],n=[],a=[],s;for(s=2;s<arguments.length;s++)a.push(arguments[s]);for(s=0;s<e;s++)n.push(this[t+s]);for(;s<this.length-t;s++)i.push(this[t+s]);var o=a.length;for(s=0;s<o+i.length;s++)this.items[t+s]=this[t+s]=s<o?a[s]:i[s-o];for(s=this.items.length=this.length-=e-o;this[s];)delete this[s++];return new ze(n)},Pe.exclude=function(t){for(var e=0,r=this.length;e<r;e++)if(this[e]==t)return this.splice(e,1),!0},Pe.animate=function(t,r,i,n){(e.is(i,"function")||!i)&&(n=i||null);var a=this.items.length,s=a,o,l=this,h;if(!a)return this;n&&(h=function(){!--a&&n.call(l)}),i=e.is(i,Z)?i:h;var u=e.animation(t,r,i,h);for(o=this.items[--s].animate(u);s--;)this.items[s]&&!this.items[s].removed&&this.items[s].animateWith(o,u,u),this.items[s]&&!this.items[s].removed||a--;return this},Pe.insertAfter=function(t){for(var e=this.items.length;e--;)this.items[e].insertAfter(t);return this},Pe.getBBox=function(){for(var t=[],e=[],r=[],i=[],n=this.items.length;n--;)if(!this.items[n].removed){var a=this.items[n].getBBox();t.push(a.x),e.push(a.y),r.push(a.x+a.width),i.push(a.y+a.height)}return t=G[z](0,t),e=G[z](0,e),r=W[z](0,r),i=W[z](0,i),{x:t,y:e,x2:r,y2:i,width:r-t,height:i-e}},Pe.clone=function(t){t=this.paper.set();for(var e=0,r=this.items.length;e<r;e++)t.push(this.items[e].clone());return t},Pe.toString=function(){return"Raphaël‘s set"},Pe.glow=function(t){var e=this.paper.set();return this.forEach(function(r,i){var n=r.glow(t);null!=n&&n.forEach(function(t,r){e.push(t)})}),e},Pe.isPointInside=function(t,e){var r=!1;return this.forEach(function(i){if(i.isPointInside(t,e))return r=!0,!1}),r},e.registerFont=function(t){if(!t.face)return t;this.fonts=this.fonts||{};var e={w:t.w,face:{},glyphs:{}},r=t.face["font-family"];for(var i in t.face)t.face[A](i)&&(e.face[i]=t.face[i]);if(this.fonts[r]?this.fonts[r].push(e):this.fonts[r]=[e],!t.svg){e.face["units-per-em"]=ut(t.face["units-per-em"],10);for(var n in t.glyphs)if(t.glyphs[A](n)){var a=t.glyphs[n];if(e.glyphs[n]={w:a.w,k:{},d:a.d&&"M"+a.d.replace(/[mlcxtrv]/g,function(t){return{l:"L",c:"C",x:"z",t:"m",r:"l",v:"c"}[t]||"M"})+"z"},a.k)for(var s in a.k)a[A](s)&&(e.glyphs[n].k[s]=a.k[s])}}return t},N.getFont=function(t,r,i,n){if(n=n||"normal",i=i||"normal",r=+r||{normal:400,bold:700,lighter:300,bolder:800}[r]||400,e.fonts){var a=e.fonts[t];if(!a){var s=new RegExp("(^|\\s)"+t.replace(/[^\w\d\s+!~.:_-]/g,R)+"(\\s|$)","i");for(var o in e.fonts)if(e.fonts[A](o)&&s.test(o)){a=e.fonts[o];break}}var l;if(a)for(var h=0,u=a.length;h<u&&(l=a[h],l.face["font-weight"]!=r||l.face["font-style"]!=i&&l.face["font-style"]||l.face["font-stretch"]!=n);h++);return l}},N.print=function(t,r,i,n,a,s,o,l){s=s||"middle",o=W(G(o||0,1),-1),l=W(G(l||1,3),1);var h=I(i)[q](R),u=0,c=0,f=R,p;if(e.is(n,"string")&&(n=this.getFont(n)),n){p=(a||16)/n.face["units-per-em"];for(var d=n.face.bbox[q](k),g=+d[0],v=d[3]-d[1],x=0,y=+d[1]+("baseline"==s?v+ +n.face.descent:v/2),m=0,b=h.length;m<b;m++){if("\n"==h[m])u=0,w=0,c=0,x+=v*l;else{var _=c&&n.glyphs[h[m-1]]||{},w=n.glyphs[h[m]];u+=c?(_.w||n.w)+(_.k&&_.k[h[m]]||0)+n.w*o:0,c=1}w&&w.d&&(f+=e.transformPath(w.d,["t",u*p,x*p,"s",p,p,g,y,"t",(t-g)/p,(r-y)/p]))}}return this.path(f).attr({fill:"#000",stroke:"none"})},N.add=function(t){if(e.is(t,"array"))for(var r=this.set(),i=0,n=t.length,a;i<n;i++)a=t[i]||{},B[A](a.type)&&r.push(this[a.type]().attr(a));return r},e.format=function(t,r){var i=e.is(r,Q)?[0][P](r):arguments;return t&&e.is(t,Z)&&i.length-1&&(t=t.replace(C,function(t,e){return null==i[++e]?R:i[e]})),t||R},e.fullfill=function(){var t=/\{([^\}]+)\}/g,e=/(?:(?:^|\.)(.+?)(?=\[|\.|$|\()|\[('|")(.+?)\2\])(\(\))?/g,r=function(t,r,i){var n=i;return r.replace(e,function(t,e,r,i,a){e=e||i,n&&(e in n&&(n=n[e]),"function"==typeof n&&a&&(n=n()))}),n=(null==n||n==i?t:n)+""};return function(e,i){return String(e).replace(t,function(t,e){return r(t,e,i)})}}(),e.ninja=function(){if(E.was)T.win.Raphael=E.is;else{window.Raphael=void 0;try{delete window.Raphael}catch(t){}}return e},e.st=Pe,t.on("raphael.DOMload",function(){w=!0}),function(t,r,i){function n(){/in/.test(t.readyState)?setTimeout(n,9):e.eve("raphael.DOMload")}null==t.readyState&&t.addEventListener&&(t.addEventListener(r,i=function(){t.removeEventListener(r,i,!1),t.readyState="complete"},!1),t.readyState="loading"),n()}(document,"DOMContentLoaded"),e}.apply(e,i),!(void 0!==n&&(t.exports=n))},function(t,e,r){var i,n;!function(r){var a="0.5.0",s="hasOwnProperty",o=/[\.\/]/,l=/\s*,\s*/,h="*",u=function(){},c=function(t,e){return t-e},f,p,d={n:{}},g=function(){for(var t=0,e=this.length;t<e;t++)if("undefined"!=typeof this[t])return this[t]},v=function(){for(var t=this.length;--t;)if("undefined"!=typeof this[t])return this[t]},x=Object.prototype.toString,y=String,m=Array.isArray||function(t){return t instanceof Array||"[object Array]"==x.call(t)};eve=function(t,e){var r=d,i=p,n=Array.prototype.slice.call(arguments,2),a=eve.listeners(t),s=0,o=!1,l,h=[],u={},x=[],y=f,m=[];x.firstDefined=g,x.lastDefined=v,f=t,p=0;for(var b=0,_=a.length;b<_;b++)"zIndex"in a[b]&&(h.push(a[b].zIndex),a[b].zIndex<0&&(u[a[b].zIndex]=a[b]));for(h.sort(c);h[s]<0;)if(l=u[h[s++]],x.push(l.apply(e,n)),p)return p=i,x;for(b=0;b<_;b++)if(l=a[b],"zIndex"in l)if(l.zIndex==h[s]){if(x.push(l.apply(e,n)),p)break;do if(s++,l=u[h[s]],l&&x.push(l.apply(e,n)),p)break;while(l)}else u[l.zIndex]=l;else if(x.push(l.apply(e,n)),p)break;return p=i,f=y,x},eve._events=d,eve.listeners=function(t){var e=m(t)?t:t.split(o),r=d,i,n,a,s,l,u,c,f,p=[r],g=[];for(s=0,l=e.length;s<l;s++){for(f=[],u=0,c=p.length;u<c;u++)for(r=p[u].n,n=[r[e[s]],r[h]],a=2;a--;)i=n[a],i&&(f.push(i),g=g.concat(i.f||[]));p=f}return g},eve.separator=function(t){t?(t=y(t).replace(/(?=[\.\^\]\[\-])/g,"\\"),t="["+t+"]",o=new RegExp(t)):o=/[\.\/]/},eve.on=function(t,e){if("function"!=typeof e)return function(){};for(var r=m(t)?m(t[0])?t:[t]:y(t).split(l),i=0,n=r.length;i<n;i++)!function(t){for(var r=m(t)?t:y(t).split(o),i=d,n,a=0,s=r.length;a<s;a++)i=i.n,i=i.hasOwnProperty(r[a])&&i[r[a]]||(i[r[a]]={n:{}});for(i.f=i.f||[],a=0,s=i.f.length;a<s;a++)if(i.f[a]==e){n=!0;break}!n&&i.f.push(e)}(r[i]);return function(t){+t==+t&&(e.zIndex=+t)}},eve.f=function(t){var e=[].slice.call(arguments,1);return function(){eve.apply(null,[t,null].concat(e).concat([].slice.call(arguments,0)))}},eve.stop=function(){p=1},eve.nt=function(t){var e=m(f)?f.join("."):f;return t?new RegExp("(?:\\.|\\/|^)"+t+"(?:\\.|\\/|$)").test(e):e},eve.nts=function(){return m(f)?f:f.split(o)},eve.off=eve.unbind=function(t,e){if(!t)return void(eve._events=d={n:{}});var r=m(t)?m(t[0])?t:[t]:y(t).split(l);if(r.length>1)for(var i=0,n=r.length;i<n;i++)eve.off(r[i],e);else{r=m(t)?t:y(t).split(o);var a,u,c,i,n,f,p,g=[d];for(i=0,n=r.length;i<n;i++)for(f=0;f<g.length;f+=c.length-2){if(c=[f,1],a=g[f].n,r[i]!=h)a[r[i]]&&c.push(a[r[i]]);else for(u in a)a[s](u)&&c.push(a[u]);g.splice.apply(g,c)}for(i=0,n=g.length;i<n;i++)for(a=g[i];a.n;){if(e){if(a.f){for(f=0,p=a.f.length;f<p;f++)if(a.f[f]==e){a.f.splice(f,1);break}!a.f.length&&delete a.f}for(u in a.n)if(a.n[s](u)&&a.n[u].f){var v=a.n[u].f;for(f=0,p=v.length;f<p;f++)if(v[f]==e){v.splice(f,1);break}!v.length&&delete a.n[u].f}}else{delete a.f;for(u in a.n)a.n[s](u)&&a.n[u].f&&delete a.n[u].f}a=a.n}}},eve.once=function(t,e){var r=function(){return eve.off(t,r),e.apply(this,arguments)};return eve.on(t,r)},eve.version=a,eve.toString=function(){return"You are running Eve "+a},"undefined"!=typeof t&&t.exports?t.exports=eve:(i=[],n=function(){return eve}.apply(e,i),!(void 0!==n&&(t.exports=n)))}(this)},function(t,e,r){var i,n;i=[r(1)],n=function(t){if(!t||t.svg){var e="hasOwnProperty",r=String,i=parseFloat,n=parseInt,a=Math,s=a.max,o=a.abs,l=a.pow,h=/[, ]+/,u=t.eve,c="",f=" ",p="http://www.w3.org/1999/xlink",d={block:"M5,0 0,2.5 5,5z",classic:"M5,0 0,2.5 5,5 3.5,3 3.5,2z",diamond:"M2.5,0 5,2.5 2.5,5 0,2.5z",open:"M6,1 1,3.5 6,6",oval:"M2.5,0A2.5,2.5,0,0,1,2.5,5 2.5,2.5,0,0,1,2.5,0z"},g={};t.toString=function(){return"Your browser supports SVG.\nYou are running Raphaël "+this.version};var v=function(i,n){if(n){"string"==typeof i&&(i=v(i));for(var a in n)n[e](a)&&("xlink:"==a.substring(0,6)?i.setAttributeNS(p,a.substring(6),r(n[a])):i.setAttribute(a,r(n[a])))}else i=t._g.doc.createElementNS("http://www.w3.org/2000/svg",i),i.style&&(i.style.webkitTapHighlightColor="rgba(0,0,0,0)");return i},x=function(e,n){var h="linear",u=e.id+n,f=.5,p=.5,d=e.node,g=e.paper,x=d.style,y=t._g.doc.getElementById(u);if(!y){if(n=r(n).replace(t._radial_gradient,function(t,e,r){if(h="radial",e&&r){f=i(e),p=i(r);var n=2*(p>.5)-1;l(f-.5,2)+l(p-.5,2)>.25&&(p=a.sqrt(.25-l(f-.5,2))*n+.5)&&.5!=p&&(p=p.toFixed(5)-1e-5*n)}return c}),n=n.split(/\s*\-\s*/),"linear"==h){var b=n.shift();if(b=-i(b),isNaN(b))return null;var _=[0,0,a.cos(t.rad(b)),a.sin(t.rad(b))],w=1/(s(o(_[2]),o(_[3]))||1);_[2]*=w,_[3]*=w,_[2]<0&&(_[0]=-_[2],_[2]=0),_[3]<0&&(_[1]=-_[3],_[3]=0)}var k=t._parseDots(n);if(!k)return null;if(u=u.replace(/[\(\)\s,\xb0#]/g,"_"),e.gradient&&u!=e.gradient.id&&(g.defs.removeChild(e.gradient),delete e.gradient),!e.gradient){y=v(h+"Gradient",{id:u}),e.gradient=y,v(y,"radial"==h?{fx:f,fy:p}:{x1:_[0],y1:_[1],x2:_[2],y2:_[3],gradientTransform:e.matrix.invert()}),g.defs.appendChild(y);for(var B=0,C=k.length;B<C;B++)y.appendChild(v("stop",{offset:k[B].offset?k[B].offset:B?"100%":"0%","stop-color":k[B].color||"#fff","stop-opacity":isFinite(k[B].opacity)?k[B].opacity:1}))}}return v(d,{fill:m(u),opacity:1,"fill-opacity":1}),x.fill=c,x.opacity=1,x.fillOpacity=1,1},y=function(){var t=document.documentMode;return t&&(9===t||10===t)},m=function(t){if(y())return"url('#"+t+"')";var e=document.location,r=e.protocol+"//"+e.host+e.pathname+e.search;return"url('"+r+"#"+t+"')"},b=function(t){var e=t.getBBox(1);v(t.pattern,{patternTransform:t.matrix.invert()+" translate("+e.x+","+e.y+")"})},_=function(i,n,a){if("path"==i.type){for(var s=r(n).toLowerCase().split("-"),o=i.paper,l=a?"end":"start",h=i.node,u=i.attrs,f=u["stroke-width"],p=s.length,x="classic",y,m,b,_,w,k=3,B=3,C=5;p--;)switch(s[p]){case"block":case"classic":case"oval":case"diamond":case"open":case"none":x=s[p];break;case"wide":B=5;break;case"narrow":B=2;break;case"long":k=5;break;case"short":k=2}if("open"==x?(k+=2,B+=2,C+=2,b=1,_=a?4:1,w={fill:"none",stroke:u.stroke}):(_=b=k/2,w={fill:u.stroke,stroke:"none"}),i._.arrows?a?(i._.arrows.endPath&&g[i._.arrows.endPath]--,i._.arrows.endMarker&&g[i._.arrows.endMarker]--):(i._.arrows.startPath&&g[i._.arrows.startPath]--,i._.arrows.startMarker&&g[i._.arrows.startMarker]--):i._.arrows={},"none"!=x){var S="raphael-marker-"+x,A="raphael-marker-"+l+x+k+B+"-obj"+i.id;t._g.doc.getElementById(S)?g[S]++:(o.defs.appendChild(v(v("path"),{"stroke-linecap":"round",d:d[x],id:S})),g[S]=1);var T=t._g.doc.getElementById(A),E;T?(g[A]++,E=T.getElementsByTagName("use")[0]):(T=v(v("marker"),{id:A,markerHeight:B,markerWidth:k,orient:"auto",refX:_,refY:B/2}),E=v(v("use"),{"xlink:href":"#"+S,transform:(a?"rotate(180 "+k/2+" "+B/2+") ":c)+"scale("+k/C+","+B/C+")","stroke-width":(1/((k/C+B/C)/2)).toFixed(4)}),T.appendChild(E),o.defs.appendChild(T),g[A]=1),v(E,w);var M=b*("diamond"!=x&&"oval"!=x);a?(y=i._.arrows.startdx*f||0,m=t.getTotalLength(u.path)-M*f):(y=M*f,m=t.getTotalLength(u.path)-(i._.arrows.enddx*f||0)),w={},w["marker-"+l]="url(#"+A+")",(m||y)&&(w.d=t.getSubpath(u.path,y,m)),v(h,w),i._.arrows[l+"Path"]=S,i._.arrows[l+"Marker"]=A,i._.arrows[l+"dx"]=M,i._.arrows[l+"Type"]=x,i._.arrows[l+"String"]=n}else a?(y=i._.arrows.startdx*f||0,m=t.getTotalLength(u.path)-y):(y=0,m=t.getTotalLength(u.path)-(i._.arrows.enddx*f||0)),i._.arrows[l+"Path"]&&v(h,{d:t.getSubpath(u.path,y,m)}),delete i._.arrows[l+"Path"],delete i._.arrows[l+"Marker"],delete i._.arrows[l+"dx"],delete i._.arrows[l+"Type"],delete i._.arrows[l+"String"];for(w in g)if(g[e](w)&&!g[w]){var N=t._g.doc.getElementById(w);N&&N.parentNode.removeChild(N)}}},w={"-":[3,1],".":[1,1],"-.":[3,1,1,1],"-..":[3,1,1,1,1,1],". ":[1,3],"- ":[4,3],"--":[8,3],"- .":[4,3,1,3],"--.":[8,3,1,3],"--..":[8,3,1,3,1,3]},k=function(t,e,i){if(e=w[r(e).toLowerCase()]){for(var n=t.attrs["stroke-width"]||"1",a={round:n,square:n,butt:0}[t.attrs["stroke-linecap"]||i["stroke-linecap"]]||0,s=[],o=e.length;o--;)s[o]=e[o]*n+(o%2?1:-1)*a;v(t.node,{"stroke-dasharray":s.join(",")})}else v(t.node,{"stroke-dasharray":"none"})},B=function(i,a){var l=i.node,u=i.attrs,f=l.style.visibility;l.style.visibility="hidden";for(var d in a)if(a[e](d)){if(!t._availableAttrs[e](d))continue;var g=a[d];switch(u[d]=g,d){case"blur":i.blur(g);break;case"title":var y=l.getElementsByTagName("title");if(y.length&&(y=y[0]))y.firstChild.nodeValue=g;else{y=v("title");var m=t._g.doc.createTextNode(g);y.appendChild(m),l.appendChild(y)}break;case"href":case"target":var w=l.parentNode;if("a"!=w.tagName.toLowerCase()){var B=v("a");w.insertBefore(B,l),B.appendChild(l),w=B}"target"==d?w.setAttributeNS(p,"show","blank"==g?"new":g):w.setAttributeNS(p,d,g);break;case"cursor":l.style.cursor=g;break;case"transform":i.transform(g);break;case"arrow-start":_(i,g);break;case"arrow-end":_(i,g,1);break;case"clip-rect":var C=r(g).split(h);if(4==C.length){i.clip&&i.clip.parentNode.parentNode.removeChild(i.clip.parentNode);var A=v("clipPath"),T=v("rect");A.id=t.createUUID(),v(T,{x:C[0],y:C[1],width:C[2],height:C[3]}),A.appendChild(T),i.paper.defs.appendChild(A),v(l,{"clip-path":"url(#"+A.id+")"}),i.clip=T}if(!g){var E=l.getAttribute("clip-path");if(E){var M=t._g.doc.getElementById(E.replace(/(^url\(#|\)$)/g,c));M&&M.parentNode.removeChild(M),v(l,{"clip-path":c}),delete i.clip}}break;case"path":"path"==i.type&&(v(l,{d:g?u.path=t._pathToAbsolute(g):"M0,0"}),i._.dirty=1,i._.arrows&&("startString"in i._.arrows&&_(i,i._.arrows.startString),"endString"in i._.arrows&&_(i,i._.arrows.endString,1)));break;case"width":if(l.setAttribute(d,g),i._.dirty=1,!u.fx)break;d="x",g=u.x;case"x":u.fx&&(g=-u.x-(u.width||0));case"rx":if("rx"==d&&"rect"==i.type)break;case"cx":l.setAttribute(d,g),i.pattern&&b(i),i._.dirty=1;break;case"height":if(l.setAttribute(d,g),i._.dirty=1,!u.fy)break;d="y",g=u.y;case"y":u.fy&&(g=-u.y-(u.height||0));case"ry":if("ry"==d&&"rect"==i.type)break;case"cy":l.setAttribute(d,g),i.pattern&&b(i),i._.dirty=1;break;case"r":"rect"==i.type?v(l,{rx:g,ry:g}):l.setAttribute(d,g),i._.dirty=1;break;case"src":"image"==i.type&&l.setAttributeNS(p,"href",g);break;case"stroke-width":1==i._.sx&&1==i._.sy||(g/=s(o(i._.sx),o(i._.sy))||1),l.setAttribute(d,g),u["stroke-dasharray"]&&k(i,u["stroke-dasharray"],a),
 	i._.arrows&&("startString"in i._.arrows&&_(i,i._.arrows.startString),"endString"in i._.arrows&&_(i,i._.arrows.endString,1));break;case"stroke-dasharray":k(i,g,a);break;case"fill":var N=r(g).match(t._ISURL);if(N){A=v("pattern");var L=v("image");A.id=t.createUUID(),v(A,{x:0,y:0,patternUnits:"userSpaceOnUse",height:1,width:1}),v(L,{x:0,y:0,"xlink:href":N[1]}),A.appendChild(L),function(e){t._preload(N[1],function(){var t=this.offsetWidth,r=this.offsetHeight;v(e,{width:t,height:r}),v(L,{width:t,height:r})})}(A),i.paper.defs.appendChild(A),v(l,{fill:"url(#"+A.id+")"}),i.pattern=A,i.pattern&&b(i);break}var z=t.getRGB(g);if(z.error){if(("circle"==i.type||"ellipse"==i.type||"r"!=r(g).charAt())&&x(i,g)){if("opacity"in u||"fill-opacity"in u){var P=t._g.doc.getElementById(l.getAttribute("fill").replace(/^url\(#|\)$/g,c));if(P){var F=P.getElementsByTagName("stop");v(F[F.length-1],{"stop-opacity":("opacity"in u?u.opacity:1)*("fill-opacity"in u?u["fill-opacity"]:1)})}}u.gradient=g,u.fill="none";break}}else delete a.gradient,delete u.gradient,!t.is(u.opacity,"undefined")&&t.is(a.opacity,"undefined")&&v(l,{opacity:u.opacity}),!t.is(u["fill-opacity"],"undefined")&&t.is(a["fill-opacity"],"undefined")&&v(l,{"fill-opacity":u["fill-opacity"]});z[e]("opacity")&&v(l,{"fill-opacity":z.opacity>1?z.opacity/100:z.opacity});case"stroke":z=t.getRGB(g),l.setAttribute(d,z.hex),"stroke"==d&&z[e]("opacity")&&v(l,{"stroke-opacity":z.opacity>1?z.opacity/100:z.opacity}),"stroke"==d&&i._.arrows&&("startString"in i._.arrows&&_(i,i._.arrows.startString),"endString"in i._.arrows&&_(i,i._.arrows.endString,1));break;case"gradient":("circle"==i.type||"ellipse"==i.type||"r"!=r(g).charAt())&&x(i,g);break;case"opacity":u.gradient&&!u[e]("stroke-opacity")&&v(l,{"stroke-opacity":g>1?g/100:g});case"fill-opacity":if(u.gradient){P=t._g.doc.getElementById(l.getAttribute("fill").replace(/^url\(#|\)$/g,c)),P&&(F=P.getElementsByTagName("stop"),v(F[F.length-1],{"stop-opacity":g}));break}default:"font-size"==d&&(g=n(g,10)+"px");var R=d.replace(/(\-.)/g,function(t){return t.substring(1).toUpperCase()});l.style[R]=g,i._.dirty=1,l.setAttribute(d,g)}}S(i,a),l.style.visibility=f},C=1.2,S=function(i,a){if("text"==i.type&&(a[e]("text")||a[e]("font")||a[e]("font-size")||a[e]("x")||a[e]("y"))){var s=i.attrs,o=i.node,l=o.firstChild?n(t._g.doc.defaultView.getComputedStyle(o.firstChild,c).getPropertyValue("font-size"),10):10;if(a[e]("text")){for(s.text=a.text;o.firstChild;)o.removeChild(o.firstChild);for(var h=r(a.text).split("\n"),u=[],f,p=0,d=h.length;p<d;p++)f=v("tspan"),p&&v(f,{dy:l*C,x:s.x}),f.appendChild(t._g.doc.createTextNode(h[p])),o.appendChild(f),u[p]=f}else for(u=o.getElementsByTagName("tspan"),p=0,d=u.length;p<d;p++)p?v(u[p],{dy:l*C,x:s.x}):v(u[0],{dy:0});v(o,{x:s.x,y:s.y}),i._.dirty=1;var g=i._getBBox(),x=s.y-(g.y+g.height/2);x&&t.is(x,"finite")&&v(u[0],{dy:x})}},A=function(t){return t.parentNode&&"a"===t.parentNode.tagName.toLowerCase()?t.parentNode:t},T=function(e,r){function i(){return("0000"+(Math.random()*Math.pow(36,5)<<0).toString(36)).slice(-5)}var n=0,a=0;this[0]=this.node=e,e.raphael=!0,this.id=i(),e.raphaelid=this.id,this.matrix=t.matrix(),this.realPath=null,this.paper=r,this.attrs=this.attrs||{},this._={transform:[],sx:1,sy:1,deg:0,dx:0,dy:0,dirty:1},!r.bottom&&(r.bottom=this),this.prev=r.top,r.top&&(r.top.next=this),r.top=this,this.next=null},E=t.el;T.prototype=E,E.constructor=T,t._engine.path=function(t,e){var r=v("path");e.canvas&&e.canvas.appendChild(r);var i=new T(r,e);return i.type="path",B(i,{fill:"none",stroke:"#000",path:t}),i},E.rotate=function(t,e,n){if(this.removed)return this;if(t=r(t).split(h),t.length-1&&(e=i(t[1]),n=i(t[2])),t=i(t[0]),null==n&&(e=n),null==e||null==n){var a=this.getBBox(1);e=a.x+a.width/2,n=a.y+a.height/2}return this.transform(this._.transform.concat([["r",t,e,n]])),this},E.scale=function(t,e,n,a){if(this.removed)return this;if(t=r(t).split(h),t.length-1&&(e=i(t[1]),n=i(t[2]),a=i(t[3])),t=i(t[0]),null==e&&(e=t),null==a&&(n=a),null==n||null==a)var s=this.getBBox(1);return n=null==n?s.x+s.width/2:n,a=null==a?s.y+s.height/2:a,this.transform(this._.transform.concat([["s",t,e,n,a]])),this},E.translate=function(t,e){return this.removed?this:(t=r(t).split(h),t.length-1&&(e=i(t[1])),t=i(t[0])||0,e=+e||0,this.transform(this._.transform.concat([["t",t,e]])),this)},E.transform=function(r){var i=this._;if(null==r)return i.transform;if(t._extractTransform(this,r),this.clip&&v(this.clip,{transform:this.matrix.invert()}),this.pattern&&b(this),this.node&&v(this.node,{transform:this.matrix}),1!=i.sx||1!=i.sy){var n=this.attrs[e]("stroke-width")?this.attrs["stroke-width"]:1;this.attr({"stroke-width":n})}return this},E.hide=function(){return this.removed||(this.node.style.display="none"),this},E.show=function(){return this.removed||(this.node.style.display=""),this},E.remove=function(){var e=A(this.node);if(!this.removed&&e.parentNode){var r=this.paper;r.__set__&&r.__set__.exclude(this),u.unbind("raphael.*.*."+this.id),this.gradient&&r.defs.removeChild(this.gradient),t._tear(this,r),e.parentNode.removeChild(e),this.removeData();for(var i in this)this[i]="function"==typeof this[i]?t._removedFactory(i):null;this.removed=!0}},E._getBBox=function(){if("none"==this.node.style.display){this.show();var t=!0}var e=!1,r;this.paper.canvas.parentElement?r=this.paper.canvas.parentElement.style:this.paper.canvas.parentNode&&(r=this.paper.canvas.parentNode.style),r&&"none"==r.display&&(e=!0,r.display="");var i={};try{i=this.node.getBBox()}catch(n){i={x:this.node.clientLeft,y:this.node.clientTop,width:this.node.clientWidth,height:this.node.clientHeight}}finally{i=i||{},e&&(r.display="none")}return t&&this.hide(),i},E.attr=function(r,i){if(this.removed)return this;if(null==r){var n={};for(var a in this.attrs)this.attrs[e](a)&&(n[a]=this.attrs[a]);return n.gradient&&"none"==n.fill&&(n.fill=n.gradient)&&delete n.gradient,n.transform=this._.transform,n}if(null==i&&t.is(r,"string")){if("fill"==r&&"none"==this.attrs.fill&&this.attrs.gradient)return this.attrs.gradient;if("transform"==r)return this._.transform;for(var s=r.split(h),o={},l=0,c=s.length;l<c;l++)r=s[l],r in this.attrs?o[r]=this.attrs[r]:t.is(this.paper.customAttributes[r],"function")?o[r]=this.paper.customAttributes[r].def:o[r]=t._availableAttrs[r];return c-1?o:o[s[0]]}if(null==i&&t.is(r,"array")){for(o={},l=0,c=r.length;l<c;l++)o[r[l]]=this.attr(r[l]);return o}if(null!=i){var f={};f[r]=i}else null!=r&&t.is(r,"object")&&(f=r);for(var p in f)u("raphael.attr."+p+"."+this.id,this,f[p]);for(p in this.paper.customAttributes)if(this.paper.customAttributes[e](p)&&f[e](p)&&t.is(this.paper.customAttributes[p],"function")){var d=this.paper.customAttributes[p].apply(this,[].concat(f[p]));this.attrs[p]=f[p];for(var g in d)d[e](g)&&(f[g]=d[g])}return B(this,f),this},E.toFront=function(){if(this.removed)return this;var e=A(this.node);e.parentNode.appendChild(e);var r=this.paper;return r.top!=this&&t._tofront(this,r),this},E.toBack=function(){if(this.removed)return this;var e=A(this.node),r=e.parentNode;r.insertBefore(e,r.firstChild),t._toback(this,this.paper);var i=this.paper;return this},E.insertAfter=function(e){if(this.removed||!e)return this;var r=A(this.node),i=A(e.node||e[e.length-1].node);return i.nextSibling?i.parentNode.insertBefore(r,i.nextSibling):i.parentNode.appendChild(r),t._insertafter(this,e,this.paper),this},E.insertBefore=function(e){if(this.removed||!e)return this;var r=A(this.node),i=A(e.node||e[0].node);return i.parentNode.insertBefore(r,i),t._insertbefore(this,e,this.paper),this},E.blur=function(e){var r=this;if(0!==+e){var i=v("filter"),n=v("feGaussianBlur");r.attrs.blur=e,i.id=t.createUUID(),v(n,{stdDeviation:+e||1.5}),i.appendChild(n),r.paper.defs.appendChild(i),r._blur=i,v(r.node,{filter:"url(#"+i.id+")"})}else r._blur&&(r._blur.parentNode.removeChild(r._blur),delete r._blur,delete r.attrs.blur),r.node.removeAttribute("filter");return r},t._engine.circle=function(t,e,r,i){var n=v("circle");t.canvas&&t.canvas.appendChild(n);var a=new T(n,t);return a.attrs={cx:e,cy:r,r:i,fill:"none",stroke:"#000"},a.type="circle",v(n,a.attrs),a},t._engine.rect=function(t,e,r,i,n,a){var s=v("rect");t.canvas&&t.canvas.appendChild(s);var o=new T(s,t);return o.attrs={x:e,y:r,width:i,height:n,rx:a||0,ry:a||0,fill:"none",stroke:"#000"},o.type="rect",v(s,o.attrs),o},t._engine.ellipse=function(t,e,r,i,n){var a=v("ellipse");t.canvas&&t.canvas.appendChild(a);var s=new T(a,t);return s.attrs={cx:e,cy:r,rx:i,ry:n,fill:"none",stroke:"#000"},s.type="ellipse",v(a,s.attrs),s},t._engine.image=function(t,e,r,i,n,a){var s=v("image");v(s,{x:r,y:i,width:n,height:a,preserveAspectRatio:"none"}),s.setAttributeNS(p,"href",e),t.canvas&&t.canvas.appendChild(s);var o=new T(s,t);return o.attrs={x:r,y:i,width:n,height:a,src:e},o.type="image",o},t._engine.text=function(e,r,i,n){var a=v("text");e.canvas&&e.canvas.appendChild(a);var s=new T(a,e);return s.attrs={x:r,y:i,"text-anchor":"middle",text:n,"font-family":t._availableAttrs["font-family"],"font-size":t._availableAttrs["font-size"],stroke:"none",fill:"#000"},s.type="text",B(s,s.attrs),s},t._engine.setSize=function(t,e){return this.width=t||this.width,this.height=e||this.height,this.canvas.setAttribute("width",this.width),this.canvas.setAttribute("height",this.height),this._viewBox&&this.setViewBox.apply(this,this._viewBox),this},t._engine.create=function(){var e=t._getContainer.apply(0,arguments),r=e&&e.container,i=e.x,n=e.y,a=e.width,s=e.height;if(!r)throw new Error("SVG container not found.");var o=v("svg"),l="overflow:hidden;",h;return i=i||0,n=n||0,a=a||512,s=s||342,v(o,{height:s,version:1.1,width:a,xmlns:"http://www.w3.org/2000/svg","xmlns:xlink":"http://www.w3.org/1999/xlink"}),1==r?(o.style.cssText=l+"position:absolute;left:"+i+"px;top:"+n+"px",t._g.doc.body.appendChild(o),h=1):(o.style.cssText=l+"position:relative",r.firstChild?r.insertBefore(o,r.firstChild):r.appendChild(o)),r=new t._Paper,r.width=a,r.height=s,r.canvas=o,r.clear(),r._left=r._top=0,h&&(r.renderfix=function(){}),r.renderfix(),r},t._engine.setViewBox=function(t,e,r,i,n){u("raphael.setViewBox",this,this._viewBox,[t,e,r,i,n]);var a=this.getSize(),o=s(r/a.width,i/a.height),l=this.top,h=n?"xMidYMid meet":"xMinYMin",c,p;for(null==t?(this._vbSize&&(o=1),delete this._vbSize,c="0 0 "+this.width+f+this.height):(this._vbSize=o,c=t+f+e+f+r+f+i),v(this.canvas,{viewBox:c,preserveAspectRatio:h});o&&l;)p="stroke-width"in l.attrs?l.attrs["stroke-width"]:1,l.attr({"stroke-width":p}),l._.dirty=1,l._.dirtyT=1,l=l.prev;return this._viewBox=[t,e,r,i,!!n],this},t.prototype.renderfix=function(){var t=this.canvas,e=t.style,r;try{r=t.getScreenCTM()||t.createSVGMatrix()}catch(i){r=t.createSVGMatrix()}var n=-r.e%1,a=-r.f%1;(n||a)&&(n&&(this._left=(this._left+n)%1,e.left=this._left+"px"),a&&(this._top=(this._top+a)%1,e.top=this._top+"px"))},t.prototype.clear=function(){t.eve("raphael.clear",this);for(var e=this.canvas;e.firstChild;)e.removeChild(e.firstChild);this.bottom=this.top=null,(this.desc=v("desc")).appendChild(t._g.doc.createTextNode("Created with Raphaël "+t.version)),e.appendChild(this.desc),e.appendChild(this.defs=v("defs"))},t.prototype.remove=function(){u("raphael.remove",this),this.canvas.parentNode&&this.canvas.parentNode.removeChild(this.canvas);for(var e in this)this[e]="function"==typeof this[e]?t._removedFactory(e):null};var M=t.st;for(var N in E)E[e](N)&&!M[e](N)&&(M[N]=function(t){return function(){var e=arguments;return this.forEach(function(r){r[t].apply(r,e)})}}(N))}}.apply(e,i),!(void 0!==n&&(t.exports=n))},function(t,e,r){var i,n;i=[r(1)],n=function(t){if(!t||t.vml){var e="hasOwnProperty",r=String,i=parseFloat,n=Math,a=n.round,s=n.max,o=n.min,l=n.abs,h="fill",u=/[, ]+/,c=t.eve,f=" progid:DXImageTransform.Microsoft",p=" ",d="",g={M:"m",L:"l",C:"c",Z:"x",m:"t",l:"r",c:"v",z:"x"},v=/([clmz]),?([^clmz]*)/gi,x=/ progid:\S+Blur\([^\)]+\)/g,y=/-?[^,\s-]+/g,m="position:absolute;left:0;top:0;width:1px;height:1px;behavior:url(#default#VML)",b=21600,_={path:1,rect:1,image:1},w={circle:1,ellipse:1},k=function(e){var i=/[ahqstv]/gi,n=t._pathToAbsolute;if(r(e).match(i)&&(n=t._path2curve),i=/[clmz]/g,n==t._pathToAbsolute&&!r(e).match(i)){var s=r(e).replace(v,function(t,e,r){var i=[],n="m"==e.toLowerCase(),s=g[e];return r.replace(y,function(t){n&&2==i.length&&(s+=i+g["m"==e?"l":"L"],i=[]),i.push(a(t*b))}),s+i});return s}var o=n(e),l,h;s=[];for(var u=0,c=o.length;u<c;u++){l=o[u],h=o[u][0].toLowerCase(),"z"==h&&(h="x");for(var f=1,x=l.length;f<x;f++)h+=a(l[f]*b)+(f!=x-1?",":d);s.push(h)}return s.join(p)},B=function(e,r,i){var n=t.matrix();return n.rotate(-e,.5,.5),{dx:n.x(r,i),dy:n.y(r,i)}},C=function(t,e,r,i,n,a){var s=t._,o=t.matrix,u=s.fillpos,c=t.node,f=c.style,d=1,g="",v,x=b/e,y=b/r;if(f.visibility="hidden",e&&r){if(c.coordsize=l(x)+p+l(y),f.rotation=a*(e*r<0?-1:1),a){var m=B(a,i,n);i=m.dx,n=m.dy}if(e<0&&(g+="x"),r<0&&(g+=" y")&&(d=-1),f.flip=g,c.coordorigin=i*-x+p+n*-y,u||s.fillsize){var _=c.getElementsByTagName(h);_=_&&_[0],c.removeChild(_),u&&(m=B(a,o.x(u[0],u[1]),o.y(u[0],u[1])),_.position=m.dx*d+p+m.dy*d),s.fillsize&&(_.size=s.fillsize[0]*l(e)+p+s.fillsize[1]*l(r)),c.appendChild(_)}f.visibility="visible"}};t.toString=function(){return"Your browser doesn’t support SVG. Falling down to VML.\nYou are running Raphaël "+this.version};var S=function(t,e,i){for(var n=r(e).toLowerCase().split("-"),a=i?"end":"start",s=n.length,o="classic",l="medium",h="medium";s--;)switch(n[s]){case"block":case"classic":case"oval":case"diamond":case"open":case"none":o=n[s];break;case"wide":case"narrow":h=n[s];break;case"long":case"short":l=n[s]}var u=t.node.getElementsByTagName("stroke")[0];u[a+"arrow"]=o,u[a+"arrowlength"]=l,u[a+"arrowwidth"]=h},A=function(n,l){n.attrs=n.attrs||{};var c=n.node,f=n.attrs,g=c.style,v,x=_[n.type]&&(l.x!=f.x||l.y!=f.y||l.width!=f.width||l.height!=f.height||l.cx!=f.cx||l.cy!=f.cy||l.rx!=f.rx||l.ry!=f.ry||l.r!=f.r),y=w[n.type]&&(f.cx!=l.cx||f.cy!=l.cy||f.r!=l.r||f.rx!=l.rx||f.ry!=l.ry),m=n;for(var B in l)l[e](B)&&(f[B]=l[B]);if(x&&(f.path=t._getPath[n.type](n),n._.dirty=1),l.href&&(c.href=l.href),l.title&&(c.title=l.title),l.target&&(c.target=l.target),l.cursor&&(g.cursor=l.cursor),"blur"in l&&n.blur(l.blur),(l.path&&"path"==n.type||x)&&(c.path=k(~r(f.path).toLowerCase().indexOf("r")?t._pathToAbsolute(f.path):f.path),n._.dirty=1,"image"==n.type&&(n._.fillpos=[f.x,f.y],n._.fillsize=[f.width,f.height],C(n,1,1,0,0,0))),"transform"in l&&n.transform(l.transform),y){var A=+f.cx,E=+f.cy,M=+f.rx||+f.r||0,L=+f.ry||+f.r||0;c.path=t.format("ar{0},{1},{2},{3},{4},{1},{4},{1}x",a((A-M)*b),a((E-L)*b),a((A+M)*b),a((E+L)*b),a(A*b)),n._.dirty=1}if("clip-rect"in l){var z=r(l["clip-rect"]).split(u);if(4==z.length){z[2]=+z[2]+ +z[0],z[3]=+z[3]+ +z[1];var P=c.clipRect||t._g.doc.createElement("div"),F=P.style;F.clip=t.format("rect({1}px {2}px {3}px {0}px)",z),c.clipRect||(F.position="absolute",F.top=0,F.left=0,F.width=n.paper.width+"px",F.height=n.paper.height+"px",c.parentNode.insertBefore(P,c),P.appendChild(c),c.clipRect=P)}l["clip-rect"]||c.clipRect&&(c.clipRect.style.clip="auto")}if(n.textpath){var R=n.textpath.style;l.font&&(R.font=l.font),l["font-family"]&&(R.fontFamily='"'+l["font-family"].split(",")[0].replace(/^['"]+|['"]+$/g,d)+'"'),l["font-size"]&&(R.fontSize=l["font-size"]),l["font-weight"]&&(R.fontWeight=l["font-weight"]),l["font-style"]&&(R.fontStyle=l["font-style"])}if("arrow-start"in l&&S(m,l["arrow-start"]),"arrow-end"in l&&S(m,l["arrow-end"],1),null!=l.opacity||null!=l.fill||null!=l.src||null!=l.stroke||null!=l["stroke-width"]||null!=l["stroke-opacity"]||null!=l["fill-opacity"]||null!=l["stroke-dasharray"]||null!=l["stroke-miterlimit"]||null!=l["stroke-linejoin"]||null!=l["stroke-linecap"]){var j=c.getElementsByTagName(h),I=!1;if(j=j&&j[0],!j&&(I=j=N(h)),"image"==n.type&&l.src&&(j.src=l.src),l.fill&&(j.on=!0),null!=j.on&&"none"!=l.fill&&null!==l.fill||(j.on=!1),j.on&&l.fill){var q=r(l.fill).match(t._ISURL);if(q){j.parentNode==c&&c.removeChild(j),j.rotate=!0,j.src=q[1],j.type="tile";var D=n.getBBox(1);j.position=D.x+p+D.y,n._.fillpos=[D.x,D.y],t._preload(q[1],function(){n._.fillsize=[this.offsetWidth,this.offsetHeight]})}else j.color=t.getRGB(l.fill).hex,j.src=d,j.type="solid",t.getRGB(l.fill).error&&(m.type in{circle:1,ellipse:1}||"r"!=r(l.fill).charAt())&&T(m,l.fill,j)&&(f.fill="none",f.gradient=l.fill,j.rotate=!1)}if("fill-opacity"in l||"opacity"in l){var V=((+f["fill-opacity"]+1||2)-1)*((+f.opacity+1||2)-1)*((+t.getRGB(l.fill).o+1||2)-1);V=o(s(V,0),1),j.opacity=V,j.src&&(j.color="none")}c.appendChild(j);var O=c.getElementsByTagName("stroke")&&c.getElementsByTagName("stroke")[0],Y=!1;!O&&(Y=O=N("stroke")),(l.stroke&&"none"!=l.stroke||l["stroke-width"]||null!=l["stroke-opacity"]||l["stroke-dasharray"]||l["stroke-miterlimit"]||l["stroke-linejoin"]||l["stroke-linecap"])&&(O.on=!0),("none"==l.stroke||null===l.stroke||null==O.on||0==l.stroke||0==l["stroke-width"])&&(O.on=!1);var W=t.getRGB(l.stroke);O.on&&l.stroke&&(O.color=W.hex),V=((+f["stroke-opacity"]+1||2)-1)*((+f.opacity+1||2)-1)*((+W.o+1||2)-1);var G=.75*(i(l["stroke-width"])||1);if(V=o(s(V,0),1),null==l["stroke-width"]&&(G=f["stroke-width"]),l["stroke-width"]&&(O.weight=G),G&&G<1&&(V*=G)&&(O.weight=1),O.opacity=V,l["stroke-linejoin"]&&(O.joinstyle=l["stroke-linejoin"]||"miter"),O.miterlimit=l["stroke-miterlimit"]||8,l["stroke-linecap"]&&(O.endcap="butt"==l["stroke-linecap"]?"flat":"square"==l["stroke-linecap"]?"square":"round"),"stroke-dasharray"in l){var H={"-":"shortdash",".":"shortdot","-.":"shortdashdot","-..":"shortdashdotdot",". ":"dot","- ":"dash","--":"longdash","- .":"dashdot","--.":"longdashdot","--..":"longdashdotdot"};O.dashstyle=H[e](l["stroke-dasharray"])?H[l["stroke-dasharray"]]:d}Y&&c.appendChild(O)}if("text"==m.type){m.paper.canvas.style.display=d;var X=m.paper.span,U=100,$=f.font&&f.font.match(/\d+(?:\.\d*)?(?=px)/);g=X.style,f.font&&(g.font=f.font),f["font-family"]&&(g.fontFamily=f["font-family"]),f["font-weight"]&&(g.fontWeight=f["font-weight"]),f["font-style"]&&(g.fontStyle=f["font-style"]),$=i(f["font-size"]||$&&$[0])||10,g.fontSize=$*U+"px",m.textpath.string&&(X.innerHTML=r(m.textpath.string).replace(/</g,"&#60;").replace(/&/g,"&#38;").replace(/\n/g,"<br>"));var Z=X.getBoundingClientRect();m.W=f.w=(Z.right-Z.left)/U,m.H=f.h=(Z.bottom-Z.top)/U,m.X=f.x,m.Y=f.y+m.H/2,("x"in l||"y"in l)&&(m.path.v=t.format("m{0},{1}l{2},{1}",a(f.x*b),a(f.y*b),a(f.x*b)+1));for(var Q=["x","y","text","font","font-family","font-weight","font-style","font-size"],J=0,K=Q.length;J<K;J++)if(Q[J]in l){m._.dirty=1;break}switch(f["text-anchor"]){case"start":m.textpath.style["v-text-align"]="left",m.bbx=m.W/2;break;case"end":m.textpath.style["v-text-align"]="right",m.bbx=-m.W/2;break;default:m.textpath.style["v-text-align"]="center",m.bbx=0}m.textpath.style["v-text-kern"]=!0}},T=function(e,a,s){e.attrs=e.attrs||{};var o=e.attrs,l=Math.pow,h,u,c="linear",f=".5 .5";if(e.attrs.gradient=a,a=r(a).replace(t._radial_gradient,function(t,e,r){return c="radial",e&&r&&(e=i(e),r=i(r),l(e-.5,2)+l(r-.5,2)>.25&&(r=n.sqrt(.25-l(e-.5,2))*(2*(r>.5)-1)+.5),f=e+p+r),d}),a=a.split(/\s*\-\s*/),"linear"==c){var g=a.shift();if(g=-i(g),isNaN(g))return null}var v=t._parseDots(a);if(!v)return null;if(e=e.shape||e.node,v.length){e.removeChild(s),s.on=!0,s.method="none",s.color=v[0].color,s.color2=v[v.length-1].color;for(var x=[],y=0,m=v.length;y<m;y++)v[y].offset&&x.push(v[y].offset+p+v[y].color);s.colors=x.length?x.join():"0% "+s.color,"radial"==c?(s.type="gradientTitle",s.focus="100%",s.focussize="0 0",s.focusposition=f,s.angle=0):(s.type="gradient",s.angle=(270-g)%360),e.appendChild(s)}return 1},E=function(e,r){this[0]=this.node=e,e.raphael=!0,this.id=t._oid++,e.raphaelid=this.id,this.X=0,this.Y=0,this.attrs={},this.paper=r,this.matrix=t.matrix(),this._={transform:[],sx:1,sy:1,dx:0,dy:0,deg:0,dirty:1,dirtyT:1},!r.bottom&&(r.bottom=this),this.prev=r.top,r.top&&(r.top.next=this),r.top=this,this.next=null},M=t.el;E.prototype=M,M.constructor=E,M.transform=function(e){if(null==e)return this._.transform;var i=this.paper._viewBoxShift,n=i?"s"+[i.scale,i.scale]+"-1-1t"+[i.dx,i.dy]:d,a;i&&(a=e=r(e).replace(/\.{3}|\u2026/g,this._.transform||d)),t._extractTransform(this,n+e);var s=this.matrix.clone(),o=this.skew,l=this.node,h,u=~r(this.attrs.fill).indexOf("-"),c=!r(this.attrs.fill).indexOf("url(");if(s.translate(1,1),c||u||"image"==this.type)if(o.matrix="1 0 0 1",o.offset="0 0",h=s.split(),u&&h.noRotation||!h.isSimple){l.style.filter=s.toFilter();var f=this.getBBox(),g=this.getBBox(1),v=f.x-g.x,x=f.y-g.y;l.coordorigin=v*-b+p+x*-b,C(this,1,1,v,x,0)}else l.style.filter=d,C(this,h.scalex,h.scaley,h.dx,h.dy,h.rotate);else l.style.filter=d,o.matrix=r(s),o.offset=s.offset();return null!==a&&(this._.transform=a,t._extractTransform(this,a)),this},M.rotate=function(t,e,n){if(this.removed)return this;if(null!=t){if(t=r(t).split(u),t.length-1&&(e=i(t[1]),n=i(t[2])),t=i(t[0]),null==n&&(e=n),null==e||null==n){var a=this.getBBox(1);e=a.x+a.width/2,n=a.y+a.height/2}return this._.dirtyT=1,this.transform(this._.transform.concat([["r",t,e,n]])),this}},M.translate=function(t,e){return this.removed?this:(t=r(t).split(u),t.length-1&&(e=i(t[1])),t=i(t[0])||0,e=+e||0,this._.bbox&&(this._.bbox.x+=t,this._.bbox.y+=e),this.transform(this._.transform.concat([["t",t,e]])),this)},M.scale=function(t,e,n,a){if(this.removed)return this;if(t=r(t).split(u),t.length-1&&(e=i(t[1]),n=i(t[2]),a=i(t[3]),isNaN(n)&&(n=null),isNaN(a)&&(a=null)),t=i(t[0]),null==e&&(e=t),null==a&&(n=a),null==n||null==a)var s=this.getBBox(1);return n=null==n?s.x+s.width/2:n,a=null==a?s.y+s.height/2:a,this.transform(this._.transform.concat([["s",t,e,n,a]])),this._.dirtyT=1,this},M.hide=function(){return!this.removed&&(this.node.style.display="none"),this},M.show=function(){return!this.removed&&(this.node.style.display=d),this},M.auxGetBBox=t.el.getBBox,M.getBBox=function(){var t=this.auxGetBBox();if(this.paper&&this.paper._viewBoxShift){var e={},r=1/this.paper._viewBoxShift.scale;return e.x=t.x-this.paper._viewBoxShift.dx,e.x*=r,e.y=t.y-this.paper._viewBoxShift.dy,e.y*=r,e.width=t.width*r,e.height=t.height*r,e.x2=e.x+e.width,e.y2=e.y+e.height,e}return t},M._getBBox=function(){return this.removed?{}:{x:this.X+(this.bbx||0)-this.W/2,y:this.Y-this.H,width:this.W,height:this.H}},M.remove=function(){if(!this.removed&&this.node.parentNode){this.paper.__set__&&this.paper.__set__.exclude(this),t.eve.unbind("raphael.*.*."+this.id),t._tear(this,this.paper),this.node.parentNode.removeChild(this.node),this.shape&&this.shape.parentNode.removeChild(this.shape);for(var e in this)this[e]="function"==typeof this[e]?t._removedFactory(e):null;this.removed=!0}},M.attr=function(r,i){if(this.removed)return this;if(null==r){var n={};for(var a in this.attrs)this.attrs[e](a)&&(n[a]=this.attrs[a]);return n.gradient&&"none"==n.fill&&(n.fill=n.gradient)&&delete n.gradient,n.transform=this._.transform,n}if(null==i&&t.is(r,"string")){if(r==h&&"none"==this.attrs.fill&&this.attrs.gradient)return this.attrs.gradient;for(var s=r.split(u),o={},l=0,f=s.length;l<f;l++)r=s[l],r in this.attrs?o[r]=this.attrs[r]:t.is(this.paper.customAttributes[r],"function")?o[r]=this.paper.customAttributes[r].def:o[r]=t._availableAttrs[r];return f-1?o:o[s[0]]}if(this.attrs&&null==i&&t.is(r,"array")){for(o={},l=0,f=r.length;l<f;l++)o[r[l]]=this.attr(r[l]);return o}var p;null!=i&&(p={},p[r]=i),null==i&&t.is(r,"object")&&(p=r);for(var d in p)c("raphael.attr."+d+"."+this.id,this,p[d]);if(p){for(d in this.paper.customAttributes)if(this.paper.customAttributes[e](d)&&p[e](d)&&t.is(this.paper.customAttributes[d],"function")){var g=this.paper.customAttributes[d].apply(this,[].concat(p[d]));this.attrs[d]=p[d];for(var v in g)g[e](v)&&(p[v]=g[v])}p.text&&"text"==this.type&&(this.textpath.string=p.text),A(this,p)}return this},M.toFront=function(){return!this.removed&&this.node.parentNode.appendChild(this.node),this.paper&&this.paper.top!=this&&t._tofront(this,this.paper),this},M.toBack=function(){return this.removed?this:(this.node.parentNode.firstChild!=this.node&&(this.node.parentNode.insertBefore(this.node,this.node.parentNode.firstChild),t._toback(this,this.paper)),this)},M.insertAfter=function(e){return this.removed?this:(e.constructor==t.st.constructor&&(e=e[e.length-1]),e.node.nextSibling?e.node.parentNode.insertBefore(this.node,e.node.nextSibling):e.node.parentNode.appendChild(this.node),t._insertafter(this,e,this.paper),this)},M.insertBefore=function(e){return this.removed?this:(e.constructor==t.st.constructor&&(e=e[0]),e.node.parentNode.insertBefore(this.node,e.node),t._insertbefore(this,e,this.paper),this)},M.blur=function(e){var r=this.node.runtimeStyle,i=r.filter;return i=i.replace(x,d),0!==+e?(this.attrs.blur=e,r.filter=i+p+f+".Blur(pixelradius="+(+e||1.5)+")",r.margin=t.format("-{0}px 0 0 -{0}px",a(+e||1.5))):(r.filter=i,r.margin=0,delete this.attrs.blur),this},t._engine.path=function(t,e){var r=N("shape");r.style.cssText=m,r.coordsize=b+p+b,r.coordorigin=e.coordorigin;var i=new E(r,e),n={fill:"none",stroke:"#000"};t&&(n.path=t),i.type="path",i.path=[],i.Path=d,A(i,n),e.canvas&&e.canvas.appendChild(r);var a=N("skew");return a.on=!0,r.appendChild(a),i.skew=a,i.transform(d),i},t._engine.rect=function(e,r,i,n,a,s){var o=t._rectPath(r,i,n,a,s),l=e.path(o),h=l.attrs;return l.X=h.x=r,l.Y=h.y=i,l.W=h.width=n,l.H=h.height=a,h.r=s,h.path=o,l.type="rect",l},t._engine.ellipse=function(t,e,r,i,n){var a=t.path(),s=a.attrs;return a.X=e-i,a.Y=r-n,a.W=2*i,a.H=2*n,a.type="ellipse",A(a,{cx:e,cy:r,rx:i,ry:n}),a},t._engine.circle=function(t,e,r,i){var n=t.path(),a=n.attrs;return n.X=e-i,n.Y=r-i,n.W=n.H=2*i,n.type="circle",A(n,{cx:e,cy:r,r:i}),n},t._engine.image=function(e,r,i,n,a,s){var o=t._rectPath(i,n,a,s),l=e.path(o).attr({stroke:"none"}),u=l.attrs,c=l.node,f=c.getElementsByTagName(h)[0];return u.src=r,l.X=u.x=i,l.Y=u.y=n,l.W=u.width=a,l.H=u.height=s,u.path=o,l.type="image",f.parentNode==c&&c.removeChild(f),f.rotate=!0,f.src=r,f.type="tile",l._.fillpos=[i,n],l._.fillsize=[a,s],c.appendChild(f),C(l,1,1,0,0,0),l},t._engine.text=function(e,i,n,s){var o=N("shape"),l=N("path"),h=N("textpath");i=i||0,n=n||0,s=s||"",l.v=t.format("m{0},{1}l{2},{1}",a(i*b),a(n*b),a(i*b)+1),l.textpathok=!0,h.string=r(s),h.on=!0,o.style.cssText=m,o.coordsize=b+p+b,o.coordorigin="0 0";var u=new E(o,e),c={fill:"#000",stroke:"none",font:t._availableAttrs.font,text:s};u.shape=o,u.path=l,u.textpath=h,u.type="text",u.attrs.text=r(s),u.attrs.x=i,u.attrs.y=n,u.attrs.w=1,u.attrs.h=1,A(u,c),o.appendChild(h),o.appendChild(l),e.canvas.appendChild(o);var f=N("skew");return f.on=!0,o.appendChild(f),u.skew=f,u.transform(d),u},t._engine.setSize=function(e,r){var i=this.canvas.style;return this.width=e,this.height=r,e==+e&&(e+="px"),r==+r&&(r+="px"),i.width=e,i.height=r,i.clip="rect(0 "+e+" "+r+" 0)",this._viewBox&&t._engine.setViewBox.apply(this,this._viewBox),this},t._engine.setViewBox=function(e,r,i,n,a){t.eve("raphael.setViewBox",this,this._viewBox,[e,r,i,n,a]);var s=this.getSize(),o=s.width,l=s.height,h,u;return a&&(h=l/n,u=o/i,i*h<o&&(e-=(o-i*h)/2/h),n*u<l&&(r-=(l-n*u)/2/u)),this._viewBox=[e,r,i,n,!!a],this._viewBoxShift={dx:-e,dy:-r,scale:s},this.forEach(function(t){t.transform("...")}),this};var N;t._engine.initWin=function(t){var e=t.document;e.styleSheets.length<31?e.createStyleSheet().addRule(".rvml","behavior:url(#default#VML)"):e.styleSheets[0].addRule(".rvml","behavior:url(#default#VML)");try{!e.namespaces.rvml&&e.namespaces.add("rvml","urn:schemas-microsoft-com:vml"),N=function(t){return e.createElement("<rvml:"+t+' class="rvml">')}}catch(r){N=function(t){return e.createElement("<"+t+' xmlns="urn:schemas-microsoft.com:vml" class="rvml">')}}},t._engine.initWin(t._g.win),t._engine.create=function(){var e=t._getContainer.apply(0,arguments),r=e.container,i=e.height,n,a=e.width,s=e.x,o=e.y;if(!r)throw new Error("VML container not found.");var l=new t._Paper,h=l.canvas=t._g.doc.createElement("div"),u=h.style;return s=s||0,o=o||0,a=a||512,i=i||342,l.width=a,l.height=i,a==+a&&(a+="px"),i==+i&&(i+="px"),l.coordsize=1e3*b+p+1e3*b,l.coordorigin="0 0",l.span=t._g.doc.createElement("span"),l.span.style.cssText="position:absolute;left:-9999em;top:-9999em;padding:0;margin:0;line-height:1;",h.appendChild(l.span),u.cssText=t.format("top:0;left:0;width:{0};height:{1};display:inline-block;position:relative;clip:rect(0 {0} {1} 0);overflow:hidden",a,i),1==r?(t._g.doc.body.appendChild(h),u.left=s+"px",u.top=o+"px",u.position="absolute"):r.firstChild?r.insertBefore(h,r.firstChild):r.appendChild(h),l.renderfix=function(){},l},t.prototype.clear=function(){t.eve("raphael.clear",this),this.canvas.innerHTML=d,this.span=t._g.doc.createElement("span"),this.span.style.cssText="position:absolute;left:-9999em;top:-9999em;padding:0;margin:0;line-height:1;display:inline;",this.canvas.appendChild(this.span),this.bottom=this.top=null},t.prototype.remove=function(){t.eve("raphael.remove",this),this.canvas.parentNode.removeChild(this.canvas);for(var e in this)this[e]="function"==typeof this[e]?t._removedFactory(e):null;return!0};var L=t.st;for(var z in M)M[e](z)&&!L[e](z)&&(L[z]=function(t){return function(){var e=arguments;return this.forEach(function(r){r[t].apply(r,e)})}}(z))}}.apply(e,i),!(void 0!==n&&(t.exports=n))}])});
+
+/***/ },
+/* 182 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(Buffer) {//  Chance.js 1.0.4
+	//  http://chancejs.com
+	//  (c) 2013 Victor Quinn
+	//  Chance may be freely distributed or modified under the MIT license.
+
+	(function () {
+
+	    // Constants
+	    var MAX_INT = 9007199254740992;
+	    var MIN_INT = -MAX_INT;
+	    var NUMBERS = '0123456789';
+	    var CHARS_LOWER = 'abcdefghijklmnopqrstuvwxyz';
+	    var CHARS_UPPER = CHARS_LOWER.toUpperCase();
+	    var HEX_POOL  = NUMBERS + "abcdef";
+
+	    // Cached array helpers
+	    var slice = Array.prototype.slice;
+
+	    // Constructor
+	    function Chance (seed) {
+	        if (!(this instanceof Chance)) {
+	            return seed == null ? new Chance() : new Chance(seed);
+	        }
+
+	        // if user has provided a function, use that as the generator
+	        if (typeof seed === 'function') {
+	            this.random = seed;
+	            return this;
+	        }
+
+	        if (arguments.length) {
+	            // set a starting value of zero so we can add to it
+	            this.seed = 0;
+	        }
+
+	        // otherwise, leave this.seed blank so that MT will receive a blank
+
+	        for (var i = 0; i < arguments.length; i++) {
+	            var seedling = 0;
+	            if (Object.prototype.toString.call(arguments[i]) === '[object String]') {
+	                for (var j = 0; j < arguments[i].length; j++) {
+	                    // create a numeric hash for each argument, add to seedling
+	                    var hash = 0;
+	                    for (var k = 0; k < arguments[i].length; k++) {
+	                        hash = arguments[i].charCodeAt(k) + (hash << 6) + (hash << 16) - hash;
+	                    }
+	                    seedling += hash;
+	                }
+	            } else {
+	                seedling = arguments[i];
+	            }
+	            this.seed += (arguments.length - i) * seedling;
+	        }
+
+	        // If no generator function was provided, use our MT
+	        this.mt = this.mersenne_twister(this.seed);
+	        this.bimd5 = this.blueimp_md5();
+	        this.random = function () {
+	            return this.mt.random(this.seed);
+	        };
+
+	        return this;
+	    }
+
+	    Chance.prototype.VERSION = "1.0.4";
+
+	    // Random helper functions
+	    function initOptions(options, defaults) {
+	        options || (options = {});
+
+	        if (defaults) {
+	            for (var i in defaults) {
+	                if (typeof options[i] === 'undefined') {
+	                    options[i] = defaults[i];
+	                }
+	            }
+	        }
+
+	        return options;
+	    }
+
+	    function testRange(test, errorMessage) {
+	        if (test) {
+	            throw new RangeError(errorMessage);
+	        }
+	    }
+
+	    /**
+	     * Encode the input string with Base64.
+	     */
+	    var base64 = function() {
+	        throw new Error('No Base64 encoder available.');
+	    };
+
+	    // Select proper Base64 encoder.
+	    (function determineBase64Encoder() {
+	        if (typeof btoa === 'function') {
+	            base64 = btoa;
+	        } else if (typeof Buffer === 'function') {
+	            base64 = function(input) {
+	                return new Buffer(input).toString('base64');
+	            };
+	        }
+	    })();
+
+	    // -- Basics --
+
+	    /**
+	     *  Return a random bool, either true or false
+	     *
+	     *  @param {Object} [options={ likelihood: 50 }] alter the likelihood of
+	     *    receiving a true or false value back.
+	     *  @throws {RangeError} if the likelihood is out of bounds
+	     *  @returns {Bool} either true or false
+	     */
+	    Chance.prototype.bool = function (options) {
+	        // likelihood of success (true)
+	        options = initOptions(options, {likelihood : 50});
+
+	        // Note, we could get some minor perf optimizations by checking range
+	        // prior to initializing defaults, but that makes code a bit messier
+	        // and the check more complicated as we have to check existence of
+	        // the object then existence of the key before checking constraints.
+	        // Since the options initialization should be minor computationally,
+	        // decision made for code cleanliness intentionally. This is mentioned
+	        // here as it's the first occurrence, will not be mentioned again.
+	        testRange(
+	            options.likelihood < 0 || options.likelihood > 100,
+	            "Chance: Likelihood accepts values from 0 to 100."
+	        );
+
+	        return this.random() * 100 < options.likelihood;
+	    };
+
+	    /**
+	     *  Return a random character.
+	     *
+	     *  @param {Object} [options={}] can specify a character pool, only alpha,
+	     *    only symbols, and casing (lower or upper)
+	     *  @returns {String} a single random character
+	     *  @throws {RangeError} Can only specify alpha or symbols, not both
+	     */
+	    Chance.prototype.character = function (options) {
+	        options = initOptions(options);
+	        testRange(
+	            options.alpha && options.symbols,
+	            "Chance: Cannot specify both alpha and symbols."
+	        );
+
+	        var symbols = "!@#$%^&*()[]",
+	            letters, pool;
+
+	        if (options.casing === 'lower') {
+	            letters = CHARS_LOWER;
+	        } else if (options.casing === 'upper') {
+	            letters = CHARS_UPPER;
+	        } else {
+	            letters = CHARS_LOWER + CHARS_UPPER;
+	        }
+
+	        if (options.pool) {
+	            pool = options.pool;
+	        } else if (options.alpha) {
+	            pool = letters;
+	        } else if (options.symbols) {
+	            pool = symbols;
+	        } else {
+	            pool = letters + NUMBERS + symbols;
+	        }
+
+	        return pool.charAt(this.natural({max: (pool.length - 1)}));
+	    };
+
+	    // Note, wanted to use "float" or "double" but those are both JS reserved words.
+
+	    // Note, fixed means N OR LESS digits after the decimal. This because
+	    // It could be 14.9000 but in JavaScript, when this is cast as a number,
+	    // the trailing zeroes are dropped. Left to the consumer if trailing zeroes are
+	    // needed
+	    /**
+	     *  Return a random floating point number
+	     *
+	     *  @param {Object} [options={}] can specify a fixed precision, min, max
+	     *  @returns {Number} a single floating point number
+	     *  @throws {RangeError} Can only specify fixed or precision, not both. Also
+	     *    min cannot be greater than max
+	     */
+	    Chance.prototype.floating = function (options) {
+	        options = initOptions(options, {fixed : 4});
+	        testRange(
+	            options.fixed && options.precision,
+	            "Chance: Cannot specify both fixed and precision."
+	        );
+
+	        var num;
+	        var fixed = Math.pow(10, options.fixed);
+
+	        var max = MAX_INT / fixed;
+	        var min = -max;
+
+	        testRange(
+	            options.min && options.fixed && options.min < min,
+	            "Chance: Min specified is out of range with fixed. Min should be, at least, " + min
+	        );
+	        testRange(
+	            options.max && options.fixed && options.max > max,
+	            "Chance: Max specified is out of range with fixed. Max should be, at most, " + max
+	        );
+
+	        options = initOptions(options, { min : min, max : max });
+
+	        // Todo - Make this work!
+	        // options.precision = (typeof options.precision !== "undefined") ? options.precision : false;
+
+	        num = this.integer({min: options.min * fixed, max: options.max * fixed});
+	        var num_fixed = (num / fixed).toFixed(options.fixed);
+
+	        return parseFloat(num_fixed);
+	    };
+
+	    /**
+	     *  Return a random integer
+	     *
+	     *  NOTE the max and min are INCLUDED in the range. So:
+	     *  chance.integer({min: 1, max: 3});
+	     *  would return either 1, 2, or 3.
+	     *
+	     *  @param {Object} [options={}] can specify a min and/or max
+	     *  @returns {Number} a single random integer number
+	     *  @throws {RangeError} min cannot be greater than max
+	     */
+	    Chance.prototype.integer = function (options) {
+	        // 9007199254740992 (2^53) is the max integer number in JavaScript
+	        // See: http://vq.io/132sa2j
+	        options = initOptions(options, {min: MIN_INT, max: MAX_INT});
+	        testRange(options.min > options.max, "Chance: Min cannot be greater than Max.");
+
+	        return Math.floor(this.random() * (options.max - options.min + 1) + options.min);
+	    };
+
+	    /**
+	     *  Return a random natural
+	     *
+	     *  NOTE the max and min are INCLUDED in the range. So:
+	     *  chance.natural({min: 1, max: 3});
+	     *  would return either 1, 2, or 3.
+	     *
+	     *  @param {Object} [options={}] can specify a min and/or max
+	     *  @returns {Number} a single random integer number
+	     *  @throws {RangeError} min cannot be greater than max
+	     */
+	    Chance.prototype.natural = function (options) {
+	        options = initOptions(options, {min: 0, max: MAX_INT});
+	        testRange(options.min < 0, "Chance: Min cannot be less than zero.");
+	        return this.integer(options);
+	    };
+
+	    /**
+	     *  Return a random string
+	     *
+	     *  @param {Object} [options={}] can specify a length
+	     *  @returns {String} a string of random length
+	     *  @throws {RangeError} length cannot be less than zero
+	     */
+	    Chance.prototype.string = function (options) {
+	        options = initOptions(options, { length: this.natural({min: 5, max: 20}) });
+	        testRange(options.length < 0, "Chance: Length cannot be less than zero.");
+	        var length = options.length,
+	            text = this.n(this.character, length, options);
+
+	        return text.join("");
+	    };
+
+	    // -- End Basics --
+
+	    // -- Helpers --
+
+	    Chance.prototype.capitalize = function (word) {
+	        return word.charAt(0).toUpperCase() + word.substr(1);
+	    };
+
+	    Chance.prototype.mixin = function (obj) {
+	        for (var func_name in obj) {
+	            Chance.prototype[func_name] = obj[func_name];
+	        }
+	        return this;
+	    };
+
+	    /**
+	     *  Given a function that generates something random and a number of items to generate,
+	     *    return an array of items where none repeat.
+	     *
+	     *  @param {Function} fn the function that generates something random
+	     *  @param {Number} num number of terms to generate
+	     *  @param {Object} options any options to pass on to the generator function
+	     *  @returns {Array} an array of length `num` with every item generated by `fn` and unique
+	     *
+	     *  There can be more parameters after these. All additional parameters are provided to the given function
+	     */
+	    Chance.prototype.unique = function(fn, num, options) {
+	        testRange(
+	            typeof fn !== "function",
+	            "Chance: The first argument must be a function."
+	        );
+
+	        var comparator = function(arr, val) { return arr.indexOf(val) !== -1; };
+
+	        if (options) {
+	            comparator = options.comparator || comparator;
+	        }
+
+	        var arr = [], count = 0, result, MAX_DUPLICATES = num * 50, params = slice.call(arguments, 2);
+
+	        while (arr.length < num) {
+	            var clonedParams = JSON.parse(JSON.stringify(params));
+	            result = fn.apply(this, clonedParams);
+	            if (!comparator(arr, result)) {
+	                arr.push(result);
+	                // reset count when unique found
+	                count = 0;
+	            }
+
+	            if (++count > MAX_DUPLICATES) {
+	                throw new RangeError("Chance: num is likely too large for sample set");
+	            }
+	        }
+	        return arr;
+	    };
+
+	    /**
+	     *  Gives an array of n random terms
+	     *
+	     *  @param {Function} fn the function that generates something random
+	     *  @param {Number} n number of terms to generate
+	     *  @returns {Array} an array of length `n` with items generated by `fn`
+	     *
+	     *  There can be more parameters after these. All additional parameters are provided to the given function
+	     */
+	    Chance.prototype.n = function(fn, n) {
+	        testRange(
+	            typeof fn !== "function",
+	            "Chance: The first argument must be a function."
+	        );
+
+	        if (typeof n === 'undefined') {
+	            n = 1;
+	        }
+	        var i = n, arr = [], params = slice.call(arguments, 2);
+
+	        // Providing a negative count should result in a noop.
+	        i = Math.max( 0, i );
+
+	        for (null; i--; null) {
+	            arr.push(fn.apply(this, params));
+	        }
+
+	        return arr;
+	    };
+
+	    // H/T to SO for this one: http://vq.io/OtUrZ5
+	    Chance.prototype.pad = function (number, width, pad) {
+	        // Default pad to 0 if none provided
+	        pad = pad || '0';
+	        // Convert number to a string
+	        number = number + '';
+	        return number.length >= width ? number : new Array(width - number.length + 1).join(pad) + number;
+	    };
+
+	    // DEPRECATED on 2015-10-01
+	    Chance.prototype.pick = function (arr, count) {
+	        if (arr.length === 0) {
+	            throw new RangeError("Chance: Cannot pick() from an empty array");
+	        }
+	        if (!count || count === 1) {
+	            return arr[this.natural({max: arr.length - 1})];
+	        } else {
+	            return this.shuffle(arr).slice(0, count);
+	        }
+	    };
+
+	    // Given an array, returns a single random element
+	    Chance.prototype.pickone = function (arr) {
+	        if (arr.length === 0) {
+	          throw new RangeError("Chance: Cannot pickone() from an empty array");
+	        }
+	        return arr[this.natural({max: arr.length - 1})];
+	    };
+
+	    // Given an array, returns a random set with 'count' elements
+	    Chance.prototype.pickset = function (arr, count) {
+	        if (count === 0) {
+	            return [];
+	        }
+	        if (arr.length === 0) {
+	            throw new RangeError("Chance: Cannot pickset() from an empty array");
+	        }
+	        if (count < 0) {
+	            throw new RangeError("Chance: count must be positive number");
+	        }
+	        if (!count || count === 1) {
+	            return [ this.pickone(arr) ];
+	        } else {
+	            return this.shuffle(arr).slice(0, count);
+	        }
+	    };
+
+	    Chance.prototype.shuffle = function (arr) {
+	        var old_array = arr.slice(0),
+	            new_array = [],
+	            j = 0,
+	            length = Number(old_array.length);
+
+	        for (var i = 0; i < length; i++) {
+	            // Pick a random index from the array
+	            j = this.natural({max: old_array.length - 1});
+	            // Add it to the new array
+	            new_array[i] = old_array[j];
+	            // Remove that element from the original array
+	            old_array.splice(j, 1);
+	        }
+
+	        return new_array;
+	    };
+
+	    // Returns a single item from an array with relative weighting of odds
+	    Chance.prototype.weighted = function (arr, weights, trim) {
+	        if (arr.length !== weights.length) {
+	            throw new RangeError("Chance: length of array and weights must match");
+	        }
+
+	        // scan weights array and sum valid entries
+	        var sum = 0;
+	        var val;
+	        for (var weightIndex = 0; weightIndex < weights.length; ++weightIndex) {
+	            val = weights[weightIndex];
+	            if (val > 0) {
+	                sum += val;
+	            }
+	        }
+
+	        if (sum === 0) {
+	            throw new RangeError("Chance: no valid entries in array weights");
+	        }
+
+	        // select a value within range
+	        var selected = this.random() * sum;
+
+	        // find array entry corresponding to selected value
+	        var total = 0;
+	        var lastGoodIdx = -1;
+	        var chosenIdx;
+	        for (weightIndex = 0; weightIndex < weights.length; ++weightIndex) {
+	            val = weights[weightIndex];
+	            total += val;
+	            if (val > 0) {
+	                if (selected <= total) {
+	                    chosenIdx = weightIndex;
+	                    break;
+	                }
+	                lastGoodIdx = weightIndex;
+	            }
+
+	            // handle any possible rounding error comparison to ensure something is picked
+	            if (weightIndex === (weights.length - 1)) {
+	                chosenIdx = lastGoodIdx;
+	            }
+	        }
+
+	        var chosen = arr[chosenIdx];
+	        trim = (typeof trim === 'undefined') ? false : trim;
+	        if (trim) {
+	            arr.splice(chosenIdx, 1);
+	            weights.splice(chosenIdx, 1);
+	        }
+
+	        return chosen;
+	    };
+
+	    // -- End Helpers --
+
+	    // -- Text --
+
+	    Chance.prototype.paragraph = function (options) {
+	        options = initOptions(options);
+
+	        var sentences = options.sentences || this.natural({min: 3, max: 7}),
+	            sentence_array = this.n(this.sentence, sentences);
+
+	        return sentence_array.join(' ');
+	    };
+
+	    // Could get smarter about this than generating random words and
+	    // chaining them together. Such as: http://vq.io/1a5ceOh
+	    Chance.prototype.sentence = function (options) {
+	        options = initOptions(options);
+
+	        var words = options.words || this.natural({min: 12, max: 18}),
+	            punctuation = options.punctuation,
+	            text, word_array = this.n(this.word, words);
+
+	        text = word_array.join(' ');
+
+	        // Capitalize first letter of sentence
+	        text = this.capitalize(text);
+
+	        // Make sure punctuation has a usable value
+	        if (punctuation !== false && !/^[\.\?;!:]$/.test(punctuation)) {
+	            punctuation = '.';
+	        }
+
+	        // Add punctuation mark
+	        if (punctuation) {
+	            text += punctuation;
+	        }
+
+	        return text;
+	    };
+
+	    Chance.prototype.syllable = function (options) {
+	        options = initOptions(options);
+
+	        var length = options.length || this.natural({min: 2, max: 3}),
+	            consonants = 'bcdfghjklmnprstvwz', // consonants except hard to speak ones
+	            vowels = 'aeiou', // vowels
+	            all = consonants + vowels, // all
+	            text = '',
+	            chr;
+
+	        // I'm sure there's a more elegant way to do this, but this works
+	        // decently well.
+	        for (var i = 0; i < length; i++) {
+	            if (i === 0) {
+	                // First character can be anything
+	                chr = this.character({pool: all});
+	            } else if (consonants.indexOf(chr) === -1) {
+	                // Last character was a vowel, now we want a consonant
+	                chr = this.character({pool: consonants});
+	            } else {
+	                // Last character was a consonant, now we want a vowel
+	                chr = this.character({pool: vowels});
+	            }
+
+	            text += chr;
+	        }
+
+	        if (options.capitalize) {
+	            text = this.capitalize(text);
+	        }
+
+	        return text;
+	    };
+
+	    Chance.prototype.word = function (options) {
+	        options = initOptions(options);
+
+	        testRange(
+	            options.syllables && options.length,
+	            "Chance: Cannot specify both syllables AND length."
+	        );
+
+	        var syllables = options.syllables || this.natural({min: 1, max: 3}),
+	            text = '';
+
+	        if (options.length) {
+	            // Either bound word by length
+	            do {
+	                text += this.syllable();
+	            } while (text.length < options.length);
+	            text = text.substring(0, options.length);
+	        } else {
+	            // Or by number of syllables
+	            for (var i = 0; i < syllables; i++) {
+	                text += this.syllable();
+	            }
+	        }
+
+	        if (options.capitalize) {
+	            text = this.capitalize(text);
+	        }
+
+	        return text;
+	    };
+
+	    // -- End Text --
+
+	    // -- Person --
+
+	    Chance.prototype.age = function (options) {
+	        options = initOptions(options);
+	        var ageRange;
+
+	        switch (options.type) {
+	            case 'child':
+	                ageRange = {min: 0, max: 12};
+	                break;
+	            case 'teen':
+	                ageRange = {min: 13, max: 19};
+	                break;
+	            case 'adult':
+	                ageRange = {min: 18, max: 65};
+	                break;
+	            case 'senior':
+	                ageRange = {min: 65, max: 100};
+	                break;
+	            case 'all':
+	                ageRange = {min: 0, max: 100};
+	                break;
+	            default:
+	                ageRange = {min: 18, max: 65};
+	                break;
+	        }
+
+	        return this.natural(ageRange);
+	    };
+
+	    Chance.prototype.birthday = function (options) {
+	        var age = this.age(options);
+	        var currentYear = new Date().getFullYear();
+
+	        if (options && options.type) {
+	            var min = new Date();
+	            var max = new Date();
+	            min.setFullYear(currentYear - age - 1);
+	            max.setFullYear(currentYear - age);
+
+	            options = initOptions(options, {
+	                min: min,
+	                max: max
+	            });
+	        } else {
+	            options = initOptions(options, {
+	                year: currentYear - age
+	            });
+	        }
+
+	        return this.date(options);
+	    };
+
+	    // CPF; ID to identify taxpayers in Brazil
+	    Chance.prototype.cpf = function (options) {
+	        options = initOptions(options, {
+	            formatted: true
+	        });
+
+	        var n = this.n(this.natural, 9, { max: 9 });
+	        var d1 = n[8]*2+n[7]*3+n[6]*4+n[5]*5+n[4]*6+n[3]*7+n[2]*8+n[1]*9+n[0]*10;
+	        d1 = 11 - (d1 % 11);
+	        if (d1>=10) {
+	            d1 = 0;
+	        }
+	        var d2 = d1*2+n[8]*3+n[7]*4+n[6]*5+n[5]*6+n[4]*7+n[3]*8+n[2]*9+n[1]*10+n[0]*11;
+	        d2 = 11 - (d2 % 11);
+	        if (d2>=10) {
+	            d2 = 0;
+	        }
+	        var cpf = ''+n[0]+n[1]+n[2]+'.'+n[3]+n[4]+n[5]+'.'+n[6]+n[7]+n[8]+'-'+d1+d2;
+	        return options.formatted ? cpf : cpf.replace(/\D/g,'');
+	    };
+
+	    // CNPJ: ID to identify companies in Brazil
+	    Chance.prototype.cnpj = function (options) {
+	        options = initOptions(options, {
+	            formatted: true
+	        });
+
+	        var n = this.n(this.natural, 12, { max: 12 });
+	        var d1 = n[11]*2+n[10]*3+n[9]*4+n[8]*5+n[7]*6+n[6]*7+n[5]*8+n[4]*9+n[3]*2+n[2]*3+n[1]*4+n[0]*5;
+	        d1 = 11 - (d1 % 11);
+	        if (d1<2) {
+	            d1 = 0;
+	        }
+	        var d2 = d1*2+n[11]*3+n[10]*4+n[9]*5+n[8]*6+n[7]*7+n[6]*8+n[5]*9+n[4]*2+n[3]*3+n[2]*4+n[1]*5+n[0]*6;
+	        d2 = 11 - (d2 % 11);
+	        if (d2<2) {
+	            d2 = 0;
+	        }
+	        var cnpj = ''+n[0]+n[1]+'.'+n[2]+n[3]+n[4]+'.'+n[5]+n[6]+n[7]+'/'+n[8]+n[9]+n[10]+n[11]+'-'+d1+d2;
+	        return options.formatted ? cnpj : cnpj.replace(/\D/g,'');
+	    };
+
+	    Chance.prototype.first = function (options) {
+	        options = initOptions(options, {gender: this.gender(), nationality: 'en'});
+	        return this.pick(this.get("firstNames")[options.gender.toLowerCase()][options.nationality.toLowerCase()]);
+	    };
+
+	    Chance.prototype.gender = function (options) {
+	        options = initOptions(options, {extraGenders: []});
+	        return this.pick(['Male', 'Female'].concat(options.extraGenders));
+	    };
+
+	    Chance.prototype.last = function (options) {
+	        options = initOptions(options, {nationality: 'en'});
+	        return this.pick(this.get("lastNames")[options.nationality.toLowerCase()]);
+	    };
+
+	    Chance.prototype.israelId=function(){
+	        var x=this.string({pool: '0123456789',length:8});
+	        var y=0;
+	        for (var i=0;i<x.length;i++){
+	            var thisDigit=  x[i] *  (i/2===parseInt(i/2) ? 1 : 2);
+	            thisDigit=this.pad(thisDigit,2).toString();
+	            thisDigit=parseInt(thisDigit[0]) + parseInt(thisDigit[1]);
+	            y=y+thisDigit;
+	        }
+	        x=x+(10-parseInt(y.toString().slice(-1))).toString().slice(-1);
+	        return x;
+	    };
+
+	    Chance.prototype.mrz = function (options) {
+	        var checkDigit = function (input) {
+	            var alpha = "<ABCDEFGHIJKLMNOPQRSTUVWXYXZ".split(''),
+	                multipliers = [ 7, 3, 1 ],
+	                runningTotal = 0;
+
+	            if (typeof input !== 'string') {
+	                input = input.toString();
+	            }
+
+	            input.split('').forEach(function(character, idx) {
+	                var pos = alpha.indexOf(character);
+
+	                if(pos !== -1) {
+	                    character = pos === 0 ? 0 : pos + 9;
+	                } else {
+	                    character = parseInt(character, 10);
+	                }
+	                character *= multipliers[idx % multipliers.length];
+	                runningTotal += character;
+	            });
+	            return runningTotal % 10;
+	        };
+	        var generate = function (opts) {
+	            var pad = function (length) {
+	                return new Array(length + 1).join('<');
+	            };
+	            var number = [ 'P<',
+	                           opts.issuer,
+	                           opts.last.toUpperCase(),
+	                           '<<',
+	                           opts.first.toUpperCase(),
+	                           pad(39 - (opts.last.length + opts.first.length + 2)),
+	                           opts.passportNumber,
+	                           checkDigit(opts.passportNumber),
+	                           opts.nationality,
+	                           opts.dob,
+	                           checkDigit(opts.dob),
+	                           opts.gender,
+	                           opts.expiry,
+	                           checkDigit(opts.expiry),
+	                           pad(14),
+	                           checkDigit(pad(14)) ].join('');
+
+	            return number +
+	                (checkDigit(number.substr(44, 10) +
+	                            number.substr(57, 7) +
+	                            number.substr(65, 7)));
+	        };
+
+	        var that = this;
+
+	        options = initOptions(options, {
+	            first: this.first(),
+	            last: this.last(),
+	            passportNumber: this.integer({min: 100000000, max: 999999999}),
+	            dob: (function () {
+	                var date = that.birthday({type: 'adult'});
+	                return [date.getFullYear().toString().substr(2),
+	                        that.pad(date.getMonth() + 1, 2),
+	                        that.pad(date.getDate(), 2)].join('');
+	            }()),
+	            expiry: (function () {
+	                var date = new Date();
+	                return [(date.getFullYear() + 5).toString().substr(2),
+	                        that.pad(date.getMonth() + 1, 2),
+	                        that.pad(date.getDate(), 2)].join('');
+	            }()),
+	            gender: this.gender() === 'Female' ? 'F': 'M',
+	            issuer: 'GBR',
+	            nationality: 'GBR'
+	        });
+	        return generate (options);
+	    };
+
+	    Chance.prototype.name = function (options) {
+	        options = initOptions(options);
+
+	        var first = this.first(options),
+	            last = this.last(options),
+	            name;
+
+	        if (options.middle) {
+	            name = first + ' ' + this.first(options) + ' ' + last;
+	        } else if (options.middle_initial) {
+	            name = first + ' ' + this.character({alpha: true, casing: 'upper'}) + '. ' + last;
+	        } else {
+	            name = first + ' ' + last;
+	        }
+
+	        if (options.prefix) {
+	            name = this.prefix(options) + ' ' + name;
+	        }
+
+	        if (options.suffix) {
+	            name = name + ' ' + this.suffix(options);
+	        }
+
+	        return name;
+	    };
+
+	    // Return the list of available name prefixes based on supplied gender.
+	    // @todo introduce internationalization
+	    Chance.prototype.name_prefixes = function (gender) {
+	        gender = gender || "all";
+	        gender = gender.toLowerCase();
+
+	        var prefixes = [
+	            { name: 'Doctor', abbreviation: 'Dr.' }
+	        ];
+
+	        if (gender === "male" || gender === "all") {
+	            prefixes.push({ name: 'Mister', abbreviation: 'Mr.' });
+	        }
+
+	        if (gender === "female" || gender === "all") {
+	            prefixes.push({ name: 'Miss', abbreviation: 'Miss' });
+	            prefixes.push({ name: 'Misses', abbreviation: 'Mrs.' });
+	        }
+
+	        return prefixes;
+	    };
+
+	    // Alias for name_prefix
+	    Chance.prototype.prefix = function (options) {
+	        return this.name_prefix(options);
+	    };
+
+	    Chance.prototype.name_prefix = function (options) {
+	        options = initOptions(options, { gender: "all" });
+	        return options.full ?
+	            this.pick(this.name_prefixes(options.gender)).name :
+	            this.pick(this.name_prefixes(options.gender)).abbreviation;
+	    };
+	    //Hungarian ID number
+	    Chance.prototype.HIDN= function(){
+	     //Hungarian ID nuber structure: XXXXXXYY (X=number,Y=Capital Latin letter)
+	      var idn_pool="0123456789";
+	      var idn_chrs="ABCDEFGHIJKLMNOPQRSTUVWXYXZ";
+	      var idn="";
+	        idn+=this.string({pool:idn_pool,length:6});
+	        idn+=this.string({pool:idn_chrs,length:2});
+	        return idn;
+	    };
+
+
+	    Chance.prototype.ssn = function (options) {
+	        options = initOptions(options, {ssnFour: false, dashes: true});
+	        var ssn_pool = "1234567890",
+	            ssn,
+	            dash = options.dashes ? '-' : '';
+
+	        if(!options.ssnFour) {
+	            ssn = this.string({pool: ssn_pool, length: 3}) + dash +
+	            this.string({pool: ssn_pool, length: 2}) + dash +
+	            this.string({pool: ssn_pool, length: 4});
+	        } else {
+	            ssn = this.string({pool: ssn_pool, length: 4});
+	        }
+	        return ssn;
+	    };
+
+	    // Return the list of available name suffixes
+	    // @todo introduce internationalization
+	    Chance.prototype.name_suffixes = function () {
+	        var suffixes = [
+	            { name: 'Doctor of Osteopathic Medicine', abbreviation: 'D.O.' },
+	            { name: 'Doctor of Philosophy', abbreviation: 'Ph.D.' },
+	            { name: 'Esquire', abbreviation: 'Esq.' },
+	            { name: 'Junior', abbreviation: 'Jr.' },
+	            { name: 'Juris Doctor', abbreviation: 'J.D.' },
+	            { name: 'Master of Arts', abbreviation: 'M.A.' },
+	            { name: 'Master of Business Administration', abbreviation: 'M.B.A.' },
+	            { name: 'Master of Science', abbreviation: 'M.S.' },
+	            { name: 'Medical Doctor', abbreviation: 'M.D.' },
+	            { name: 'Senior', abbreviation: 'Sr.' },
+	            { name: 'The Third', abbreviation: 'III' },
+	            { name: 'The Fourth', abbreviation: 'IV' },
+	            { name: 'Bachelor of Engineering', abbreviation: 'B.E' },
+	            { name: 'Bachelor of Technology', abbreviation: 'B.TECH' }
+	        ];
+	        return suffixes;
+	    };
+
+	    // Alias for name_suffix
+	    Chance.prototype.suffix = function (options) {
+	        return this.name_suffix(options);
+	    };
+
+	    Chance.prototype.name_suffix = function (options) {
+	        options = initOptions(options);
+	        return options.full ?
+	            this.pick(this.name_suffixes()).name :
+	            this.pick(this.name_suffixes()).abbreviation;
+	    };
+
+	    Chance.prototype.nationalities = function () {
+	        return this.get("nationalities");
+	    };
+
+	    // Generate random nationality based on json list
+	    Chance.prototype.nationality = function () {
+	        var nationality = this.pick(this.nationalities());
+	        return nationality.name;
+	    };
+
+	    // -- End Person --
+
+	    // -- Mobile --
+	    // Android GCM Registration ID
+	    Chance.prototype.android_id = function () {
+	        return "APA91" + this.string({ pool: "0123456789abcefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_", length: 178 });
+	    };
+
+	    // Apple Push Token
+	    Chance.prototype.apple_token = function () {
+	        return this.string({ pool: "abcdef1234567890", length: 64 });
+	    };
+
+	    // Windows Phone 8 ANID2
+	    Chance.prototype.wp8_anid2 = function () {
+	        return base64( this.hash( { length : 32 } ) );
+	    };
+
+	    // Windows Phone 7 ANID
+	    Chance.prototype.wp7_anid = function () {
+	        return 'A=' + this.guid().replace(/-/g, '').toUpperCase() + '&E=' + this.hash({ length:3 }) + '&W=' + this.integer({ min:0, max:9 });
+	    };
+
+	    // BlackBerry Device PIN
+	    Chance.prototype.bb_pin = function () {
+	        return this.hash({ length: 8 });
+	    };
+
+	    // -- End Mobile --
+
+	    // -- Web --
+	    Chance.prototype.avatar = function (options) {
+	        var url = null;
+	        var URL_BASE = '//www.gravatar.com/avatar/';
+	        var PROTOCOLS = {
+	            http: 'http',
+	            https: 'https'
+	        };
+	        var FILE_TYPES = {
+	            bmp: 'bmp',
+	            gif: 'gif',
+	            jpg: 'jpg',
+	            png: 'png'
+	        };
+	        var FALLBACKS = {
+	            '404': '404', // Return 404 if not found
+	            mm: 'mm', // Mystery man
+	            identicon: 'identicon', // Geometric pattern based on hash
+	            monsterid: 'monsterid', // A generated monster icon
+	            wavatar: 'wavatar', // A generated face
+	            retro: 'retro', // 8-bit icon
+	            blank: 'blank' // A transparent png
+	        };
+	        var RATINGS = {
+	            g: 'g',
+	            pg: 'pg',
+	            r: 'r',
+	            x: 'x'
+	        };
+	        var opts = {
+	            protocol: null,
+	            email: null,
+	            fileExtension: null,
+	            size: null,
+	            fallback: null,
+	            rating: null
+	        };
+
+	        if (!options) {
+	            // Set to a random email
+	            opts.email = this.email();
+	            options = {};
+	        }
+	        else if (typeof options === 'string') {
+	            opts.email = options;
+	            options = {};
+	        }
+	        else if (typeof options !== 'object') {
+	            return null;
+	        }
+	        else if (options.constructor === 'Array') {
+	            return null;
+	        }
+
+	        opts = initOptions(options, opts);
+
+	        if (!opts.email) {
+	            // Set to a random email
+	            opts.email = this.email();
+	        }
+
+	        // Safe checking for params
+	        opts.protocol = PROTOCOLS[opts.protocol] ? opts.protocol + ':' : '';
+	        opts.size = parseInt(opts.size, 0) ? opts.size : '';
+	        opts.rating = RATINGS[opts.rating] ? opts.rating : '';
+	        opts.fallback = FALLBACKS[opts.fallback] ? opts.fallback : '';
+	        opts.fileExtension = FILE_TYPES[opts.fileExtension] ? opts.fileExtension : '';
+
+	        url =
+	            opts.protocol +
+	            URL_BASE +
+	            this.bimd5.md5(opts.email) +
+	            (opts.fileExtension ? '.' + opts.fileExtension : '') +
+	            (opts.size || opts.rating || opts.fallback ? '?' : '') +
+	            (opts.size ? '&s=' + opts.size.toString() : '') +
+	            (opts.rating ? '&r=' + opts.rating : '') +
+	            (opts.fallback ? '&d=' + opts.fallback : '')
+	            ;
+
+	        return url;
+	    };
+
+	    /**
+	     * #Description:
+	     * ===============================================
+	     * Generate random color value base on color type:
+	     * -> hex
+	     * -> rgb
+	     * -> rgba
+	     * -> 0x
+	     * -> named color
+	     *
+	     * #Examples:
+	     * ===============================================
+	     * * Geerate random hex color
+	     * chance.color() => '#79c157' / 'rgb(110,52,164)' / '0x67ae0b' / '#e2e2e2' / '#29CFA7'
+	     *
+	     * * Generate Hex based color value
+	     * chance.color({format: 'hex'})    => '#d67118'
+	     *
+	     * * Generate simple rgb value
+	     * chance.color({format: 'rgb'})    => 'rgb(110,52,164)'
+	     *
+	     * * Generate Ox based color value
+	     * chance.color({format: '0x'})     => '0x67ae0b'
+	     *
+	     * * Generate graiscale based value
+	     * chance.color({grayscale: true})  => '#e2e2e2'
+	     *
+	     * * Return valide color name
+	     * chance.color({format: 'name'})   => 'red'
+	     *
+	     * * Make color uppercase
+	     * chance.color({casing: 'upper'})  => '#29CFA7'
+	     *
+	     * @param  [object] options
+	     * @return [string] color value
+	     */
+	    Chance.prototype.color = function (options) {
+
+	        function gray(value, delimiter) {
+	            return [value, value, value].join(delimiter || '');
+	        }
+
+	        function rgb(hasAlpha) {
+
+	            var rgbValue    = (hasAlpha)    ? 'rgba' : 'rgb';
+	            var alphaChanal = (hasAlpha)    ? (',' + this.floating({min:0, max:1})) : "";
+	            var colorValue  = (isGrayscale) ? (gray(this.natural({max: 255}), ',')) : (this.natural({max: 255}) + ',' + this.natural({max: 255}) + ',' + this.natural({max: 255}));
+
+	            return rgbValue + '(' + colorValue + alphaChanal + ')';
+	        }
+
+	        function hex(start, end, withHash) {
+
+	            var simbol = (withHash) ? "#" : "";
+	            var expression  = (isGrayscale ? gray(this.hash({length: start})) : this.hash({length: end}));
+	            return simbol + expression;
+	        }
+
+	        options = initOptions(options, {
+	            format: this.pick(['hex', 'shorthex', 'rgb', 'rgba', '0x', 'name']),
+	            grayscale: false,
+	            casing: 'lower'
+	        });
+
+	        var isGrayscale = options.grayscale;
+	        var colorValue;
+
+	        if (options.format === 'hex') {
+	            colorValue =  hex.call(this, 2, 6, true);
+	        }
+	        else if (options.format === 'shorthex') {
+	            colorValue = hex.call(this, 1, 3, true);
+	        }
+	        else if (options.format === 'rgb') {
+	            colorValue = rgb.call(this, false);
+	        }
+	        else if (options.format === 'rgba') {
+	            colorValue = rgb.call(this, true);
+	        }
+	        else if (options.format === '0x') {
+	            colorValue = '0x' + hex.call(this, 2, 6);
+	        }
+	        else if(options.format === 'name') {
+	            return this.pick(this.get("colorNames"));
+	        }
+	        else {
+	            throw new RangeError('Invalid format provided. Please provide one of "hex", "shorthex", "rgb", "rgba", "0x" or "name".');
+	        }
+
+	        if (options.casing === 'upper' ) {
+	            colorValue = colorValue.toUpperCase();
+	        }
+
+	        return colorValue;
+	    };
+
+	    Chance.prototype.domain = function (options) {
+	        options = initOptions(options);
+	        return this.word() + '.' + (options.tld || this.tld());
+	    };
+
+	    Chance.prototype.email = function (options) {
+	        options = initOptions(options);
+	        return this.word({length: options.length}) + '@' + (options.domain || this.domain());
+	    };
+
+	    Chance.prototype.fbid = function () {
+	        return parseInt('10000' + this.natural({max: 100000000000}), 10);
+	    };
+
+	    Chance.prototype.google_analytics = function () {
+	        var account = this.pad(this.natural({max: 999999}), 6);
+	        var property = this.pad(this.natural({max: 99}), 2);
+
+	        return 'UA-' + account + '-' + property;
+	    };
+
+	    Chance.prototype.hashtag = function () {
+	        return '#' + this.word();
+	    };
+
+	    Chance.prototype.ip = function () {
+	        // Todo: This could return some reserved IPs. See http://vq.io/137dgYy
+	        // this should probably be updated to account for that rare as it may be
+	        return this.natural({min: 1, max: 254}) + '.' +
+	               this.natural({max: 255}) + '.' +
+	               this.natural({max: 255}) + '.' +
+	               this.natural({min: 1, max: 254});
+	    };
+
+	    Chance.prototype.ipv6 = function () {
+	        var ip_addr = this.n(this.hash, 8, {length: 4});
+
+	        return ip_addr.join(":");
+	    };
+
+	    Chance.prototype.klout = function () {
+	        return this.natural({min: 1, max: 99});
+	    };
+
+	    Chance.prototype.semver = function (options) {
+	        options = initOptions(options, { include_prerelease: true });
+
+	        var range = this.pickone(["^", "~", "<", ">", "<=", ">=", "="]);
+	        if (options.range) {
+	            range = options.range;
+	        }
+
+	        var prerelease = "";
+	        if (options.include_prerelease) {
+	            prerelease = this.weighted(["", "-dev", "-beta", "-alpha"], [50, 10, 5, 1]);
+	        }
+	        return range + this.rpg('3d10').join('.') + prerelease;
+	    };
+
+	    Chance.prototype.tlds = function () {
+	        return ['com', 'org', 'edu', 'gov', 'co.uk', 'net', 'io', 'ac', 'ad', 'ae', 'af', 'ag', 'ai', 'al', 'am', 'an', 'ao', 'aq', 'ar', 'as', 'at', 'au', 'aw', 'ax', 'az', 'ba', 'bb', 'bd', 'be', 'bf', 'bg', 'bh', 'bi', 'bj', 'bm', 'bn', 'bo', 'bq', 'br', 'bs', 'bt', 'bv', 'bw', 'by', 'bz', 'ca', 'cc', 'cd', 'cf', 'cg', 'ch', 'ci', 'ck', 'cl', 'cm', 'cn', 'co', 'cr', 'cu', 'cv', 'cw', 'cx', 'cy', 'cz', 'de', 'dj', 'dk', 'dm', 'do', 'dz', 'ec', 'ee', 'eg', 'eh', 'er', 'es', 'et', 'eu', 'fi', 'fj', 'fk', 'fm', 'fo', 'fr', 'ga', 'gb', 'gd', 'ge', 'gf', 'gg', 'gh', 'gi', 'gl', 'gm', 'gn', 'gp', 'gq', 'gr', 'gs', 'gt', 'gu', 'gw', 'gy', 'hk', 'hm', 'hn', 'hr', 'ht', 'hu', 'id', 'ie', 'il', 'im', 'in', 'io', 'iq', 'ir', 'is', 'it', 'je', 'jm', 'jo', 'jp', 'ke', 'kg', 'kh', 'ki', 'km', 'kn', 'kp', 'kr', 'kw', 'ky', 'kz', 'la', 'lb', 'lc', 'li', 'lk', 'lr', 'ls', 'lt', 'lu', 'lv', 'ly', 'ma', 'mc', 'md', 'me', 'mg', 'mh', 'mk', 'ml', 'mm', 'mn', 'mo', 'mp', 'mq', 'mr', 'ms', 'mt', 'mu', 'mv', 'mw', 'mx', 'my', 'mz', 'na', 'nc', 'ne', 'nf', 'ng', 'ni', 'nl', 'no', 'np', 'nr', 'nu', 'nz', 'om', 'pa', 'pe', 'pf', 'pg', 'ph', 'pk', 'pl', 'pm', 'pn', 'pr', 'ps', 'pt', 'pw', 'py', 'qa', 're', 'ro', 'rs', 'ru', 'rw', 'sa', 'sb', 'sc', 'sd', 'se', 'sg', 'sh', 'si', 'sj', 'sk', 'sl', 'sm', 'sn', 'so', 'sr', 'ss', 'st', 'su', 'sv', 'sx', 'sy', 'sz', 'tc', 'td', 'tf', 'tg', 'th', 'tj', 'tk', 'tl', 'tm', 'tn', 'to', 'tp', 'tr', 'tt', 'tv', 'tw', 'tz', 'ua', 'ug', 'uk', 'us', 'uy', 'uz', 'va', 'vc', 've', 'vg', 'vi', 'vn', 'vu', 'wf', 'ws', 'ye', 'yt', 'za', 'zm', 'zw'];
+	    };
+
+	    Chance.prototype.tld = function () {
+	        return this.pick(this.tlds());
+	    };
+
+	    Chance.prototype.twitter = function () {
+	        return '@' + this.word();
+	    };
+
+	    Chance.prototype.url = function (options) {
+	        options = initOptions(options, { protocol: "http", domain: this.domain(options), domain_prefix: "", path: this.word(), extensions: []});
+
+	        var extension = options.extensions.length > 0 ? "." + this.pick(options.extensions) : "";
+	        var domain = options.domain_prefix ? options.domain_prefix + "." + options.domain : options.domain;
+
+	        return options.protocol + "://" + domain + "/" + options.path + extension;
+	    };
+
+	    // -- End Web --
+
+	    // -- Location --
+
+	    Chance.prototype.address = function (options) {
+	        options = initOptions(options);
+	        return this.natural({min: 5, max: 2000}) + ' ' + this.street(options);
+	    };
+
+	    Chance.prototype.altitude = function (options) {
+	        options = initOptions(options, {fixed: 5, min: 0, max: 8848});
+	        return this.floating({
+	            min: options.min,
+	            max: options.max,
+	            fixed: options.fixed
+	        });
+	    };
+
+	    Chance.prototype.areacode = function (options) {
+	        options = initOptions(options, {parens : true});
+	        // Don't want area codes to start with 1, or have a 9 as the second digit
+	        var areacode = this.natural({min: 2, max: 9}).toString() +
+	                this.natural({min: 0, max: 8}).toString() +
+	                this.natural({min: 0, max: 9}).toString();
+
+	        return options.parens ? '(' + areacode + ')' : areacode;
+	    };
+
+	    Chance.prototype.city = function () {
+	        return this.capitalize(this.word({syllables: 3}));
+	    };
+
+	    Chance.prototype.coordinates = function (options) {
+	        return this.latitude(options) + ', ' + this.longitude(options);
+	    };
+
+	    Chance.prototype.countries = function () {
+	        return this.get("countries");
+	    };
+
+	    Chance.prototype.country = function (options) {
+	        options = initOptions(options);
+	        var country = this.pick(this.countries());
+	        return options.full ? country.name : country.abbreviation;
+	    };
+
+	    Chance.prototype.depth = function (options) {
+	        options = initOptions(options, {fixed: 5, min: -10994, max: 0});
+	        return this.floating({
+	            min: options.min,
+	            max: options.max,
+	            fixed: options.fixed
+	        });
+	    };
+
+	    Chance.prototype.geohash = function (options) {
+	        options = initOptions(options, { length: 7 });
+	        return this.string({ length: options.length, pool: '0123456789bcdefghjkmnpqrstuvwxyz' });
+	    };
+
+	    Chance.prototype.geojson = function (options) {
+	        return this.latitude(options) + ', ' + this.longitude(options) + ', ' + this.altitude(options);
+	    };
+
+	    Chance.prototype.latitude = function (options) {
+	        options = initOptions(options, {fixed: 5, min: -90, max: 90});
+	        return this.floating({min: options.min, max: options.max, fixed: options.fixed});
+	    };
+
+	    Chance.prototype.longitude = function (options) {
+	        options = initOptions(options, {fixed: 5, min: -180, max: 180});
+	        return this.floating({min: options.min, max: options.max, fixed: options.fixed});
+	    };
+
+	    Chance.prototype.phone = function (options) {
+	        var self = this,
+	            numPick,
+	            ukNum = function (parts) {
+	                var section = [];
+	                //fills the section part of the phone number with random numbers.
+	                parts.sections.forEach(function(n) {
+	                    section.push(self.string({ pool: '0123456789', length: n}));
+	                });
+	                return parts.area + section.join(' ');
+	            };
+	        options = initOptions(options, {
+	            formatted: true,
+	            country: 'us',
+	            mobile: false
+	        });
+	        if (!options.formatted) {
+	            options.parens = false;
+	        }
+	        var phone;
+	        switch (options.country) {
+	            case 'fr':
+	                if (!options.mobile) {
+	                    numPick = this.pick([
+	                        // Valid zone and département codes.
+	                        '01' + this.pick(['30', '34', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '53', '55', '56', '58', '60', '64', '69', '70', '72', '73', '74', '75', '76', '77', '78', '79', '80', '81', '82', '83']) + self.string({ pool: '0123456789', length: 6}),
+	                        '02' + this.pick(['14', '18', '22', '23', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '40', '41', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '54', '56', '57', '61', '62', '69', '72', '76', '77', '78', '85', '90', '96', '97', '98', '99']) + self.string({ pool: '0123456789', length: 6}),
+	                        '03' + this.pick(['10', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '39', '44', '45', '51', '52', '54', '55', '57', '58', '59', '60', '61', '62', '63', '64', '65', '66', '67', '68', '69', '70', '71', '72', '73', '80', '81', '82', '83', '84', '85', '86', '87', '88', '89', '90']) + self.string({ pool: '0123456789', length: 6}),
+	                        '04' + this.pick(['11', '13', '15', '20', '22', '26', '27', '30', '32', '34', '37', '42', '43', '44', '50', '56', '57', '63', '66', '67', '68', '69', '70', '71', '72', '73', '74', '75', '76', '77', '78', '79', '80', '81', '82', '83', '84', '85', '86', '88', '89', '90', '91', '92', '93', '94', '95', '97', '98']) + self.string({ pool: '0123456789', length: 6}),
+	                        '05' + this.pick(['08', '16', '17', '19', '24', '31', '32', '33', '34', '35', '40', '45', '46', '47', '49', '53', '55', '56', '57', '58', '59', '61', '62', '63', '64', '65', '67', '79', '81', '82', '86', '87', '90', '94']) + self.string({ pool: '0123456789', length: 6}),
+	                        '09' + self.string({ pool: '0123456789', length: 8}),
+	                    ]);
+	                    phone = options.formatted ? numPick.match(/../g).join(' ') : numPick;
+	                } else {
+	                    numPick = this.pick(['06', '07']) + self.string({ pool: '0123456789', length: 8});
+	                    phone = options.formatted ? numPick.match(/../g).join(' ') : numPick;
+	                }
+	                break;
+	            case 'uk':
+	                if (!options.mobile) {
+	                    numPick = this.pick([
+	                        //valid area codes of major cities/counties followed by random numbers in required format.
+	                        { area: '01' + this.character({ pool: '234569' }) + '1 ', sections: [3,4] },
+	                        { area: '020 ' + this.character({ pool: '378' }), sections: [3,4] },
+	                        { area: '023 ' + this.character({ pool: '89' }), sections: [3,4] },
+	                        { area: '024 7', sections: [3,4] },
+	                        { area: '028 ' + this.pick(['25','28','37','71','82','90','92','95']), sections: [2,4] },
+	                        { area: '012' + this.pick(['04','08','54','76','97','98']) + ' ', sections: [6] },
+	                        { area: '013' + this.pick(['63','64','84','86']) + ' ', sections: [6] },
+	                        { area: '014' + this.pick(['04','20','60','61','80','88']) + ' ', sections: [6] },
+	                        { area: '015' + this.pick(['24','27','62','66']) + ' ', sections: [6] },
+	                        { area: '016' + this.pick(['06','29','35','47','59','95']) + ' ', sections: [6] },
+	                        { area: '017' + this.pick(['26','44','50','68']) + ' ', sections: [6] },
+	                        { area: '018' + this.pick(['27','37','84','97']) + ' ', sections: [6] },
+	                        { area: '019' + this.pick(['00','05','35','46','49','63','95']) + ' ', sections: [6] }
+	                    ]);
+	                    phone = options.formatted ? ukNum(numPick) : ukNum(numPick).replace(' ', '', 'g');
+	                } else {
+	                    numPick = this.pick([
+	                        { area: '07' + this.pick(['4','5','7','8','9']), sections: [2,6] },
+	                        { area: '07624 ', sections: [6] }
+	                    ]);
+	                    phone = options.formatted ? ukNum(numPick) : ukNum(numPick).replace(' ', '');
+	                }
+	                break;
+	            case 'us':
+	                var areacode = this.areacode(options).toString();
+	                var exchange = this.natural({ min: 2, max: 9 }).toString() +
+	                    this.natural({ min: 0, max: 9 }).toString() +
+	                    this.natural({ min: 0, max: 9 }).toString();
+	                var subscriber = this.natural({ min: 1000, max: 9999 }).toString(); // this could be random [0-9]{4}
+	                phone = options.formatted ? areacode + ' ' + exchange + '-' + subscriber : areacode + exchange + subscriber;
+	        }
+	        return phone;
+	    };
+
+	    Chance.prototype.postal = function () {
+	        // Postal District
+	        var pd = this.character({pool: "XVTSRPNKLMHJGECBA"});
+	        // Forward Sortation Area (FSA)
+	        var fsa = pd + this.natural({max: 9}) + this.character({alpha: true, casing: "upper"});
+	        // Local Delivery Unut (LDU)
+	        var ldu = this.natural({max: 9}) + this.character({alpha: true, casing: "upper"}) + this.natural({max: 9});
+
+	        return fsa + " " + ldu;
+	    };
+
+	    Chance.prototype.counties = function (options) {
+	        options = initOptions(options, { country: 'uk' });
+	        return this.get("counties")[options.country.toLowerCase()];
+	    };
+
+	    Chance.prototype.county = function (options) {
+	        return this.pick(this.counties(options)).name;
+	    };
+
+	    Chance.prototype.provinces = function (options) {
+	        options = initOptions(options, { country: 'ca' });
+	        return this.get("provinces")[options.country.toLowerCase()];
+	    };
+
+	    Chance.prototype.province = function (options) {
+	        return (options && options.full) ?
+	            this.pick(this.provinces(options)).name :
+	            this.pick(this.provinces(options)).abbreviation;
+	    };
+
+	    Chance.prototype.state = function (options) {
+	        return (options && options.full) ?
+	            this.pick(this.states(options)).name :
+	            this.pick(this.states(options)).abbreviation;
+	    };
+
+	    Chance.prototype.states = function (options) {
+	        options = initOptions(options, { country: 'us', us_states_and_dc: true } );
+
+	        var states;
+
+	        switch (options.country.toLowerCase()) {
+	            case 'us':
+	                var us_states_and_dc = this.get("us_states_and_dc"),
+	                    territories = this.get("territories"),
+	                    armed_forces = this.get("armed_forces");
+
+	                states = [];
+
+	                if (options.us_states_and_dc) {
+	                    states = states.concat(us_states_and_dc);
+	                }
+	                if (options.territories) {
+	                    states = states.concat(territories);
+	                }
+	                if (options.armed_forces) {
+	                    states = states.concat(armed_forces);
+	                }
+	                break;
+	            case 'it':
+	                states = this.get("country_regions")[options.country.toLowerCase()];
+	                break;
+	            case 'uk':
+	                states = this.get("counties")[options.country.toLowerCase()];
+	                break;
+	        }
+
+	        return states;
+	    };
+
+	    Chance.prototype.street = function (options) {
+	        options = initOptions(options, { country: 'us', syllables: 2 });
+	        var     street;
+
+	        switch (options.country.toLowerCase()) {
+	            case 'us':
+	                street = this.word({ syllables: options.syllables });
+	                street = this.capitalize(street);
+	                street += ' ';
+	                street += options.short_suffix ?
+	                    this.street_suffix(options).abbreviation :
+	                    this.street_suffix(options).name;
+	                break;
+	            case 'it':
+	                street = this.word({ syllables: options.syllables });
+	                street = this.capitalize(street);
+	                street = (options.short_suffix ?
+	                    this.street_suffix(options).abbreviation :
+	                    this.street_suffix(options).name) + " " + street;
+	                break;
+	        }
+	        return street;
+	    };
+
+	    Chance.prototype.street_suffix = function (options) {
+	        options = initOptions(options, { country: 'us' });
+	        return this.pick(this.street_suffixes(options));
+	    };
+
+	    Chance.prototype.street_suffixes = function (options) {
+	        options = initOptions(options, { country: 'us' });
+	        // These are the most common suffixes.
+	        return this.get("street_suffixes")[options.country.toLowerCase()];
+	    };
+
+	    // Note: only returning US zip codes, internationalization will be a whole
+	    // other beast to tackle at some point.
+	    Chance.prototype.zip = function (options) {
+	        var zip = this.n(this.natural, 5, {max: 9});
+
+	        if (options && options.plusfour === true) {
+	            zip.push('-');
+	            zip = zip.concat(this.n(this.natural, 4, {max: 9}));
+	        }
+
+	        return zip.join("");
+	    };
+
+	    // -- End Location --
+
+	    // -- Time
+
+	    Chance.prototype.ampm = function () {
+	        return this.bool() ? 'am' : 'pm';
+	    };
+
+	    Chance.prototype.date = function (options) {
+	        var date_string, date;
+
+	        // If interval is specified we ignore preset
+	        if(options && (options.min || options.max)) {
+	            options = initOptions(options, {
+	                american: true,
+	                string: false
+	            });
+	            var min = typeof options.min !== "undefined" ? options.min.getTime() : 1;
+	            // 100,000,000 days measured relative to midnight at the beginning of 01 January, 1970 UTC. http://es5.github.io/#x15.9.1.1
+	            var max = typeof options.max !== "undefined" ? options.max.getTime() : 8640000000000000;
+
+	            date = new Date(this.integer({min: min, max: max}));
+	        } else {
+	            var m = this.month({raw: true});
+	            var daysInMonth = m.days;
+
+	            if(options && options.month) {
+	                // Mod 12 to allow months outside range of 0-11 (not encouraged, but also not prevented).
+	                daysInMonth = this.get('months')[((options.month % 12) + 12) % 12].days;
+	            }
+
+	            options = initOptions(options, {
+	                year: parseInt(this.year(), 10),
+	                // Necessary to subtract 1 because Date() 0-indexes month but not day or year
+	                // for some reason.
+	                month: m.numeric - 1,
+	                day: this.natural({min: 1, max: daysInMonth}),
+	                hour: this.hour({twentyfour: true}),
+	                minute: this.minute(),
+	                second: this.second(),
+	                millisecond: this.millisecond(),
+	                american: true,
+	                string: false
+	            });
+
+	            date = new Date(options.year, options.month, options.day, options.hour, options.minute, options.second, options.millisecond);
+	        }
+
+	        if (options.american) {
+	            // Adding 1 to the month is necessary because Date() 0-indexes
+	            // months but not day for some odd reason.
+	            date_string = (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
+	        } else {
+	            date_string = date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+	        }
+
+	        return options.string ? date_string : date;
+	    };
+
+	    Chance.prototype.hammertime = function (options) {
+	        return this.date(options).getTime();
+	    };
+
+	    Chance.prototype.hour = function (options) {
+	        options = initOptions(options, {
+	            min: options && options.twentyfour ? 0 : 1,
+	            max: options && options.twentyfour ? 23 : 12
+	        });
+
+	        testRange(options.min < 0, "Chance: Min cannot be less than 0.");
+	        testRange(options.twentyfour && options.max > 23, "Chance: Max cannot be greater than 23 for twentyfour option.");
+	        testRange(!options.twentyfour && options.max > 12, "Chance: Max cannot be greater than 12.");
+	        testRange(options.min > options.max, "Chance: Min cannot be greater than Max.");
+
+	        return this.natural({min: options.min, max: options.max});
+	    };
+
+	    Chance.prototype.millisecond = function () {
+	        return this.natural({max: 999});
+	    };
+
+	    Chance.prototype.minute = Chance.prototype.second = function (options) {
+	        options = initOptions(options, {min: 0, max: 59});
+
+	        testRange(options.min < 0, "Chance: Min cannot be less than 0.");
+	        testRange(options.max > 59, "Chance: Max cannot be greater than 59.");
+	        testRange(options.min > options.max, "Chance: Min cannot be greater than Max.");
+
+	        return this.natural({min: options.min, max: options.max});
+	    };
+
+	    Chance.prototype.month = function (options) {
+	        options = initOptions(options, {min: 1, max: 12});
+
+	        testRange(options.min < 1, "Chance: Min cannot be less than 1.");
+	        testRange(options.max > 12, "Chance: Max cannot be greater than 12.");
+	        testRange(options.min > options.max, "Chance: Min cannot be greater than Max.");
+
+	        var month = this.pick(this.months().slice(options.min - 1, options.max));
+	        return options.raw ? month : month.name;
+	    };
+
+	    Chance.prototype.months = function () {
+	        return this.get("months");
+	    };
+
+	    Chance.prototype.second = function () {
+	        return this.natural({max: 59});
+	    };
+
+	    Chance.prototype.timestamp = function () {
+	        return this.natural({min: 1, max: parseInt(new Date().getTime() / 1000, 10)});
+	    };
+
+	    Chance.prototype.weekday = function (options) {
+	        options = initOptions(options, {weekday_only: false});
+	        var weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+	        if (!options.weekday_only) {
+	            weekdays.push("Saturday");
+	            weekdays.push("Sunday");
+	        }
+	        return this.pickone(weekdays);
+	    };
+
+	    Chance.prototype.year = function (options) {
+	        // Default to current year as min if none specified
+	        options = initOptions(options, {min: new Date().getFullYear()});
+
+	        // Default to one century after current year as max if none specified
+	        options.max = (typeof options.max !== "undefined") ? options.max : options.min + 100;
+
+	        return this.natural(options).toString();
+	    };
+
+	    // -- End Time
+
+	    // -- Finance --
+
+	    Chance.prototype.cc = function (options) {
+	        options = initOptions(options);
+
+	        var type, number, to_generate;
+
+	        type = (options.type) ?
+	                    this.cc_type({ name: options.type, raw: true }) :
+	                    this.cc_type({ raw: true });
+
+	        number = type.prefix.split("");
+	        to_generate = type.length - type.prefix.length - 1;
+
+	        // Generates n - 1 digits
+	        number = number.concat(this.n(this.integer, to_generate, {min: 0, max: 9}));
+
+	        // Generates the last digit according to Luhn algorithm
+	        number.push(this.luhn_calculate(number.join("")));
+
+	        return number.join("");
+	    };
+
+	    Chance.prototype.cc_types = function () {
+	        // http://en.wikipedia.org/wiki/Bank_card_number#Issuer_identification_number_.28IIN.29
+	        return this.get("cc_types");
+	    };
+
+	    Chance.prototype.cc_type = function (options) {
+	        options = initOptions(options);
+	        var types = this.cc_types(),
+	            type = null;
+
+	        if (options.name) {
+	            for (var i = 0; i < types.length; i++) {
+	                // Accept either name or short_name to specify card type
+	                if (types[i].name === options.name || types[i].short_name === options.name) {
+	                    type = types[i];
+	                    break;
+	                }
+	            }
+	            if (type === null) {
+	                throw new RangeError("Credit card type '" + options.name + "'' is not supported");
+	            }
+	        } else {
+	            type = this.pick(types);
+	        }
+
+	        return options.raw ? type : type.name;
+	    };
+
+	    //return all world currency by ISO 4217
+	    Chance.prototype.currency_types = function () {
+	        return this.get("currency_types");
+	    };
+
+	    //return random world currency by ISO 4217
+	    Chance.prototype.currency = function () {
+	        return this.pick(this.currency_types());
+	    };
+
+	    //return all timezones availabel
+	    Chance.prototype.timezones = function () {
+	        return this.get("timezones");
+	    };
+
+	    //return random timezone
+	    Chance.prototype.timezone = function () {
+	        return this.pick(this.timezones());
+	    };
+
+	    //Return random correct currency exchange pair (e.g. EUR/USD) or array of currency code
+	    Chance.prototype.currency_pair = function (returnAsString) {
+	        var currencies = this.unique(this.currency, 2, {
+	            comparator: function(arr, val) {
+
+	                return arr.reduce(function(acc, item) {
+	                    // If a match has been found, short circuit check and just return
+	                    return acc || (item.code === val.code);
+	                }, false);
+	            }
+	        });
+
+	        if (returnAsString) {
+	            return currencies[0].code + '/' + currencies[1].code;
+	        } else {
+	            return currencies;
+	        }
+	    };
+
+	    Chance.prototype.dollar = function (options) {
+	        // By default, a somewhat more sane max for dollar than all available numbers
+	        options = initOptions(options, {max : 10000, min : 0});
+
+	        var dollar = this.floating({min: options.min, max: options.max, fixed: 2}).toString(),
+	            cents = dollar.split('.')[1];
+
+	        if (cents === undefined) {
+	            dollar += '.00';
+	        } else if (cents.length < 2) {
+	            dollar = dollar + '0';
+	        }
+
+	        if (dollar < 0) {
+	            return '-$' + dollar.replace('-', '');
+	        } else {
+	            return '$' + dollar;
+	        }
+	    };
+
+	    Chance.prototype.euro = function (options) {
+	        return Number(this.dollar(options).replace("$", "")).toLocaleString() + "€";
+	    };
+
+	    Chance.prototype.exp = function (options) {
+	        options = initOptions(options);
+	        var exp = {};
+
+	        exp.year = this.exp_year();
+
+	        // If the year is this year, need to ensure month is greater than the
+	        // current month or this expiration will not be valid
+	        if (exp.year === (new Date().getFullYear()).toString()) {
+	            exp.month = this.exp_month({future: true});
+	        } else {
+	            exp.month = this.exp_month();
+	        }
+
+	        return options.raw ? exp : exp.month + '/' + exp.year;
+	    };
+
+	    Chance.prototype.exp_month = function (options) {
+	        options = initOptions(options);
+	        var month, month_int,
+	            // Date object months are 0 indexed
+	            curMonth = new Date().getMonth() + 1;
+
+	        if (options.future && (curMonth !== 12)) {
+	            do {
+	                month = this.month({raw: true}).numeric;
+	                month_int = parseInt(month, 10);
+	            } while (month_int <= curMonth);
+	        } else {
+	            month = this.month({raw: true}).numeric;
+	        }
+
+	        return month;
+	    };
+
+	    Chance.prototype.exp_year = function () {
+	        var curMonth = new Date().getMonth() + 1,
+	            curYear = new Date().getFullYear();
+
+	        return this.year({min: ((curMonth === 12) ? (curYear + 1) : curYear), max: (curYear + 10)});
+	    };
+
+	    Chance.prototype.vat = function (options) {
+	        options = initOptions(options, { country: 'it' });
+	        switch (options.country.toLowerCase()) {
+	            case 'it':
+	                return this.it_vat();
+	        }
+	    };
+
+	    // -- End Finance
+
+	    // -- Regional
+
+	    Chance.prototype.it_vat = function () {
+	        var it_vat = this.natural({min: 1, max: 1800000});
+
+	        it_vat = this.pad(it_vat, 7) + this.pad(this.pick(this.provinces({ country: 'it' })).code, 3);
+	        return it_vat + this.luhn_calculate(it_vat);
+	    };
+
+	    /*
+	     * this generator is written following the official algorithm
+	     * all data can be passed explicitely or randomized by calling chance.cf() without options
+	     * the code does not check that the input data is valid (it goes beyond the scope of the generator)
+	     *
+	     * @param  [Object] options = { first: first name,
+	     *                              last: last name,
+	     *                              gender: female|male,
+	                                    birthday: JavaScript date object,
+	                                    city: string(4), 1 letter + 3 numbers
+	                                   }
+	     * @return [string] codice fiscale
+	     *
+	    */
+	    Chance.prototype.cf = function (options) {
+	        options = options || {};
+	        var gender = !!options.gender ? options.gender : this.gender(),
+	            first = !!options.first ? options.first : this.first( { gender: gender, nationality: 'it'} ),
+	            last = !!options.last ? options.last : this.last( { nationality: 'it'} ),
+	            birthday = !!options.birthday ? options.birthday : this.birthday(),
+	            city = !!options.city ? options.city : this.pickone(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'L', 'M', 'Z']) + this.pad(this.natural({max:999}), 3),
+	            cf = [],
+	            name_generator = function(name, isLast) {
+	                var temp,
+	                    return_value = [];
+
+	                if (name.length < 3) {
+	                    return_value = name.split("").concat("XXX".split("")).splice(0,3);
+	                }
+	                else {
+	                    temp = name.toUpperCase().split('').map(function(c){
+	                        return ("BCDFGHJKLMNPRSTVWZ".indexOf(c) !== -1) ? c : undefined;
+	                    }).join('');
+	                    if (temp.length > 3) {
+	                        if (isLast) {
+	                            temp = temp.substr(0,3);
+	                        } else {
+	                            temp = temp[0] + temp.substr(2,2);
+	                        }
+	                    }
+	                    if (temp.length < 3) {
+	                        return_value = temp;
+	                        temp = name.toUpperCase().split('').map(function(c){
+	                            return ("AEIOU".indexOf(c) !== -1) ? c : undefined;
+	                        }).join('').substr(0, 3 - return_value.length);
+	                    }
+	                    return_value = return_value + temp;
+	                }
+
+	                return return_value;
+	            },
+	            date_generator = function(birthday, gender, that) {
+	                var lettermonths = ['A', 'B', 'C', 'D', 'E', 'H', 'L', 'M', 'P', 'R', 'S', 'T'];
+
+	                return  birthday.getFullYear().toString().substr(2) +
+	                        lettermonths[birthday.getMonth()] +
+	                        that.pad(birthday.getDate() + ((gender.toLowerCase() === "female") ? 40 : 0), 2);
+	            },
+	            checkdigit_generator = function(cf) {
+	                var range1 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+	                    range2 = "ABCDEFGHIJABCDEFGHIJKLMNOPQRSTUVWXYZ",
+	                    evens  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+	                    odds   = "BAKPLCQDREVOSFTGUHMINJWZYX",
+	                    digit  = 0;
+
+
+	                for(var i = 0; i < 15; i++) {
+	                    if (i % 2 !== 0) {
+	                        digit += evens.indexOf(range2[range1.indexOf(cf[i])]);
+	                    }
+	                    else {
+	                        digit +=  odds.indexOf(range2[range1.indexOf(cf[i])]);
+	                    }
+	                }
+	                return evens[digit % 26];
+	            };
+
+	        cf = cf.concat(name_generator(last, true), name_generator(first), date_generator(birthday, gender, this), city.toUpperCase().split("")).join("");
+	        cf += checkdigit_generator(cf.toUpperCase(), this);
+
+	        return cf.toUpperCase();
+	    };
+
+	    Chance.prototype.pl_pesel = function () {
+	        var number = this.natural({min: 1, max: 9999999999});
+	        var arr = this.pad(number, 10).split('');
+	        for (var i = 0; i < arr.length; i++) {
+	            arr[i] = parseInt(arr[i]);
+	        }
+
+	        var controlNumber = (1 * arr[0] + 3 * arr[1] + 7 * arr[2] + 9 * arr[3] + 1 * arr[4] + 3 * arr[5] + 7 * arr[6] + 9 * arr[7] + 1 * arr[8] + 3 * arr[9]) % 10;
+	        if(controlNumber !== 0) {
+	            controlNumber = 10 - controlNumber;
+	        }
+
+	        return arr.join('') + controlNumber;
+	    };
+
+	    Chance.prototype.pl_nip = function () {
+	        var number = this.natural({min: 1, max: 999999999});
+	        var arr = this.pad(number, 9).split('');
+	        for (var i = 0; i < arr.length; i++) {
+	            arr[i] = parseInt(arr[i]);
+	        }
+
+	        var controlNumber = (6 * arr[0] + 5 * arr[1] + 7 * arr[2] + 2 * arr[3] + 3 * arr[4] + 4 * arr[5] + 5 * arr[6] + 6 * arr[7] + 7 * arr[8]) % 11;
+	        if(controlNumber === 10) {
+	            return this.pl_nip();
+	        }
+
+	        return arr.join('') + controlNumber;
+	    };
+
+	    Chance.prototype.pl_regon = function () {
+	        var number = this.natural({min: 1, max: 99999999});
+	        var arr = this.pad(number, 8).split('');
+	        for (var i = 0; i < arr.length; i++) {
+	            arr[i] = parseInt(arr[i]);
+	        }
+
+	        var controlNumber = (8 * arr[0] + 9 * arr[1] + 2 * arr[2] + 3 * arr[3] + 4 * arr[4] + 5 * arr[5] + 6 * arr[6] + 7 * arr[7]) % 11;
+	        if(controlNumber === 10) {
+	            controlNumber = 0;
+	        }
+
+	        return arr.join('') + controlNumber;
+	    };
+
+	    // -- End Regional
+
+	    // -- Miscellaneous --
+
+	    // Dice - For all the board game geeks out there, myself included ;)
+	    function diceFn (range) {
+	        return function () {
+	            return this.natural(range);
+	        };
+	    }
+	    Chance.prototype.d4 = diceFn({min: 1, max: 4});
+	    Chance.prototype.d6 = diceFn({min: 1, max: 6});
+	    Chance.prototype.d8 = diceFn({min: 1, max: 8});
+	    Chance.prototype.d10 = diceFn({min: 1, max: 10});
+	    Chance.prototype.d12 = diceFn({min: 1, max: 12});
+	    Chance.prototype.d20 = diceFn({min: 1, max: 20});
+	    Chance.prototype.d30 = diceFn({min: 1, max: 30});
+	    Chance.prototype.d100 = diceFn({min: 1, max: 100});
+
+	    Chance.prototype.rpg = function (thrown, options) {
+	        options = initOptions(options);
+	        if (!thrown) {
+	            throw new RangeError("A type of die roll must be included");
+	        } else {
+	            var bits = thrown.toLowerCase().split("d"),
+	                rolls = [];
+
+	            if (bits.length !== 2 || !parseInt(bits[0], 10) || !parseInt(bits[1], 10)) {
+	                throw new Error("Invalid format provided. Please provide #d# where the first # is the number of dice to roll, the second # is the max of each die");
+	            }
+	            for (var i = bits[0]; i > 0; i--) {
+	                rolls[i - 1] = this.natural({min: 1, max: bits[1]});
+	            }
+	            return (typeof options.sum !== 'undefined' && options.sum) ? rolls.reduce(function (p, c) { return p + c; }) : rolls;
+	        }
+	    };
+
+	    // Guid
+	    Chance.prototype.guid = function (options) {
+	        options = initOptions(options, { version: 5 });
+
+	        var guid_pool = "abcdef1234567890",
+	            variant_pool = "ab89",
+	            guid = this.string({ pool: guid_pool, length: 8 }) + '-' +
+	                   this.string({ pool: guid_pool, length: 4 }) + '-' +
+	                   // The Version
+	                   options.version +
+	                   this.string({ pool: guid_pool, length: 3 }) + '-' +
+	                   // The Variant
+	                   this.string({ pool: variant_pool, length: 1 }) +
+	                   this.string({ pool: guid_pool, length: 3 }) + '-' +
+	                   this.string({ pool: guid_pool, length: 12 });
+	        return guid;
+	    };
+
+	    // Hash
+	    Chance.prototype.hash = function (options) {
+	        options = initOptions(options, {length : 40, casing: 'lower'});
+	        var pool = options.casing === 'upper' ? HEX_POOL.toUpperCase() : HEX_POOL;
+	        return this.string({pool: pool, length: options.length});
+	    };
+
+	    Chance.prototype.luhn_check = function (num) {
+	        var str = num.toString();
+	        var checkDigit = +str.substring(str.length - 1);
+	        return checkDigit === this.luhn_calculate(+str.substring(0, str.length - 1));
+	    };
+
+	    Chance.prototype.luhn_calculate = function (num) {
+	        var digits = num.toString().split("").reverse();
+	        var sum = 0;
+	        var digit;
+
+	        for (var i = 0, l = digits.length; l > i; ++i) {
+	            digit = +digits[i];
+	            if (i % 2 === 0) {
+	                digit *= 2;
+	                if (digit > 9) {
+	                    digit -= 9;
+	                }
+	            }
+	            sum += digit;
+	        }
+	        return (sum * 9) % 10;
+	    };
+
+	    // MD5 Hash
+	    Chance.prototype.md5 = function(options) {
+	        var opts = { str: '', key: null, raw: false };
+
+	        if (!options) {
+	            opts.str = this.string();
+	            options = {};
+	        }
+	        else if (typeof options === 'string') {
+	            opts.str = options;
+	            options = {};
+	        }
+	        else if (typeof options !== 'object') {
+	            return null;
+	        }
+	        else if(options.constructor === 'Array') {
+	            return null;
+	        }
+
+	        opts = initOptions(options, opts);
+
+	        if(!opts.str){
+	            throw new Error('A parameter is required to return an md5 hash.');
+	        }
+
+	        return this.bimd5.md5(opts.str, opts.key, opts.raw);
+	    };
+
+	    /**
+	     * #Description:
+	     * =====================================================
+	     * Generate random file name with extention
+	     *
+	     * The argument provide extention type
+	     * -> raster
+	     * -> vector
+	     * -> 3d
+	     * -> document
+	     *
+	     * If noting is provided the function return random file name with random
+	     * extention type of any kind
+	     *
+	     * The user can validate the file name length range
+	     * If noting provided the generated file name is radom
+	     *
+	     * #Extention Pool :
+	     * * Currently the supported extentions are
+	     *  -> some of the most popular raster image extentions
+	     *  -> some of the most popular vector image extentions
+	     *  -> some of the most popular 3d image extentions
+	     *  -> some of the most popular document extentions
+	     *
+	     * #Examples :
+	     * =====================================================
+	     *
+	     * Return random file name with random extention. The file extention
+	     * is provided by a predifined collection of extentions. More abouth the extention
+	     * pool can be fond in #Extention Pool section
+	     *
+	     * chance.file()
+	     * => dsfsdhjf.xml
+	     *
+	     * In order to generate a file name with sspecific length, specify the
+	     * length property and integer value. The extention is going to be random
+	     *
+	     * chance.file({length : 10})
+	     * => asrtineqos.pdf
+	     *
+	     * In order to geerate file with extention form some of the predifined groups
+	     * of the extention pool just specify the extenton pool category in fileType property
+	     *
+	     * chance.file({fileType : 'raster'})
+	     * => dshgssds.psd
+	     *
+	     * You can provide specific extention for your files
+	     * chance.file({extention : 'html'})
+	     * => djfsd.html
+	     *
+	     * Or you could pass custom collection of extentons bt array or by object
+	     * chance.file({extentions : [...]})
+	     * => dhgsdsd.psd
+	     *
+	     * chance.file({extentions : { key : [...], key : [...]}})
+	     * => djsfksdjsd.xml
+	     *
+	     * @param  [collection] options
+	     * @return [string]
+	     *
+	     */
+	    Chance.prototype.file = function(options) {
+
+	        var fileOptions = options || {};
+	        var poolCollectionKey = "fileExtension";
+	        var typeRange   = Object.keys(this.get("fileExtension"));//['raster', 'vector', '3d', 'document'];
+	        var fileName;
+	        var fileExtention;
+
+	        // Generate random file name
+	        fileName = this.word({length : fileOptions.length});
+
+	        // Generate file by specific extention provided by the user
+	        if(fileOptions.extention) {
+
+	            fileExtention = fileOptions.extention;
+	            return (fileName + '.' + fileExtention);
+	        }
+
+	        // Generate file by specific axtention collection
+	        if(fileOptions.extentions) {
+
+	            if(Array.isArray(fileOptions.extentions)) {
+
+	                fileExtention = this.pickone(fileOptions.extentions);
+	                return (fileName + '.' + fileExtention);
+	            }
+	            else if(fileOptions.extentions.constructor === Object) {
+
+	                var extentionObjectCollection = fileOptions.extentions;
+	                var keys = Object.keys(extentionObjectCollection);
+
+	                fileExtention = this.pickone(extentionObjectCollection[this.pickone(keys)]);
+	                return (fileName + '.' + fileExtention);
+	            }
+
+	            throw new Error("Expect collection of type Array or Object to be passed as an argument ");
+	        }
+
+	        // Generate file extention based on specific file type
+	        if(fileOptions.fileType) {
+
+	            var fileType = fileOptions.fileType;
+	            if(typeRange.indexOf(fileType) !== -1) {
+
+	                fileExtention = this.pickone(this.get(poolCollectionKey)[fileType]);
+	                return (fileName + '.' + fileExtention);
+	            }
+
+	            throw new Error("Expect file type value to be 'raster', 'vector', '3d' or 'document' ");
+	        }
+
+	        // Generate random file name if no extenton options are passed
+	        fileExtention = this.pickone(this.get(poolCollectionKey)[this.pickone(typeRange)]);
+	        return (fileName + '.' + fileExtention);
+	    };
+
+	    var data = {
+
+	        firstNames: {
+	            "male": {
+	                "en": ["James", "John", "Robert", "Michael", "William", "David", "Richard", "Joseph", "Charles", "Thomas", "Christopher", "Daniel", "Matthew", "George", "Donald", "Anthony", "Paul", "Mark", "Edward", "Steven", "Kenneth", "Andrew", "Brian", "Joshua", "Kevin", "Ronald", "Timothy", "Jason", "Jeffrey", "Frank", "Gary", "Ryan", "Nicholas", "Eric", "Stephen", "Jacob", "Larry", "Jonathan", "Scott", "Raymond", "Justin", "Brandon", "Gregory", "Samuel", "Benjamin", "Patrick", "Jack", "Henry", "Walter", "Dennis", "Jerry", "Alexander", "Peter", "Tyler", "Douglas", "Harold", "Aaron", "Jose", "Adam", "Arthur", "Zachary", "Carl", "Nathan", "Albert", "Kyle", "Lawrence", "Joe", "Willie", "Gerald", "Roger", "Keith", "Jeremy", "Terry", "Harry", "Ralph", "Sean", "Jesse", "Roy", "Louis", "Billy", "Austin", "Bruce", "Eugene", "Christian", "Bryan", "Wayne", "Russell", "Howard", "Fred", "Ethan", "Jordan", "Philip", "Alan", "Juan", "Randy", "Vincent", "Bobby", "Dylan", "Johnny", "Phillip", "Victor", "Clarence", "Ernest", "Martin", "Craig", "Stanley", "Shawn", "Travis", "Bradley", "Leonard", "Earl", "Gabriel", "Jimmy", "Francis", "Todd", "Noah", "Danny", "Dale", "Cody", "Carlos", "Allen", "Frederick", "Logan", "Curtis", "Alex", "Joel", "Luis", "Norman", "Marvin", "Glenn", "Tony", "Nathaniel", "Rodney", "Melvin", "Alfred", "Steve", "Cameron", "Chad", "Edwin", "Caleb", "Evan", "Antonio", "Lee", "Herbert", "Jeffery", "Isaac", "Derek", "Ricky", "Marcus", "Theodore", "Elijah", "Luke", "Jesus", "Eddie", "Troy", "Mike", "Dustin", "Ray", "Adrian", "Bernard", "Leroy", "Angel", "Randall", "Wesley", "Ian", "Jared", "Mason", "Hunter", "Calvin", "Oscar", "Clifford", "Jay", "Shane", "Ronnie", "Barry", "Lucas", "Corey", "Manuel", "Leo", "Tommy", "Warren", "Jackson", "Isaiah", "Connor", "Don", "Dean", "Jon", "Julian", "Miguel", "Bill", "Lloyd", "Charlie", "Mitchell", "Leon", "Jerome", "Darrell", "Jeremiah", "Alvin", "Brett", "Seth", "Floyd", "Jim", "Blake", "Micheal", "Gordon", "Trevor", "Lewis", "Erik", "Edgar", "Vernon", "Devin", "Gavin", "Jayden", "Chris", "Clyde", "Tom", "Derrick", "Mario", "Brent", "Marc", "Herman", "Chase", "Dominic", "Ricardo", "Franklin", "Maurice", "Max", "Aiden", "Owen", "Lester", "Gilbert", "Elmer", "Gene", "Francisco", "Glen", "Cory", "Garrett", "Clayton", "Sam", "Jorge", "Chester", "Alejandro", "Jeff", "Harvey", "Milton", "Cole", "Ivan", "Andre", "Duane", "Landon"],
+	                // Data taken from http://www.dati.gov.it/dataset/comune-di-firenze_0163
+	                "it": ["Adolfo", "Alberto", "Aldo", "Alessandro", "Alessio", "Alfredo", "Alvaro", "Andrea", "Angelo", "Angiolo", "Antonino", "Antonio", "Attilio", "Benito", "Bernardo", "Bruno", "Carlo", "Cesare", "Christian", "Claudio", "Corrado", "Cosimo", "Cristian", "Cristiano", "Daniele", "Dario", "David", "Davide", "Diego", "Dino", "Domenico", "Duccio", "Edoardo", "Elia", "Elio", "Emanuele", "Emiliano", "Emilio", "Enrico", "Enzo", "Ettore", "Fabio", "Fabrizio", "Federico", "Ferdinando", "Fernando", "Filippo", "Francesco", "Franco", "Gabriele", "Giacomo", "Giampaolo", "Giampiero", "Giancarlo", "Gianfranco", "Gianluca", "Gianmarco", "Gianni", "Gino", "Giorgio", "Giovanni", "Giuliano", "Giulio", "Giuseppe", "Graziano", "Gregorio", "Guido", "Iacopo", "Jacopo", "Lapo", "Leonardo", "Lorenzo", "Luca", "Luciano", "Luigi", "Manuel", "Marcello", "Marco", "Marino", "Mario", "Massimiliano", "Massimo", "Matteo", "Mattia", "Maurizio", "Mauro", "Michele", "Mirko", "Mohamed", "Nello", "Neri", "Niccolò", "Nicola", "Osvaldo", "Otello", "Paolo", "Pier Luigi", "Piero", "Pietro", "Raffaele", "Remo", "Renato", "Renzo", "Riccardo", "Roberto", "Rolando", "Romano", "Salvatore", "Samuele", "Sandro", "Sergio", "Silvano", "Simone", "Stefano", "Thomas", "Tommaso", "Ubaldo", "Ugo", "Umberto", "Valerio", "Valter", "Vasco", "Vincenzo", "Vittorio"]
+	            },
+	            "female": {
+	                "en": ["Mary", "Emma", "Elizabeth", "Minnie", "Margaret", "Ida", "Alice", "Bertha", "Sarah", "Annie", "Clara", "Ella", "Florence", "Cora", "Martha", "Laura", "Nellie", "Grace", "Carrie", "Maude", "Mabel", "Bessie", "Jennie", "Gertrude", "Julia", "Hattie", "Edith", "Mattie", "Rose", "Catherine", "Lillian", "Ada", "Lillie", "Helen", "Jessie", "Louise", "Ethel", "Lula", "Myrtle", "Eva", "Frances", "Lena", "Lucy", "Edna", "Maggie", "Pearl", "Daisy", "Fannie", "Josephine", "Dora", "Rosa", "Katherine", "Agnes", "Marie", "Nora", "May", "Mamie", "Blanche", "Stella", "Ellen", "Nancy", "Effie", "Sallie", "Nettie", "Della", "Lizzie", "Flora", "Susie", "Maud", "Mae", "Etta", "Harriet", "Sadie", "Caroline", "Katie", "Lydia", "Elsie", "Kate", "Susan", "Mollie", "Alma", "Addie", "Georgia", "Eliza", "Lulu", "Nannie", "Lottie", "Amanda", "Belle", "Charlotte", "Rebecca", "Ruth", "Viola", "Olive", "Amelia", "Hannah", "Jane", "Virginia", "Emily", "Matilda", "Irene", "Kathryn", "Esther", "Willie", "Henrietta", "Ollie", "Amy", "Rachel", "Sara", "Estella", "Theresa", "Augusta", "Ora", "Pauline", "Josie", "Lola", "Sophia", "Leona", "Anne", "Mildred", "Ann", "Beulah", "Callie", "Lou", "Delia", "Eleanor", "Barbara", "Iva", "Louisa", "Maria", "Mayme", "Evelyn", "Estelle", "Nina", "Betty", "Marion", "Bettie", "Dorothy", "Luella", "Inez", "Lela", "Rosie", "Allie", "Millie", "Janie", "Cornelia", "Victoria", "Ruby", "Winifred", "Alta", "Celia", "Christine", "Beatrice", "Birdie", "Harriett", "Mable", "Myra", "Sophie", "Tillie", "Isabel", "Sylvia", "Carolyn", "Isabelle", "Leila", "Sally", "Ina", "Essie", "Bertie", "Nell", "Alberta", "Katharine", "Lora", "Rena", "Mina", "Rhoda", "Mathilda", "Abbie", "Eula", "Dollie", "Hettie", "Eunice", "Fanny", "Ola", "Lenora", "Adelaide", "Christina", "Lelia", "Nelle", "Sue", "Johanna", "Lilly", "Lucinda", "Minerva", "Lettie", "Roxie", "Cynthia", "Helena", "Hilda", "Hulda", "Bernice", "Genevieve", "Jean", "Cordelia", "Marian", "Francis", "Jeanette", "Adeline", "Gussie", "Leah", "Lois", "Lura", "Mittie", "Hallie", "Isabella", "Olga", "Phoebe", "Teresa", "Hester", "Lida", "Lina", "Winnie", "Claudia", "Marguerite", "Vera", "Cecelia", "Bess", "Emilie", "John", "Rosetta", "Verna", "Myrtie", "Cecilia", "Elva", "Olivia", "Ophelia", "Georgie", "Elnora", "Violet", "Adele", "Lily", "Linnie", "Loretta", "Madge", "Polly", "Virgie", "Eugenia", "Lucile", "Lucille", "Mabelle", "Rosalie"],
+	                // Data taken from http://www.dati.gov.it/dataset/comune-di-firenze_0162
+	                "it": ["Ada", "Adriana", "Alessandra", "Alessia", "Alice", "Angela", "Anna", "Anna Maria", "Annalisa", "Annita", "Annunziata", "Antonella", "Arianna", "Asia", "Assunta", "Aurora", "Barbara", "Beatrice", "Benedetta", "Bianca", "Bruna", "Camilla", "Carla", "Carlotta", "Carmela", "Carolina", "Caterina", "Catia", "Cecilia", "Chiara", "Cinzia", "Clara", "Claudia", "Costanza", "Cristina", "Daniela", "Debora", "Diletta", "Dina", "Donatella", "Elena", "Eleonora", "Elisa", "Elisabetta", "Emanuela", "Emma", "Eva", "Federica", "Fernanda", "Fiorella", "Fiorenza", "Flora", "Franca", "Francesca", "Gabriella", "Gaia", "Gemma", "Giada", "Gianna", "Gina", "Ginevra", "Giorgia", "Giovanna", "Giulia", "Giuliana", "Giuseppa", "Giuseppina", "Grazia", "Graziella", "Greta", "Ida", "Ilaria", "Ines", "Iolanda", "Irene", "Irma", "Isabella", "Jessica", "Laura", "Leda", "Letizia", "Licia", "Lidia", "Liliana", "Lina", "Linda", "Lisa", "Livia", "Loretta", "Luana", "Lucia", "Luciana", "Lucrezia", "Luisa", "Manuela", "Mara", "Marcella", "Margherita", "Maria", "Maria Cristina", "Maria Grazia", "Maria Luisa", "Maria Pia", "Maria Teresa", "Marina", "Marisa", "Marta", "Martina", "Marzia", "Matilde", "Melissa", "Michela", "Milena", "Mirella", "Monica", "Natalina", "Nella", "Nicoletta", "Noemi", "Olga", "Paola", "Patrizia", "Piera", "Pierina", "Raffaella", "Rebecca", "Renata", "Rina", "Rita", "Roberta", "Rosa", "Rosanna", "Rossana", "Rossella", "Sabrina", "Sandra", "Sara", "Serena", "Silvana", "Silvia", "Simona", "Simonetta", "Sofia", "Sonia", "Stefania", "Susanna", "Teresa", "Tina", "Tiziana", "Tosca", "Valentina", "Valeria", "Vanda", "Vanessa", "Vanna", "Vera", "Veronica", "Vilma", "Viola", "Virginia", "Vittoria"]
+	            }
+	        },
+
+	        lastNames: {
+	            "en": ['Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore', 'Taylor', 'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Martin', 'Thompson', 'Garcia', 'Martinez', 'Robinson', 'Clark', 'Rodriguez', 'Lewis', 'Lee', 'Walker', 'Hall', 'Allen', 'Young', 'Hernandez', 'King', 'Wright', 'Lopez', 'Hill', 'Scott', 'Green', 'Adams', 'Baker', 'Gonzalez', 'Nelson', 'Carter', 'Mitchell', 'Perez', 'Roberts', 'Turner', 'Phillips', 'Campbell', 'Parker', 'Evans', 'Edwards', 'Collins', 'Stewart', 'Sanchez', 'Morris', 'Rogers', 'Reed', 'Cook', 'Morgan', 'Bell', 'Murphy', 'Bailey', 'Rivera', 'Cooper', 'Richardson', 'Cox', 'Howard', 'Ward', 'Torres', 'Peterson', 'Gray', 'Ramirez', 'James', 'Watson', 'Brooks', 'Kelly', 'Sanders', 'Price', 'Bennett', 'Wood', 'Barnes', 'Ross', 'Henderson', 'Coleman', 'Jenkins', 'Perry', 'Powell', 'Long', 'Patterson', 'Hughes', 'Flores', 'Washington', 'Butler', 'Simmons', 'Foster', 'Gonzales', 'Bryant', 'Alexander', 'Russell', 'Griffin', 'Diaz', 'Hayes', 'Myers', 'Ford', 'Hamilton', 'Graham', 'Sullivan', 'Wallace', 'Woods', 'Cole', 'West', 'Jordan', 'Owens', 'Reynolds', 'Fisher', 'Ellis', 'Harrison', 'Gibson', 'McDonald', 'Cruz', 'Marshall', 'Ortiz', 'Gomez', 'Murray', 'Freeman', 'Wells', 'Webb', 'Simpson', 'Stevens', 'Tucker', 'Porter', 'Hunter', 'Hicks', 'Crawford', 'Henry', 'Boyd', 'Mason', 'Morales', 'Kennedy', 'Warren', 'Dixon', 'Ramos', 'Reyes', 'Burns', 'Gordon', 'Shaw', 'Holmes', 'Rice', 'Robertson', 'Hunt', 'Black', 'Daniels', 'Palmer', 'Mills', 'Nichols', 'Grant', 'Knight', 'Ferguson', 'Rose', 'Stone', 'Hawkins', 'Dunn', 'Perkins', 'Hudson', 'Spencer', 'Gardner', 'Stephens', 'Payne', 'Pierce', 'Berry', 'Matthews', 'Arnold', 'Wagner', 'Willis', 'Ray', 'Watkins', 'Olson', 'Carroll', 'Duncan', 'Snyder', 'Hart', 'Cunningham', 'Bradley', 'Lane', 'Andrews', 'Ruiz', 'Harper', 'Fox', 'Riley', 'Armstrong', 'Carpenter', 'Weaver', 'Greene', 'Lawrence', 'Elliott', 'Chavez', 'Sims', 'Austin', 'Peters', 'Kelley', 'Franklin', 'Lawson', 'Fields', 'Gutierrez', 'Ryan', 'Schmidt', 'Carr', 'Vasquez', 'Castillo', 'Wheeler', 'Chapman', 'Oliver', 'Montgomery', 'Richards', 'Williamson', 'Johnston', 'Banks', 'Meyer', 'Bishop', 'McCoy', 'Howell', 'Alvarez', 'Morrison', 'Hansen', 'Fernandez', 'Garza', 'Harvey', 'Little', 'Burton', 'Stanley', 'Nguyen', 'George', 'Jacobs', 'Reid', 'Kim', 'Fuller', 'Lynch', 'Dean', 'Gilbert', 'Garrett', 'Romero', 'Welch', 'Larson', 'Frazier', 'Burke', 'Hanson', 'Day', 'Mendoza', 'Moreno', 'Bowman', 'Medina', 'Fowler', 'Brewer', 'Hoffman', 'Carlson', 'Silva', 'Pearson', 'Holland', 'Douglas', 'Fleming', 'Jensen', 'Vargas', 'Byrd', 'Davidson', 'Hopkins', 'May', 'Terry', 'Herrera', 'Wade', 'Soto', 'Walters', 'Curtis', 'Neal', 'Caldwell', 'Lowe', 'Jennings', 'Barnett', 'Graves', 'Jimenez', 'Horton', 'Shelton', 'Barrett', 'Obrien', 'Castro', 'Sutton', 'Gregory', 'McKinney', 'Lucas', 'Miles', 'Craig', 'Rodriquez', 'Chambers', 'Holt', 'Lambert', 'Fletcher', 'Watts', 'Bates', 'Hale', 'Rhodes', 'Pena', 'Beck', 'Newman', 'Haynes', 'McDaniel', 'Mendez', 'Bush', 'Vaughn', 'Parks', 'Dawson', 'Santiago', 'Norris', 'Hardy', 'Love', 'Steele', 'Curry', 'Powers', 'Schultz', 'Barker', 'Guzman', 'Page', 'Munoz', 'Ball', 'Keller', 'Chandler', 'Weber', 'Leonard', 'Walsh', 'Lyons', 'Ramsey', 'Wolfe', 'Schneider', 'Mullins', 'Benson', 'Sharp', 'Bowen', 'Daniel', 'Barber', 'Cummings', 'Hines', 'Baldwin', 'Griffith', 'Valdez', 'Hubbard', 'Salazar', 'Reeves', 'Warner', 'Stevenson', 'Burgess', 'Santos', 'Tate', 'Cross', 'Garner', 'Mann', 'Mack', 'Moss', 'Thornton', 'Dennis', 'McGee', 'Farmer', 'Delgado', 'Aguilar', 'Vega', 'Glover', 'Manning', 'Cohen', 'Harmon', 'Rodgers', 'Robbins', 'Newton', 'Todd', 'Blair', 'Higgins', 'Ingram', 'Reese', 'Cannon', 'Strickland', 'Townsend', 'Potter', 'Goodwin', 'Walton', 'Rowe', 'Hampton', 'Ortega', 'Patton', 'Swanson', 'Joseph', 'Francis', 'Goodman', 'Maldonado', 'Yates', 'Becker', 'Erickson', 'Hodges', 'Rios', 'Conner', 'Adkins', 'Webster', 'Norman', 'Malone', 'Hammond', 'Flowers', 'Cobb', 'Moody', 'Quinn', 'Blake', 'Maxwell', 'Pope', 'Floyd', 'Osborne', 'Paul', 'McCarthy', 'Guerrero', 'Lindsey', 'Estrada', 'Sandoval', 'Gibbs', 'Tyler', 'Gross', 'Fitzgerald', 'Stokes', 'Doyle', 'Sherman', 'Saunders', 'Wise', 'Colon', 'Gill', 'Alvarado', 'Greer', 'Padilla', 'Simon', 'Waters', 'Nunez', 'Ballard', 'Schwartz', 'McBride', 'Houston', 'Christensen', 'Klein', 'Pratt', 'Briggs', 'Parsons', 'McLaughlin', 'Zimmerman', 'French', 'Buchanan', 'Moran', 'Copeland', 'Roy', 'Pittman', 'Brady', 'McCormick', 'Holloway', 'Brock', 'Poole', 'Frank', 'Logan', 'Owen', 'Bass', 'Marsh', 'Drake', 'Wong', 'Jefferson', 'Park', 'Morton', 'Abbott', 'Sparks', 'Patrick', 'Norton', 'Huff', 'Clayton', 'Massey', 'Lloyd', 'Figueroa', 'Carson', 'Bowers', 'Roberson', 'Barton', 'Tran', 'Lamb', 'Harrington', 'Casey', 'Boone', 'Cortez', 'Clarke', 'Mathis', 'Singleton', 'Wilkins', 'Cain', 'Bryan', 'Underwood', 'Hogan', 'McKenzie', 'Collier', 'Luna', 'Phelps', 'McGuire', 'Allison', 'Bridges', 'Wilkerson', 'Nash', 'Summers', 'Atkins'],
+	                // Data taken from http://www.dati.gov.it/dataset/comune-di-firenze_0164 (first 1000)
+	            "it": ["Acciai", "Aglietti", "Agostini", "Agresti", "Ahmed", "Aiazzi", "Albanese", "Alberti", "Alessi", "Alfani", "Alinari", "Alterini", "Amato", "Ammannati", "Ancillotti", "Andrei", "Andreini", "Andreoni", "Angeli", "Anichini", "Antonelli", "Antonini", "Arena", "Ariani", "Arnetoli", "Arrighi", "Baccani", "Baccetti", "Bacci", "Bacherini", "Badii", "Baggiani", "Baglioni", "Bagni", "Bagnoli", "Baldassini", "Baldi", "Baldini", "Ballerini", "Balli", "Ballini", "Balloni", "Bambi", "Banchi", "Bandinelli", "Bandini", "Bani", "Barbetti", "Barbieri", "Barchielli", "Bardazzi", "Bardelli", "Bardi", "Barducci", "Bargellini", "Bargiacchi", "Barni", "Baroncelli", "Baroncini", "Barone", "Baroni", "Baronti", "Bartalesi", "Bartoletti", "Bartoli", "Bartolini", "Bartoloni", "Bartolozzi", "Basagni", "Basile", "Bassi", "Batacchi", "Battaglia", "Battaglini", "Bausi", "Becagli", "Becattini", "Becchi", "Becucci", "Bellandi", "Bellesi", "Belli", "Bellini", "Bellucci", "Bencini", "Benedetti", "Benelli", "Beni", "Benini", "Bensi", "Benucci", "Benvenuti", "Berlincioni", "Bernacchioni", "Bernardi", "Bernardini", "Berni", "Bernini", "Bertelli", "Berti", "Bertini", "Bessi", "Betti", "Bettini", "Biagi", "Biagini", "Biagioni", "Biagiotti", "Biancalani", "Bianchi", "Bianchini", "Bianco", "Biffoli", "Bigazzi", "Bigi", "Biliotti", "Billi", "Binazzi", "Bindi", "Bini", "Biondi", "Bizzarri", "Bocci", "Bogani", "Bolognesi", "Bonaiuti", "Bonanni", "Bonciani", "Boncinelli", "Bondi", "Bonechi", "Bongini", "Boni", "Bonini", "Borchi", "Boretti", "Borghi", "Borghini", "Borgioli", "Borri", "Borselli", "Boschi", "Bottai", "Bracci", "Braccini", "Brandi", "Braschi", "Bravi", "Brazzini", "Breschi", "Brilli", "Brizzi", "Brogelli", "Brogi", "Brogioni", "Brunelli", "Brunetti", "Bruni", "Bruno", "Brunori", "Bruschi", "Bucci", "Bucciarelli", "Buccioni", "Bucelli", "Bulli", "Burberi", "Burchi", "Burgassi", "Burroni", "Bussotti", "Buti", "Caciolli", "Caiani", "Calabrese", "Calamai", "Calamandrei", "Caldini", "Calo'", "Calonaci", "Calosi", "Calvelli", "Cambi", "Camiciottoli", "Cammelli", "Cammilli", "Campolmi", "Cantini", "Capanni", "Capecchi", "Caponi", "Cappelletti", "Cappelli", "Cappellini", "Cappugi", "Capretti", "Caputo", "Carbone", "Carboni", "Cardini", "Carlesi", "Carletti", "Carli", "Caroti", "Carotti", "Carrai", "Carraresi", "Carta", "Caruso", "Casalini", "Casati", "Caselli", "Casini", "Castagnoli", "Castellani", "Castelli", "Castellucci", "Catalano", "Catarzi", "Catelani", "Cavaciocchi", "Cavallaro", "Cavallini", "Cavicchi", "Cavini", "Ceccarelli", "Ceccatelli", "Ceccherelli", "Ceccherini", "Cecchi", "Cecchini", "Cecconi", "Cei", "Cellai", "Celli", "Cellini", "Cencetti", "Ceni", "Cenni", "Cerbai", "Cesari", "Ceseri", "Checcacci", "Checchi", "Checcucci", "Cheli", "Chellini", "Chen", "Cheng", "Cherici", "Cherubini", "Chiaramonti", "Chiarantini", "Chiarelli", "Chiari", "Chiarini", "Chiarugi", "Chiavacci", "Chiesi", "Chimenti", "Chini", "Chirici", "Chiti", "Ciabatti", "Ciampi", "Cianchi", "Cianfanelli", "Cianferoni", "Ciani", "Ciapetti", "Ciappi", "Ciardi", "Ciatti", "Cicali", "Ciccone", "Cinelli", "Cini", "Ciobanu", "Ciolli", "Cioni", "Cipriani", "Cirillo", "Cirri", "Ciucchi", "Ciuffi", "Ciulli", "Ciullini", "Clemente", "Cocchi", "Cognome", "Coli", "Collini", "Colombo", "Colzi", "Comparini", "Conforti", "Consigli", "Conte", "Conti", "Contini", "Coppini", "Coppola", "Corsi", "Corsini", "Corti", "Cortini", "Cosi", "Costa", "Costantini", "Costantino", "Cozzi", "Cresci", "Crescioli", "Cresti", "Crini", "Curradi", "D'Agostino", "D'Alessandro", "D'Amico", "D'Angelo", "Daddi", "Dainelli", "Dallai", "Danti", "Davitti", "De Angelis", "De Luca", "De Marco", "De Rosa", "De Santis", "De Simone", "De Vita", "Degl'Innocenti", "Degli Innocenti", "Dei", "Del Lungo", "Del Re", "Di Marco", "Di Stefano", "Dini", "Diop", "Dobre", "Dolfi", "Donati", "Dondoli", "Dong", "Donnini", "Ducci", "Dumitru", "Ermini", "Esposito", "Evangelisti", "Fabbri", "Fabbrini", "Fabbrizzi", "Fabbroni", "Fabbrucci", "Fabiani", "Facchini", "Faggi", "Fagioli", "Failli", "Faini", "Falciani", "Falcini", "Falcone", "Fallani", "Falorni", "Falsini", "Falugiani", "Fancelli", "Fanelli", "Fanetti", "Fanfani", "Fani", "Fantappie'", "Fantechi", "Fanti", "Fantini", "Fantoni", "Farina", "Fattori", "Favilli", "Fedi", "Fei", "Ferrante", "Ferrara", "Ferrari", "Ferraro", "Ferretti", "Ferri", "Ferrini", "Ferroni", "Fiaschi", "Fibbi", "Fiesoli", "Filippi", "Filippini", "Fini", "Fioravanti", "Fiore", "Fiorentini", "Fiorini", "Fissi", "Focardi", "Foggi", "Fontana", "Fontanelli", "Fontani", "Forconi", "Formigli", "Forte", "Forti", "Fortini", "Fossati", "Fossi", "Francalanci", "Franceschi", "Franceschini", "Franchi", "Franchini", "Franci", "Francini", "Francioni", "Franco", "Frassineti", "Frati", "Fratini", "Frilli", "Frizzi", "Frosali", "Frosini", "Frullini", "Fusco", "Fusi", "Gabbrielli", "Gabellini", "Gagliardi", "Galanti", "Galardi", "Galeotti", "Galletti", "Galli", "Gallo", "Gallori", "Gambacciani", "Gargani", "Garofalo", "Garuglieri", "Gashi", "Gasperini", "Gatti", "Gelli", "Gensini", "Gentile", "Gentili", "Geri", "Gerini", "Gheri", "Ghini", "Giachetti", "Giachi", "Giacomelli", "Gianassi", "Giani", "Giannelli", "Giannetti", "Gianni", "Giannini", "Giannoni", "Giannotti", "Giannozzi", "Gigli", "Giordano", "Giorgetti", "Giorgi", "Giovacchini", "Giovannelli", "Giovannetti", "Giovannini", "Giovannoni", "Giuliani", "Giunti", "Giuntini", "Giusti", "Gonnelli", "Goretti", "Gori", "Gradi", "Gramigni", "Grassi", "Grasso", "Graziani", "Grazzini", "Greco", "Grifoni", "Grillo", "Grimaldi", "Grossi", "Gualtieri", "Guarducci", "Guarino", "Guarnieri", "Guasti", "Guerra", "Guerri", "Guerrini", "Guidi", "Guidotti", "He", "Hoxha", "Hu", "Huang", "Iandelli", "Ignesti", "Innocenti", "Jin", "La Rosa", "Lai", "Landi", "Landini", "Lanini", "Lapi", "Lapini", "Lari", "Lascialfari", "Lastrucci", "Latini", "Lazzeri", "Lazzerini", "Lelli", "Lenzi", "Leonardi", "Leoncini", "Leone", "Leoni", "Lepri", "Li", "Liao", "Lin", "Linari", "Lippi", "Lisi", "Livi", "Lombardi", "Lombardini", "Lombardo", "Longo", "Lopez", "Lorenzi", "Lorenzini", "Lorini", "Lotti", "Lu", "Lucchesi", "Lucherini", "Lunghi", "Lupi", "Madiai", "Maestrini", "Maffei", "Maggi", "Maggini", "Magherini", "Magini", "Magnani", "Magnelli", "Magni", "Magnolfi", "Magrini", "Malavolti", "Malevolti", "Manca", "Mancini", "Manetti", "Manfredi", "Mangani", "Mannelli", "Manni", "Mannini", "Mannucci", "Manuelli", "Manzini", "Marcelli", "Marchese", "Marchetti", "Marchi", "Marchiani", "Marchionni", "Marconi", "Marcucci", "Margheri", "Mari", "Mariani", "Marilli", "Marinai", "Marinari", "Marinelli", "Marini", "Marino", "Mariotti", "Marsili", "Martelli", "Martinelli", "Martini", "Martino", "Marzi", "Masi", "Masini", "Masoni", "Massai", "Materassi", "Mattei", "Matteini", "Matteucci", "Matteuzzi", "Mattioli", "Mattolini", "Matucci", "Mauro", "Mazzanti", "Mazzei", "Mazzetti", "Mazzi", "Mazzini", "Mazzocchi", "Mazzoli", "Mazzoni", "Mazzuoli", "Meacci", "Mecocci", "Meini", "Melani", "Mele", "Meli", "Mengoni", "Menichetti", "Meoni", "Merlini", "Messeri", "Messina", "Meucci", "Miccinesi", "Miceli", "Micheli", "Michelini", "Michelozzi", "Migliori", "Migliorini", "Milani", "Miniati", "Misuri", "Monaco", "Montagnani", "Montagni", "Montanari", "Montelatici", "Monti", "Montigiani", "Montini", "Morandi", "Morandini", "Morelli", "Moretti", "Morganti", "Mori", "Morini", "Moroni", "Morozzi", "Mugnai", "Mugnaini", "Mustafa", "Naldi", "Naldini", "Nannelli", "Nanni", "Nannini", "Nannucci", "Nardi", "Nardini", "Nardoni", "Natali", "Ndiaye", "Nencetti", "Nencini", "Nencioni", "Neri", "Nesi", "Nesti", "Niccolai", "Niccoli", "Niccolini", "Nigi", "Nistri", "Nocentini", "Noferini", "Novelli", "Nucci", "Nuti", "Nutini", "Oliva", "Olivieri", "Olmi", "Orlandi", "Orlandini", "Orlando", "Orsini", "Ortolani", "Ottanelli", "Pacciani", "Pace", "Paci", "Pacini", "Pagani", "Pagano", "Paggetti", "Pagliai", "Pagni", "Pagnini", "Paladini", "Palagi", "Palchetti", "Palloni", "Palmieri", "Palumbo", "Pampaloni", "Pancani", "Pandolfi", "Pandolfini", "Panerai", "Panichi", "Paoletti", "Paoli", "Paolini", "Papi", "Papini", "Papucci", "Parenti", "Parigi", "Parisi", "Parri", "Parrini", "Pasquini", "Passeri", "Pecchioli", "Pecorini", "Pellegrini", "Pepi", "Perini", "Perrone", "Peruzzi", "Pesci", "Pestelli", "Petri", "Petrini", "Petrucci", "Pettini", "Pezzati", "Pezzatini", "Piani", "Piazza", "Piazzesi", "Piazzini", "Piccardi", "Picchi", "Piccini", "Piccioli", "Pieraccini", "Pieraccioni", "Pieralli", "Pierattini", "Pieri", "Pierini", "Pieroni", "Pietrini", "Pini", "Pinna", "Pinto", "Pinzani", "Pinzauti", "Piras", "Pisani", "Pistolesi", "Poggesi", "Poggi", "Poggiali", "Poggiolini", "Poli", "Pollastri", "Porciani", "Pozzi", "Pratellesi", "Pratesi", "Prosperi", "Pruneti", "Pucci", "Puccini", "Puccioni", "Pugi", "Pugliese", "Puliti", "Querci", "Quercioli", "Raddi", "Radu", "Raffaelli", "Ragazzini", "Ranfagni", "Ranieri", "Rastrelli", "Raugei", "Raveggi", "Renai", "Renzi", "Rettori", "Ricci", "Ricciardi", "Ridi", "Ridolfi", "Rigacci", "Righi", "Righini", "Rinaldi", "Risaliti", "Ristori", "Rizzo", "Rocchi", "Rocchini", "Rogai", "Romagnoli", "Romanelli", "Romani", "Romano", "Romei", "Romeo", "Romiti", "Romoli", "Romolini", "Rontini", "Rosati", "Roselli", "Rosi", "Rossetti", "Rossi", "Rossini", "Rovai", "Ruggeri", "Ruggiero", "Russo", "Sabatini", "Saccardi", "Sacchetti", "Sacchi", "Sacco", "Salerno", "Salimbeni", "Salucci", "Salvadori", "Salvestrini", "Salvi", "Salvini", "Sanesi", "Sani", "Sanna", "Santi", "Santini", "Santoni", "Santoro", "Santucci", "Sardi", "Sarri", "Sarti", "Sassi", "Sbolci", "Scali", "Scarpelli", "Scarselli", "Scopetani", "Secci", "Selvi", "Senatori", "Senesi", "Serafini", "Sereni", "Serra", "Sestini", "Sguanci", "Sieni", "Signorini", "Silvestri", "Simoncini", "Simonetti", "Simoni", "Singh", "Sodi", "Soldi", "Somigli", "Sorbi", "Sorelli", "Sorrentino", "Sottili", "Spina", "Spinelli", "Staccioli", "Staderini", "Stefanelli", "Stefani", "Stefanini", "Stella", "Susini", "Tacchi", "Tacconi", "Taddei", "Tagliaferri", "Tamburini", "Tanganelli", "Tani", "Tanini", "Tapinassi", "Tarchi", "Tarchiani", "Targioni", "Tassi", "Tassini", "Tempesti", "Terzani", "Tesi", "Testa", "Testi", "Tilli", "Tinti", "Tirinnanzi", "Toccafondi", "Tofanari", "Tofani", "Tognaccini", "Tonelli", "Tonini", "Torelli", "Torrini", "Tosi", "Toti", "Tozzi", "Trambusti", "Trapani", "Tucci", "Turchi", "Ugolini", "Ulivi", "Valente", "Valenti", "Valentini", "Vangelisti", "Vanni", "Vannini", "Vannoni", "Vannozzi", "Vannucchi", "Vannucci", "Ventura", "Venturi", "Venturini", "Vestri", "Vettori", "Vichi", "Viciani", "Vieri", "Vigiani", "Vignoli", "Vignolini", "Vignozzi", "Villani", "Vinci", "Visani", "Vitale", "Vitali", "Viti", "Viviani", "Vivoli", "Volpe", "Volpi", "Wang", "Wu", "Xu", "Yang", "Ye", "Zagli", "Zani", "Zanieri", "Zanobini", "Zecchi", "Zetti", "Zhang", "Zheng", "Zhou", "Zhu", "Zingoni", "Zini", "Zoppi"]
+	        },
+
+	        // Data taken from https://github.com/umpirsky/country-list/blob/master/data/en_US/country.json
+	        countries: [{"name":"Afghanistan","abbreviation":"AF"},{"name":"Åland Islands","abbreviation":"AX"},{"name":"Albania","abbreviation":"AL"},{"name":"Algeria","abbreviation":"DZ"},{"name":"American Samoa","abbreviation":"AS"},{"name":"Andorra","abbreviation":"AD"},{"name":"Angola","abbreviation":"AO"},{"name":"Anguilla","abbreviation":"AI"},{"name":"Antarctica","abbreviation":"AQ"},{"name":"Antigua & Barbuda","abbreviation":"AG"},{"name":"Argentina","abbreviation":"AR"},{"name":"Armenia","abbreviation":"AM"},{"name":"Aruba","abbreviation":"AW"},{"name":"Ascension Island","abbreviation":"AC"},{"name":"Australia","abbreviation":"AU"},{"name":"Austria","abbreviation":"AT"},{"name":"Azerbaijan","abbreviation":"AZ"},{"name":"Bahamas","abbreviation":"BS"},{"name":"Bahrain","abbreviation":"BH"},{"name":"Bangladesh","abbreviation":"BD"},{"name":"Barbados","abbreviation":"BB"},{"name":"Belarus","abbreviation":"BY"},{"name":"Belgium","abbreviation":"BE"},{"name":"Belize","abbreviation":"BZ"},{"name":"Benin","abbreviation":"BJ"},{"name":"Bermuda","abbreviation":"BM"},{"name":"Bhutan","abbreviation":"BT"},{"name":"Bolivia","abbreviation":"BO"},{"name":"Bosnia & Herzegovina","abbreviation":"BA"},{"name":"Botswana","abbreviation":"BW"},{"name":"Brazil","abbreviation":"BR"},{"name":"British Indian Ocean Territory","abbreviation":"IO"},{"name":"British Virgin Islands","abbreviation":"VG"},{"name":"Brunei","abbreviation":"BN"},{"name":"Bulgaria","abbreviation":"BG"},{"name":"Burkina Faso","abbreviation":"BF"},{"name":"Burundi","abbreviation":"BI"},{"name":"Cambodia","abbreviation":"KH"},{"name":"Cameroon","abbreviation":"CM"},{"name":"Canada","abbreviation":"CA"},{"name":"Canary Islands","abbreviation":"IC"},{"name":"Cape Verde","abbreviation":"CV"},{"name":"Caribbean Netherlands","abbreviation":"BQ"},{"name":"Cayman Islands","abbreviation":"KY"},{"name":"Central African Republic","abbreviation":"CF"},{"name":"Ceuta & Melilla","abbreviation":"EA"},{"name":"Chad","abbreviation":"TD"},{"name":"Chile","abbreviation":"CL"},{"name":"China","abbreviation":"CN"},{"name":"Christmas Island","abbreviation":"CX"},{"name":"Cocos (Keeling) Islands","abbreviation":"CC"},{"name":"Colombia","abbreviation":"CO"},{"name":"Comoros","abbreviation":"KM"},{"name":"Congo - Brazzaville","abbreviation":"CG"},{"name":"Congo - Kinshasa","abbreviation":"CD"},{"name":"Cook Islands","abbreviation":"CK"},{"name":"Costa Rica","abbreviation":"CR"},{"name":"Côte d'Ivoire","abbreviation":"CI"},{"name":"Croatia","abbreviation":"HR"},{"name":"Cuba","abbreviation":"CU"},{"name":"Curaçao","abbreviation":"CW"},{"name":"Cyprus","abbreviation":"CY"},{"name":"Czech Republic","abbreviation":"CZ"},{"name":"Denmark","abbreviation":"DK"},{"name":"Diego Garcia","abbreviation":"DG"},{"name":"Djibouti","abbreviation":"DJ"},{"name":"Dominica","abbreviation":"DM"},{"name":"Dominican Republic","abbreviation":"DO"},{"name":"Ecuador","abbreviation":"EC"},{"name":"Egypt","abbreviation":"EG"},{"name":"El Salvador","abbreviation":"SV"},{"name":"Equatorial Guinea","abbreviation":"GQ"},{"name":"Eritrea","abbreviation":"ER"},{"name":"Estonia","abbreviation":"EE"},{"name":"Ethiopia","abbreviation":"ET"},{"name":"Falkland Islands","abbreviation":"FK"},{"name":"Faroe Islands","abbreviation":"FO"},{"name":"Fiji","abbreviation":"FJ"},{"name":"Finland","abbreviation":"FI"},{"name":"France","abbreviation":"FR"},{"name":"French Guiana","abbreviation":"GF"},{"name":"French Polynesia","abbreviation":"PF"},{"name":"French Southern Territories","abbreviation":"TF"},{"name":"Gabon","abbreviation":"GA"},{"name":"Gambia","abbreviation":"GM"},{"name":"Georgia","abbreviation":"GE"},{"name":"Germany","abbreviation":"DE"},{"name":"Ghana","abbreviation":"GH"},{"name":"Gibraltar","abbreviation":"GI"},{"name":"Greece","abbreviation":"GR"},{"name":"Greenland","abbreviation":"GL"},{"name":"Grenada","abbreviation":"GD"},{"name":"Guadeloupe","abbreviation":"GP"},{"name":"Guam","abbreviation":"GU"},{"name":"Guatemala","abbreviation":"GT"},{"name":"Guernsey","abbreviation":"GG"},{"name":"Guinea","abbreviation":"GN"},{"name":"Guinea-Bissau","abbreviation":"GW"},{"name":"Guyana","abbreviation":"GY"},{"name":"Haiti","abbreviation":"HT"},{"name":"Honduras","abbreviation":"HN"},{"name":"Hong Kong SAR China","abbreviation":"HK"},{"name":"Hungary","abbreviation":"HU"},{"name":"Iceland","abbreviation":"IS"},{"name":"India","abbreviation":"IN"},{"name":"Indonesia","abbreviation":"ID"},{"name":"Iran","abbreviation":"IR"},{"name":"Iraq","abbreviation":"IQ"},{"name":"Ireland","abbreviation":"IE"},{"name":"Isle of Man","abbreviation":"IM"},{"name":"Israel","abbreviation":"IL"},{"name":"Italy","abbreviation":"IT"},{"name":"Jamaica","abbreviation":"JM"},{"name":"Japan","abbreviation":"JP"},{"name":"Jersey","abbreviation":"JE"},{"name":"Jordan","abbreviation":"JO"},{"name":"Kazakhstan","abbreviation":"KZ"},{"name":"Kenya","abbreviation":"KE"},{"name":"Kiribati","abbreviation":"KI"},{"name":"Kosovo","abbreviation":"XK"},{"name":"Kuwait","abbreviation":"KW"},{"name":"Kyrgyzstan","abbreviation":"KG"},{"name":"Laos","abbreviation":"LA"},{"name":"Latvia","abbreviation":"LV"},{"name":"Lebanon","abbreviation":"LB"},{"name":"Lesotho","abbreviation":"LS"},{"name":"Liberia","abbreviation":"LR"},{"name":"Libya","abbreviation":"LY"},{"name":"Liechtenstein","abbreviation":"LI"},{"name":"Lithuania","abbreviation":"LT"},{"name":"Luxembourg","abbreviation":"LU"},{"name":"Macau SAR China","abbreviation":"MO"},{"name":"Macedonia","abbreviation":"MK"},{"name":"Madagascar","abbreviation":"MG"},{"name":"Malawi","abbreviation":"MW"},{"name":"Malaysia","abbreviation":"MY"},{"name":"Maldives","abbreviation":"MV"},{"name":"Mali","abbreviation":"ML"},{"name":"Malta","abbreviation":"MT"},{"name":"Marshall Islands","abbreviation":"MH"},{"name":"Martinique","abbreviation":"MQ"},{"name":"Mauritania","abbreviation":"MR"},{"name":"Mauritius","abbreviation":"MU"},{"name":"Mayotte","abbreviation":"YT"},{"name":"Mexico","abbreviation":"MX"},{"name":"Micronesia","abbreviation":"FM"},{"name":"Moldova","abbreviation":"MD"},{"name":"Monaco","abbreviation":"MC"},{"name":"Mongolia","abbreviation":"MN"},{"name":"Montenegro","abbreviation":"ME"},{"name":"Montserrat","abbreviation":"MS"},{"name":"Morocco","abbreviation":"MA"},{"name":"Mozambique","abbreviation":"MZ"},{"name":"Myanmar (Burma)","abbreviation":"MM"},{"name":"Namibia","abbreviation":"NA"},{"name":"Nauru","abbreviation":"NR"},{"name":"Nepal","abbreviation":"NP"},{"name":"Netherlands","abbreviation":"NL"},{"name":"New Caledonia","abbreviation":"NC"},{"name":"New Zealand","abbreviation":"NZ"},{"name":"Nicaragua","abbreviation":"NI"},{"name":"Niger","abbreviation":"NE"},{"name":"Nigeria","abbreviation":"NG"},{"name":"Niue","abbreviation":"NU"},{"name":"Norfolk Island","abbreviation":"NF"},{"name":"North Korea","abbreviation":"KP"},{"name":"Northern Mariana Islands","abbreviation":"MP"},{"name":"Norway","abbreviation":"NO"},{"name":"Oman","abbreviation":"OM"},{"name":"Pakistan","abbreviation":"PK"},{"name":"Palau","abbreviation":"PW"},{"name":"Palestinian Territories","abbreviation":"PS"},{"name":"Panama","abbreviation":"PA"},{"name":"Papua New Guinea","abbreviation":"PG"},{"name":"Paraguay","abbreviation":"PY"},{"name":"Peru","abbreviation":"PE"},{"name":"Philippines","abbreviation":"PH"},{"name":"Pitcairn Islands","abbreviation":"PN"},{"name":"Poland","abbreviation":"PL"},{"name":"Portugal","abbreviation":"PT"},{"name":"Puerto Rico","abbreviation":"PR"},{"name":"Qatar","abbreviation":"QA"},{"name":"Réunion","abbreviation":"RE"},{"name":"Romania","abbreviation":"RO"},{"name":"Russia","abbreviation":"RU"},{"name":"Rwanda","abbreviation":"RW"},{"name":"Samoa","abbreviation":"WS"},{"name":"San Marino","abbreviation":"SM"},{"name":"São Tomé and Príncipe","abbreviation":"ST"},{"name":"Saudi Arabia","abbreviation":"SA"},{"name":"Senegal","abbreviation":"SN"},{"name":"Serbia","abbreviation":"RS"},{"name":"Seychelles","abbreviation":"SC"},{"name":"Sierra Leone","abbreviation":"SL"},{"name":"Singapore","abbreviation":"SG"},{"name":"Sint Maarten","abbreviation":"SX"},{"name":"Slovakia","abbreviation":"SK"},{"name":"Slovenia","abbreviation":"SI"},{"name":"Solomon Islands","abbreviation":"SB"},{"name":"Somalia","abbreviation":"SO"},{"name":"South Africa","abbreviation":"ZA"},{"name":"South Georgia & South Sandwich Islands","abbreviation":"GS"},{"name":"South Korea","abbreviation":"KR"},{"name":"South Sudan","abbreviation":"SS"},{"name":"Spain","abbreviation":"ES"},{"name":"Sri Lanka","abbreviation":"LK"},{"name":"St. Barthélemy","abbreviation":"BL"},{"name":"St. Helena","abbreviation":"SH"},{"name":"St. Kitts & Nevis","abbreviation":"KN"},{"name":"St. Lucia","abbreviation":"LC"},{"name":"St. Martin","abbreviation":"MF"},{"name":"St. Pierre & Miquelon","abbreviation":"PM"},{"name":"St. Vincent & Grenadines","abbreviation":"VC"},{"name":"Sudan","abbreviation":"SD"},{"name":"Suriname","abbreviation":"SR"},{"name":"Svalbard & Jan Mayen","abbreviation":"SJ"},{"name":"Swaziland","abbreviation":"SZ"},{"name":"Sweden","abbreviation":"SE"},{"name":"Switzerland","abbreviation":"CH"},{"name":"Syria","abbreviation":"SY"},{"name":"Taiwan","abbreviation":"TW"},{"name":"Tajikistan","abbreviation":"TJ"},{"name":"Tanzania","abbreviation":"TZ"},{"name":"Thailand","abbreviation":"TH"},{"name":"Timor-Leste","abbreviation":"TL"},{"name":"Togo","abbreviation":"TG"},{"name":"Tokelau","abbreviation":"TK"},{"name":"Tonga","abbreviation":"TO"},{"name":"Trinidad & Tobago","abbreviation":"TT"},{"name":"Tristan da Cunha","abbreviation":"TA"},{"name":"Tunisia","abbreviation":"TN"},{"name":"Turkey","abbreviation":"TR"},{"name":"Turkmenistan","abbreviation":"TM"},{"name":"Turks & Caicos Islands","abbreviation":"TC"},{"name":"Tuvalu","abbreviation":"TV"},{"name":"U.S. Outlying Islands","abbreviation":"UM"},{"name":"U.S. Virgin Islands","abbreviation":"VI"},{"name":"Uganda","abbreviation":"UG"},{"name":"Ukraine","abbreviation":"UA"},{"name":"United Arab Emirates","abbreviation":"AE"},{"name":"United Kingdom","abbreviation":"GB"},{"name":"United States","abbreviation":"US"},{"name":"Uruguay","abbreviation":"UY"},{"name":"Uzbekistan","abbreviation":"UZ"},{"name":"Vanuatu","abbreviation":"VU"},{"name":"Vatican City","abbreviation":"VA"},{"name":"Venezuela","abbreviation":"VE"},{"name":"Vietnam","abbreviation":"VN"},{"name":"Wallis & Futuna","abbreviation":"WF"},{"name":"Western Sahara","abbreviation":"EH"},{"name":"Yemen","abbreviation":"YE"},{"name":"Zambia","abbreviation":"ZM"},{"name":"Zimbabwe","abbreviation":"ZW"}],
+
+			counties: {
+	            // Data taken from http://www.downloadexcelfiles.com/gb_en/download-excel-file-list-counties-uk
+	            "uk": [
+	                {name: 'Bath and North East Somerset'},
+	                {name: 'Bedford'},
+	                {name: 'Blackburn with Darwen'},
+	                {name: 'Blackpool'},
+	                {name: 'Bournemouth'},
+	                {name: 'Bracknell Forest'},
+	                {name: 'Brighton & Hove'},
+	                {name: 'Bristol'},
+	                {name: 'Buckinghamshire'},
+	                {name: 'Cambridgeshire'},
+	                {name: 'Central Bedfordshire'},
+	                {name: 'Cheshire East'},
+	                {name: 'Cheshire West and Chester'},
+	                {name: 'Cornwall'},
+	                {name: 'County Durham'},
+	                {name: 'Cumbria'},
+	                {name: 'Darlington'},
+	                {name: 'Derby'},
+	                {name: 'Derbyshire'},
+	                {name: 'Devon'},
+	                {name: 'Dorset'},
+	                {name: 'East Riding of Yorkshire'},
+	                {name: 'East Sussex'},
+	                {name: 'Essex'},
+	                {name: 'Gloucestershire'},
+	                {name: 'Greater London'},
+	                {name: 'Greater Manchester'},
+	                {name: 'Halton'},
+	                {name: 'Hampshire'},
+	                {name: 'Hartlepool'},
+	                {name: 'Herefordshire'},
+	                {name: 'Hertfordshire'},
+	                {name: 'Hull'},
+	                {name: 'Isle of Wight'},
+	                {name: 'Isles of Scilly'},
+	                {name: 'Kent'},
+	                {name: 'Lancashire'},
+	                {name: 'Leicester'},
+	                {name: 'Leicestershire'},
+	                {name: 'Lincolnshire'},
+	                {name: 'Luton'},
+	                {name: 'Medway'},
+	                {name: 'Merseyside'},
+	                {name: 'Middlesbrough'},
+	                {name: 'Milton Keynes'},
+	                {name: 'Norfolk'},
+	                {name: 'North East Lincolnshire'},
+	                {name: 'North Lincolnshire'},
+	                {name: 'North Somerset'},
+	                {name: 'North Yorkshire'},
+	                {name: 'Northamptonshire'},
+	                {name: 'Northumberland'},
+	                {name: 'Nottingham'},
+	                {name: 'Nottinghamshire'},
+	                {name: 'Oxfordshire'},
+	                {name: 'Peterborough'},
+	                {name: 'Plymouth'},
+	                {name: 'Poole'},
+	                {name: 'Portsmouth'},
+	                {name: 'Reading'},
+	                {name: 'Redcar and Cleveland'},
+	                {name: 'Rutland'},
+	                {name: 'Shropshire'},
+	                {name: 'Slough'},
+	                {name: 'Somerset'},
+	                {name: 'South Gloucestershire'},
+	                {name: 'South Yorkshire'},
+	                {name: 'Southampton'},
+	                {name: 'Southend-on-Sea'},
+	                {name: 'Staffordshire'},
+	                {name: 'Stockton-on-Tees'},
+	                {name: 'Stoke-on-Trent'},
+	                {name: 'Suffolk'},
+	                {name: 'Surrey'},
+	                {name: 'Swindon'},
+	                {name: 'Telford and Wrekin'},
+	                {name: 'Thurrock'},
+	                {name: 'Torbay'},
+	                {name: 'Tyne and Wear'},
+	                {name: 'Warrington'},
+	                {name: 'Warwickshire'},
+	                {name: 'West Berkshire'},
+	                {name: 'West Midlands'},
+	                {name: 'West Sussex'},
+	                {name: 'West Yorkshire'},
+	                {name: 'Wiltshire'},
+	                {name: 'Windsor and Maidenhead'},
+	                {name: 'Wokingham'},
+	                {name: 'Worcestershire'},
+	                {name: 'York'}]
+					},
+	        provinces: {
+	            "ca": [
+	                {name: 'Alberta', abbreviation: 'AB'},
+	                {name: 'British Columbia', abbreviation: 'BC'},
+	                {name: 'Manitoba', abbreviation: 'MB'},
+	                {name: 'New Brunswick', abbreviation: 'NB'},
+	                {name: 'Newfoundland and Labrador', abbreviation: 'NL'},
+	                {name: 'Nova Scotia', abbreviation: 'NS'},
+	                {name: 'Ontario', abbreviation: 'ON'},
+	                {name: 'Prince Edward Island', abbreviation: 'PE'},
+	                {name: 'Quebec', abbreviation: 'QC'},
+	                {name: 'Saskatchewan', abbreviation: 'SK'},
+
+	                // The case could be made that the following are not actually provinces
+	                // since they are technically considered "territories" however they all
+	                // look the same on an envelope!
+	                {name: 'Northwest Territories', abbreviation: 'NT'},
+	                {name: 'Nunavut', abbreviation: 'NU'},
+	                {name: 'Yukon', abbreviation: 'YT'}
+	            ],
+	            "it": [
+	                { name: "Agrigento", abbreviation: "AG", code: 84 },
+	                { name: "Alessandria", abbreviation: "AL", code: 6 },
+	                { name: "Ancona", abbreviation: "AN", code: 42 },
+	                { name: "Aosta", abbreviation: "AO", code: 7 },
+	                { name: "L'Aquila", abbreviation: "AQ", code: 66 },
+	                { name: "Arezzo", abbreviation: "AR", code: 51 },
+	                { name: "Ascoli-Piceno", abbreviation: "AP", code: 44 },
+	                { name: "Asti", abbreviation: "AT", code: 5 },
+	                { name: "Avellino", abbreviation: "AV", code: 64 },
+	                { name: "Bari", abbreviation: "BA", code: 72 },
+	                { name: "Barletta-Andria-Trani", abbreviation: "BT", code: 72 },
+	                { name: "Belluno", abbreviation: "BL", code: 25 },
+	                { name: "Benevento", abbreviation: "BN", code: 62 },
+	                { name: "Bergamo", abbreviation: "BG", code: 16 },
+	                { name: "Biella", abbreviation: "BI", code: 96 },
+	                { name: "Bologna", abbreviation: "BO", code: 37 },
+	                { name: "Bolzano", abbreviation: "BZ", code: 21 },
+	                { name: "Brescia", abbreviation: "BS", code: 17 },
+	                { name: "Brindisi", abbreviation: "BR", code: 74 },
+	                { name: "Cagliari", abbreviation: "CA", code: 92 },
+	                { name: "Caltanissetta", abbreviation: "CL", code: 85 },
+	                { name: "Campobasso", abbreviation: "CB", code: 70 },
+	                { name: "Carbonia Iglesias", abbreviation: "CI", code: 70 },
+	                { name: "Caserta", abbreviation: "CE", code: 61 },
+	                { name: "Catania", abbreviation: "CT", code: 87 },
+	                { name: "Catanzaro", abbreviation: "CZ", code: 79 },
+	                { name: "Chieti", abbreviation: "CH", code: 69 },
+	                { name: "Como", abbreviation: "CO", code: 13 },
+	                { name: "Cosenza", abbreviation: "CS", code: 78 },
+	                { name: "Cremona", abbreviation: "CR", code: 19 },
+	                { name: "Crotone", abbreviation: "KR", code: 101 },
+	                { name: "Cuneo", abbreviation: "CN", code: 4 },
+	                { name: "Enna", abbreviation: "EN", code: 86 },
+	                { name: "Fermo", abbreviation: "FM", code: 86 },
+	                { name: "Ferrara", abbreviation: "FE", code: 38 },
+	                { name: "Firenze", abbreviation: "FI", code: 48 },
+	                { name: "Foggia", abbreviation: "FG", code: 71 },
+	                { name: "Forli-Cesena", abbreviation: "FC", code: 71 },
+	                { name: "Frosinone", abbreviation: "FR", code: 60 },
+	                { name: "Genova", abbreviation: "GE", code: 10 },
+	                { name: "Gorizia", abbreviation: "GO", code: 31 },
+	                { name: "Grosseto", abbreviation: "GR", code: 53 },
+	                { name: "Imperia", abbreviation: "IM", code: 8 },
+	                { name: "Isernia", abbreviation: "IS", code: 94 },
+	                { name: "La-Spezia", abbreviation: "SP", code: 66 },
+	                { name: "Latina", abbreviation: "LT", code: 59 },
+	                { name: "Lecce", abbreviation: "LE", code: 75 },
+	                { name: "Lecco", abbreviation: "LC", code: 97 },
+	                { name: "Livorno", abbreviation: "LI", code: 49 },
+	                { name: "Lodi", abbreviation: "LO", code: 98 },
+	                { name: "Lucca", abbreviation: "LU", code: 46 },
+	                { name: "Macerata", abbreviation: "MC", code: 43 },
+	                { name: "Mantova", abbreviation: "MN", code: 20 },
+	                { name: "Massa-Carrara", abbreviation: "MS", code: 45 },
+	                { name: "Matera", abbreviation: "MT", code: 77 },
+	                { name: "Medio Campidano", abbreviation: "VS", code: 77 },
+	                { name: "Messina", abbreviation: "ME", code: 83 },
+	                { name: "Milano", abbreviation: "MI", code: 15 },
+	                { name: "Modena", abbreviation: "MO", code: 36 },
+	                { name: "Monza-Brianza", abbreviation: "MB", code: 36 },
+	                { name: "Napoli", abbreviation: "NA", code: 63 },
+	                { name: "Novara", abbreviation: "NO", code: 3 },
+	                { name: "Nuoro", abbreviation: "NU", code: 91 },
+	                { name: "Ogliastra", abbreviation: "OG", code: 91 },
+	                { name: "Olbia Tempio", abbreviation: "OT", code: 91 },
+	                { name: "Oristano", abbreviation: "OR", code: 95 },
+	                { name: "Padova", abbreviation: "PD", code: 28 },
+	                { name: "Palermo", abbreviation: "PA", code: 82 },
+	                { name: "Parma", abbreviation: "PR", code: 34 },
+	                { name: "Pavia", abbreviation: "PV", code: 18 },
+	                { name: "Perugia", abbreviation: "PG", code: 54 },
+	                { name: "Pesaro-Urbino", abbreviation: "PU", code: 41 },
+	                { name: "Pescara", abbreviation: "PE", code: 68 },
+	                { name: "Piacenza", abbreviation: "PC", code: 33 },
+	                { name: "Pisa", abbreviation: "PI", code: 50 },
+	                { name: "Pistoia", abbreviation: "PT", code: 47 },
+	                { name: "Pordenone", abbreviation: "PN", code: 93 },
+	                { name: "Potenza", abbreviation: "PZ", code: 76 },
+	                { name: "Prato", abbreviation: "PO", code: 100 },
+	                { name: "Ragusa", abbreviation: "RG", code: 88 },
+	                { name: "Ravenna", abbreviation: "RA", code: 39 },
+	                { name: "Reggio-Calabria", abbreviation: "RC", code: 35 },
+	                { name: "Reggio-Emilia", abbreviation: "RE", code: 35 },
+	                { name: "Rieti", abbreviation: "RI", code: 57 },
+	                { name: "Rimini", abbreviation: "RN", code: 99 },
+	                { name: "Roma", abbreviation: "Roma", code: 58 },
+	                { name: "Rovigo", abbreviation: "RO", code: 29 },
+	                { name: "Salerno", abbreviation: "SA", code: 65 },
+	                { name: "Sassari", abbreviation: "SS", code: 90 },
+	                { name: "Savona", abbreviation: "SV", code: 9 },
+	                { name: "Siena", abbreviation: "SI", code: 52 },
+	                { name: "Siracusa", abbreviation: "SR", code: 89 },
+	                { name: "Sondrio", abbreviation: "SO", code: 14 },
+	                { name: "Taranto", abbreviation: "TA", code: 73 },
+	                { name: "Teramo", abbreviation: "TE", code: 67 },
+	                { name: "Terni", abbreviation: "TR", code: 55 },
+	                { name: "Torino", abbreviation: "TO", code: 1 },
+	                { name: "Trapani", abbreviation: "TP", code: 81 },
+	                { name: "Trento", abbreviation: "TN", code: 22 },
+	                { name: "Treviso", abbreviation: "TV", code: 26 },
+	                { name: "Trieste", abbreviation: "TS", code: 32 },
+	                { name: "Udine", abbreviation: "UD", code: 30 },
+	                { name: "Varese", abbreviation: "VA", code: 12 },
+	                { name: "Venezia", abbreviation: "VE", code: 27 },
+	                { name: "Verbania", abbreviation: "VB", code: 27 },
+	                { name: "Vercelli", abbreviation: "VC", code: 2 },
+	                { name: "Verona", abbreviation: "VR", code: 23 },
+	                { name: "Vibo-Valentia", abbreviation: "VV", code: 102 },
+	                { name: "Vicenza", abbreviation: "VI", code: 24 },
+	                { name: "Viterbo", abbreviation: "VT", code: 56 }
+	            ]
+	        },
+
+	            // from: https://github.com/samsargent/Useful-Autocomplete-Data/blob/master/data/nationalities.json
+	        nationalities: [
+	           {name: 'Afghan'},
+	           {name: 'Albanian'},
+	           {name: 'Algerian'},
+	           {name: 'American'},
+	           {name: 'Andorran'},
+	           {name: 'Angolan'},
+	           {name: 'Antiguans'},
+	           {name: 'Argentinean'},
+	           {name: 'Armenian'},
+	           {name: 'Australian'},
+	           {name: 'Austrian'},
+	           {name: 'Azerbaijani'},
+	           {name: 'Bahami'},
+	           {name: 'Bahraini'},
+	           {name: 'Bangladeshi'},
+	           {name: 'Barbadian'},
+	           {name: 'Barbudans'},
+	           {name: 'Batswana'},
+	           {name: 'Belarusian'},
+	           {name: 'Belgian'},
+	           {name: 'Belizean'},
+	           {name: 'Beninese'},
+	           {name: 'Bhutanese'},
+	           {name: 'Bolivian'},
+	           {name: 'Bosnian'},
+	           {name: 'Brazilian'},
+	           {name: 'British'},
+	           {name: 'Bruneian'},
+	           {name: 'Bulgarian'},
+	           {name: 'Burkinabe'},
+	           {name: 'Burmese'},
+	           {name: 'Burundian'},
+	           {name: 'Cambodian'},
+	           {name: 'Cameroonian'},
+	           {name: 'Canadian'},
+	           {name: 'Cape Verdean'},
+	           {name: 'Central African'},
+	           {name: 'Chadian'},
+	           {name: 'Chilean'},
+	           {name: 'Chinese'},
+	           {name: 'Colombian'},
+	           {name: 'Comoran'},
+	           {name: 'Congolese'},
+	           {name: 'Costa Rican'},
+	           {name: 'Croatian'},
+	           {name: 'Cuban'},
+	           {name: 'Cypriot'},
+	           {name: 'Czech'},
+	           {name: 'Danish'},
+	           {name: 'Djibouti'},
+	           {name: 'Dominican'},
+	           {name: 'Dutch'},
+	           {name: 'East Timorese'},
+	           {name: 'Ecuadorean'},
+	           {name: 'Egyptian'},
+	           {name: 'Emirian'},
+	           {name: 'Equatorial Guinean'},
+	           {name: 'Eritrean'},
+	           {name: 'Estonian'},
+	           {name: 'Ethiopian'},
+	           {name: 'Fijian'},
+	           {name: 'Filipino'},
+	           {name: 'Finnish'},
+	           {name: 'French'},
+	           {name: 'Gabonese'},
+	           {name: 'Gambian'},
+	           {name: 'Georgian'},
+	           {name: 'German'},
+	           {name: 'Ghanaian'},
+	           {name: 'Greek'},
+	           {name: 'Grenadian'},
+	           {name: 'Guatemalan'},
+	           {name: 'Guinea-Bissauan'},
+	           {name: 'Guinean'},
+	           {name: 'Guyanese'},
+	           {name: 'Haitian'},
+	           {name: 'Herzegovinian'},
+	           {name: 'Honduran'},
+	           {name: 'Hungarian'},
+	           {name: 'I-Kiribati'},
+	           {name: 'Icelander'},
+	           {name: 'Indian'},
+	           {name: 'Indonesian'},
+	           {name: 'Iranian'},
+	           {name: 'Iraqi'},
+	           {name: 'Irish'},
+	           {name: 'Israeli'},
+	           {name: 'Italian'},
+	           {name: 'Ivorian'},
+	           {name: 'Jamaican'},
+	           {name: 'Japanese'},
+	           {name: 'Jordanian'},
+	           {name: 'Kazakhstani'},
+	           {name: 'Kenyan'},
+	           {name: 'Kittian and Nevisian'},
+	           {name: 'Kuwaiti'},
+	           {name: 'Kyrgyz'},
+	           {name: 'Laotian'},
+	           {name: 'Latvian'},
+	           {name: 'Lebanese'},
+	           {name: 'Liberian'},
+	           {name: 'Libyan'},
+	           {name: 'Liechtensteiner'},
+	           {name: 'Lithuanian'},
+	           {name: 'Luxembourger'},
+	           {name: 'Macedonian'},
+	           {name: 'Malagasy'},
+	           {name: 'Malawian'},
+	           {name: 'Malaysian'},
+	           {name: 'Maldivan'},
+	           {name: 'Malian'},
+	           {name: 'Maltese'},
+	           {name: 'Marshallese'},
+	           {name: 'Mauritanian'},
+	           {name: 'Mauritian'},
+	           {name: 'Mexican'},
+	           {name: 'Micronesian'},
+	           {name: 'Moldovan'},
+	           {name: 'Monacan'},
+	           {name: 'Mongolian'},
+	           {name: 'Moroccan'},
+	           {name: 'Mosotho'},
+	           {name: 'Motswana'},
+	           {name: 'Mozambican'},
+	           {name: 'Namibian'},
+	           {name: 'Nauruan'},
+	           {name: 'Nepalese'},
+	           {name: 'New Zealander'},
+	           {name: 'Nicaraguan'},
+	           {name: 'Nigerian'},
+	           {name: 'Nigerien'},
+	           {name: 'North Korean'},
+	           {name: 'Northern Irish'},
+	           {name: 'Norwegian'},
+	           {name: 'Omani'},
+	           {name: 'Pakistani'},
+	           {name: 'Palauan'},
+	           {name: 'Panamanian'},
+	           {name: 'Papua New Guinean'},
+	           {name: 'Paraguayan'},
+	           {name: 'Peruvian'},
+	           {name: 'Polish'},
+	           {name: 'Portuguese'},
+	           {name: 'Qatari'},
+	           {name: 'Romani'},
+	           {name: 'Russian'},
+	           {name: 'Rwandan'},
+	           {name: 'Saint Lucian'},
+	           {name: 'Salvadoran'},
+	           {name: 'Samoan'},
+	           {name: 'San Marinese'},
+	           {name: 'Sao Tomean'},
+	           {name: 'Saudi'},
+	           {name: 'Scottish'},
+	           {name: 'Senegalese'},
+	           {name: 'Serbian'},
+	           {name: 'Seychellois'},
+	           {name: 'Sierra Leonean'},
+	           {name: 'Singaporean'},
+	           {name: 'Slovakian'},
+	           {name: 'Slovenian'},
+	           {name: 'Solomon Islander'},
+	           {name: 'Somali'},
+	           {name: 'South African'},
+	           {name: 'South Korean'},
+	           {name: 'Spanish'},
+	           {name: 'Sri Lankan'},
+	           {name: 'Sudanese'},
+	           {name: 'Surinamer'},
+	           {name: 'Swazi'},
+	           {name: 'Swedish'},
+	           {name: 'Swiss'},
+	           {name: 'Syrian'},
+	           {name: 'Taiwanese'},
+	           {name: 'Tajik'},
+	           {name: 'Tanzanian'},
+	           {name: 'Thai'},
+	           {name: 'Togolese'},
+	           {name: 'Tongan'},
+	           {name: 'Trinidadian or Tobagonian'},
+	           {name: 'Tunisian'},
+	           {name: 'Turkish'},
+	           {name: 'Tuvaluan'},
+	           {name: 'Ugandan'},
+	           {name: 'Ukrainian'},
+	           {name: 'Uruguaya'},
+	           {name: 'Uzbekistani'},
+	           {name: 'Venezuela'},
+	           {name: 'Vietnamese'},
+	           {name: 'Wels'},
+	           {name: 'Yemenit'},
+	           {name: 'Zambia'},
+	           {name: 'Zimbabwe'},
+	        ],
+
+	        us_states_and_dc: [
+	            {name: 'Alabama', abbreviation: 'AL'},
+	            {name: 'Alaska', abbreviation: 'AK'},
+	            {name: 'Arizona', abbreviation: 'AZ'},
+	            {name: 'Arkansas', abbreviation: 'AR'},
+	            {name: 'California', abbreviation: 'CA'},
+	            {name: 'Colorado', abbreviation: 'CO'},
+	            {name: 'Connecticut', abbreviation: 'CT'},
+	            {name: 'Delaware', abbreviation: 'DE'},
+	            {name: 'District of Columbia', abbreviation: 'DC'},
+	            {name: 'Florida', abbreviation: 'FL'},
+	            {name: 'Georgia', abbreviation: 'GA'},
+	            {name: 'Hawaii', abbreviation: 'HI'},
+	            {name: 'Idaho', abbreviation: 'ID'},
+	            {name: 'Illinois', abbreviation: 'IL'},
+	            {name: 'Indiana', abbreviation: 'IN'},
+	            {name: 'Iowa', abbreviation: 'IA'},
+	            {name: 'Kansas', abbreviation: 'KS'},
+	            {name: 'Kentucky', abbreviation: 'KY'},
+	            {name: 'Louisiana', abbreviation: 'LA'},
+	            {name: 'Maine', abbreviation: 'ME'},
+	            {name: 'Maryland', abbreviation: 'MD'},
+	            {name: 'Massachusetts', abbreviation: 'MA'},
+	            {name: 'Michigan', abbreviation: 'MI'},
+	            {name: 'Minnesota', abbreviation: 'MN'},
+	            {name: 'Mississippi', abbreviation: 'MS'},
+	            {name: 'Missouri', abbreviation: 'MO'},
+	            {name: 'Montana', abbreviation: 'MT'},
+	            {name: 'Nebraska', abbreviation: 'NE'},
+	            {name: 'Nevada', abbreviation: 'NV'},
+	            {name: 'New Hampshire', abbreviation: 'NH'},
+	            {name: 'New Jersey', abbreviation: 'NJ'},
+	            {name: 'New Mexico', abbreviation: 'NM'},
+	            {name: 'New York', abbreviation: 'NY'},
+	            {name: 'North Carolina', abbreviation: 'NC'},
+	            {name: 'North Dakota', abbreviation: 'ND'},
+	            {name: 'Ohio', abbreviation: 'OH'},
+	            {name: 'Oklahoma', abbreviation: 'OK'},
+	            {name: 'Oregon', abbreviation: 'OR'},
+	            {name: 'Pennsylvania', abbreviation: 'PA'},
+	            {name: 'Rhode Island', abbreviation: 'RI'},
+	            {name: 'South Carolina', abbreviation: 'SC'},
+	            {name: 'South Dakota', abbreviation: 'SD'},
+	            {name: 'Tennessee', abbreviation: 'TN'},
+	            {name: 'Texas', abbreviation: 'TX'},
+	            {name: 'Utah', abbreviation: 'UT'},
+	            {name: 'Vermont', abbreviation: 'VT'},
+	            {name: 'Virginia', abbreviation: 'VA'},
+	            {name: 'Washington', abbreviation: 'WA'},
+	            {name: 'West Virginia', abbreviation: 'WV'},
+	            {name: 'Wisconsin', abbreviation: 'WI'},
+	            {name: 'Wyoming', abbreviation: 'WY'}
+	        ],
+
+	        territories: [
+	            {name: 'American Samoa', abbreviation: 'AS'},
+	            {name: 'Federated States of Micronesia', abbreviation: 'FM'},
+	            {name: 'Guam', abbreviation: 'GU'},
+	            {name: 'Marshall Islands', abbreviation: 'MH'},
+	            {name: 'Northern Mariana Islands', abbreviation: 'MP'},
+	            {name: 'Puerto Rico', abbreviation: 'PR'},
+	            {name: 'Virgin Islands, U.S.', abbreviation: 'VI'}
+	        ],
+
+	        armed_forces: [
+	            {name: 'Armed Forces Europe', abbreviation: 'AE'},
+	            {name: 'Armed Forces Pacific', abbreviation: 'AP'},
+	            {name: 'Armed Forces the Americas', abbreviation: 'AA'}
+	        ],
+
+	        country_regions: {
+	            it: [
+	                { name: "Valle d'Aosta", abbreviation: "VDA" },
+	                { name: "Piemonte", abbreviation: "PIE" },
+	                { name: "Lombardia", abbreviation: "LOM" },
+	                { name: "Veneto", abbreviation: "VEN" },
+	                { name: "Trentino Alto Adige", abbreviation: "TAA" },
+	                { name: "Friuli Venezia Giulia", abbreviation: "FVG" },
+	                { name: "Liguria", abbreviation: "LIG" },
+	                { name: "Emilia Romagna", abbreviation: "EMR" },
+	                { name: "Toscana", abbreviation: "TOS" },
+	                { name: "Umbria", abbreviation: "UMB" },
+	                { name: "Marche", abbreviation: "MAR" },
+	                { name: "Abruzzo", abbreviation: "ABR" },
+	                { name: "Lazio", abbreviation: "LAZ" },
+	                { name: "Campania", abbreviation: "CAM" },
+	                { name: "Puglia", abbreviation: "PUG" },
+	                { name: "Basilicata", abbreviation: "BAS" },
+	                { name: "Molise", abbreviation: "MOL" },
+	                { name: "Calabria", abbreviation: "CAL" },
+	                { name: "Sicilia", abbreviation: "SIC" },
+	                { name: "Sardegna", abbreviation: "SAR" }
+	            ]
+	        },
+
+	        street_suffixes: {
+	            'us': [
+	                {name: 'Avenue', abbreviation: 'Ave'},
+	                {name: 'Boulevard', abbreviation: 'Blvd'},
+	                {name: 'Center', abbreviation: 'Ctr'},
+	                {name: 'Circle', abbreviation: 'Cir'},
+	                {name: 'Court', abbreviation: 'Ct'},
+	                {name: 'Drive', abbreviation: 'Dr'},
+	                {name: 'Extension', abbreviation: 'Ext'},
+	                {name: 'Glen', abbreviation: 'Gln'},
+	                {name: 'Grove', abbreviation: 'Grv'},
+	                {name: 'Heights', abbreviation: 'Hts'},
+	                {name: 'Highway', abbreviation: 'Hwy'},
+	                {name: 'Junction', abbreviation: 'Jct'},
+	                {name: 'Key', abbreviation: 'Key'},
+	                {name: 'Lane', abbreviation: 'Ln'},
+	                {name: 'Loop', abbreviation: 'Loop'},
+	                {name: 'Manor', abbreviation: 'Mnr'},
+	                {name: 'Mill', abbreviation: 'Mill'},
+	                {name: 'Park', abbreviation: 'Park'},
+	                {name: 'Parkway', abbreviation: 'Pkwy'},
+	                {name: 'Pass', abbreviation: 'Pass'},
+	                {name: 'Path', abbreviation: 'Path'},
+	                {name: 'Pike', abbreviation: 'Pike'},
+	                {name: 'Place', abbreviation: 'Pl'},
+	                {name: 'Plaza', abbreviation: 'Plz'},
+	                {name: 'Point', abbreviation: 'Pt'},
+	                {name: 'Ridge', abbreviation: 'Rdg'},
+	                {name: 'River', abbreviation: 'Riv'},
+	                {name: 'Road', abbreviation: 'Rd'},
+	                {name: 'Square', abbreviation: 'Sq'},
+	                {name: 'Street', abbreviation: 'St'},
+	                {name: 'Terrace', abbreviation: 'Ter'},
+	                {name: 'Trail', abbreviation: 'Trl'},
+	                {name: 'Turnpike', abbreviation: 'Tpke'},
+	                {name: 'View', abbreviation: 'Vw'},
+	                {name: 'Way', abbreviation: 'Way'}
+	            ],
+	            'it': [
+	                { name: 'Accesso', abbreviation: 'Acc.' },
+	                { name: 'Alzaia', abbreviation: 'Alz.' },
+	                { name: 'Arco', abbreviation: 'Arco' },
+	                { name: 'Archivolto', abbreviation: 'Acv.' },
+	                { name: 'Arena', abbreviation: 'Arena' },
+	                { name: 'Argine', abbreviation: 'Argine' },
+	                { name: 'Bacino', abbreviation: 'Bacino' },
+	                { name: 'Banchi', abbreviation: 'Banchi' },
+	                { name: 'Banchina', abbreviation: 'Ban.' },
+	                { name: 'Bastioni', abbreviation: 'Bas.' },
+	                { name: 'Belvedere', abbreviation: 'Belv.' },
+	                { name: 'Borgata', abbreviation: 'B.ta' },
+	                { name: 'Borgo', abbreviation: 'B.go' },
+	                { name: 'Calata', abbreviation: 'Cal.' },
+	                { name: 'Calle', abbreviation: 'Calle' },
+	                { name: 'Campiello', abbreviation: 'Cam.' },
+	                { name: 'Campo', abbreviation: 'Cam.' },
+	                { name: 'Canale', abbreviation: 'Can.' },
+	                { name: 'Carraia', abbreviation: 'Carr.' },
+	                { name: 'Cascina', abbreviation: 'Cascina' },
+	                { name: 'Case sparse', abbreviation: 'c.s.' },
+	                { name: 'Cavalcavia', abbreviation: 'Cv.' },
+	                { name: 'Circonvallazione', abbreviation: 'Cv.' },
+	                { name: 'Complanare', abbreviation: 'C.re' },
+	                { name: 'Contrada', abbreviation: 'C.da' },
+	                { name: 'Corso', abbreviation: 'C.so' },
+	                { name: 'Corte', abbreviation: 'C.te' },
+	                { name: 'Cortile', abbreviation: 'C.le' },
+	                { name: 'Diramazione', abbreviation: 'Dir.' },
+	                { name: 'Fondaco', abbreviation: 'F.co' },
+	                { name: 'Fondamenta', abbreviation: 'F.ta' },
+	                { name: 'Fondo', abbreviation: 'F.do' },
+	                { name: 'Frazione', abbreviation: 'Fr.' },
+	                { name: 'Isola', abbreviation: 'Is.' },
+	                { name: 'Largo', abbreviation: 'L.go' },
+	                { name: 'Litoranea', abbreviation: 'Lit.' },
+	                { name: 'Lungolago', abbreviation: 'L.go lago' },
+	                { name: 'Lungo Po', abbreviation: 'l.go Po' },
+	                { name: 'Molo', abbreviation: 'Molo' },
+	                { name: 'Mura', abbreviation: 'Mura' },
+	                { name: 'Passaggio privato', abbreviation: 'pass. priv.' },
+	                { name: 'Passeggiata', abbreviation: 'Pass.' },
+	                { name: 'Piazza', abbreviation: 'P.zza' },
+	                { name: 'Piazzale', abbreviation: 'P.le' },
+	                { name: 'Ponte', abbreviation: 'P.te' },
+	                { name: 'Portico', abbreviation: 'P.co' },
+	                { name: 'Rampa', abbreviation: 'Rampa' },
+	                { name: 'Regione', abbreviation: 'Reg.' },
+	                { name: 'Rione', abbreviation: 'R.ne' },
+	                { name: 'Rio', abbreviation: 'Rio' },
+	                { name: 'Ripa', abbreviation: 'Ripa' },
+	                { name: 'Riva', abbreviation: 'Riva' },
+	                { name: 'Rondò', abbreviation: 'Rondò' },
+	                { name: 'Rotonda', abbreviation: 'Rot.' },
+	                { name: 'Sagrato', abbreviation: 'Sagr.' },
+	                { name: 'Salita', abbreviation: 'Sal.' },
+	                { name: 'Scalinata', abbreviation: 'Scal.' },
+	                { name: 'Scalone', abbreviation: 'Scal.' },
+	                { name: 'Slargo', abbreviation: 'Sl.' },
+	                { name: 'Sottoportico', abbreviation: 'Sott.' },
+	                { name: 'Strada', abbreviation: 'Str.' },
+	                { name: 'Stradale', abbreviation: 'Str.le' },
+	                { name: 'Strettoia', abbreviation: 'Strett.' },
+	                { name: 'Traversa', abbreviation: 'Trav.' },
+	                { name: 'Via', abbreviation: 'V.' },
+	                { name: 'Viale', abbreviation: 'V.le' },
+	                { name: 'Vicinale', abbreviation: 'Vic.le' },
+	                { name: 'Vicolo', abbreviation: 'Vic.' }
+	            ]
+	        },
+
+	        months: [
+	            {name: 'January', short_name: 'Jan', numeric: '01', days: 31},
+	            // Not messing with leap years...
+	            {name: 'February', short_name: 'Feb', numeric: '02', days: 28},
+	            {name: 'March', short_name: 'Mar', numeric: '03', days: 31},
+	            {name: 'April', short_name: 'Apr', numeric: '04', days: 30},
+	            {name: 'May', short_name: 'May', numeric: '05', days: 31},
+	            {name: 'June', short_name: 'Jun', numeric: '06', days: 30},
+	            {name: 'July', short_name: 'Jul', numeric: '07', days: 31},
+	            {name: 'August', short_name: 'Aug', numeric: '08', days: 31},
+	            {name: 'September', short_name: 'Sep', numeric: '09', days: 30},
+	            {name: 'October', short_name: 'Oct', numeric: '10', days: 31},
+	            {name: 'November', short_name: 'Nov', numeric: '11', days: 30},
+	            {name: 'December', short_name: 'Dec', numeric: '12', days: 31}
+	        ],
+
+	        // http://en.wikipedia.org/wiki/Bank_card_number#Issuer_identification_number_.28IIN.29
+	        cc_types: [
+	            {name: "American Express", short_name: 'amex', prefix: '34', length: 15},
+	            {name: "Bankcard", short_name: 'bankcard', prefix: '5610', length: 16},
+	            {name: "China UnionPay", short_name: 'chinaunion', prefix: '62', length: 16},
+	            {name: "Diners Club Carte Blanche", short_name: 'dccarte', prefix: '300', length: 14},
+	            {name: "Diners Club enRoute", short_name: 'dcenroute', prefix: '2014', length: 15},
+	            {name: "Diners Club International", short_name: 'dcintl', prefix: '36', length: 14},
+	            {name: "Diners Club United States & Canada", short_name: 'dcusc', prefix: '54', length: 16},
+	            {name: "Discover Card", short_name: 'discover', prefix: '6011', length: 16},
+	            {name: "InstaPayment", short_name: 'instapay', prefix: '637', length: 16},
+	            {name: "JCB", short_name: 'jcb', prefix: '3528', length: 16},
+	            {name: "Laser", short_name: 'laser', prefix: '6304', length: 16},
+	            {name: "Maestro", short_name: 'maestro', prefix: '5018', length: 16},
+	            {name: "Mastercard", short_name: 'mc', prefix: '51', length: 16},
+	            {name: "Solo", short_name: 'solo', prefix: '6334', length: 16},
+	            {name: "Switch", short_name: 'switch', prefix: '4903', length: 16},
+	            {name: "Visa", short_name: 'visa', prefix: '4', length: 16},
+	            {name: "Visa Electron", short_name: 'electron', prefix: '4026', length: 16}
+	        ],
+
+	        //return all world currency by ISO 4217
+	        currency_types: [
+	            {'code' : 'AED', 'name' : 'United Arab Emirates Dirham'},
+	            {'code' : 'AFN', 'name' : 'Afghanistan Afghani'},
+	            {'code' : 'ALL', 'name' : 'Albania Lek'},
+	            {'code' : 'AMD', 'name' : 'Armenia Dram'},
+	            {'code' : 'ANG', 'name' : 'Netherlands Antilles Guilder'},
+	            {'code' : 'AOA', 'name' : 'Angola Kwanza'},
+	            {'code' : 'ARS', 'name' : 'Argentina Peso'},
+	            {'code' : 'AUD', 'name' : 'Australia Dollar'},
+	            {'code' : 'AWG', 'name' : 'Aruba Guilder'},
+	            {'code' : 'AZN', 'name' : 'Azerbaijan New Manat'},
+	            {'code' : 'BAM', 'name' : 'Bosnia and Herzegovina Convertible Marka'},
+	            {'code' : 'BBD', 'name' : 'Barbados Dollar'},
+	            {'code' : 'BDT', 'name' : 'Bangladesh Taka'},
+	            {'code' : 'BGN', 'name' : 'Bulgaria Lev'},
+	            {'code' : 'BHD', 'name' : 'Bahrain Dinar'},
+	            {'code' : 'BIF', 'name' : 'Burundi Franc'},
+	            {'code' : 'BMD', 'name' : 'Bermuda Dollar'},
+	            {'code' : 'BND', 'name' : 'Brunei Darussalam Dollar'},
+	            {'code' : 'BOB', 'name' : 'Bolivia Boliviano'},
+	            {'code' : 'BRL', 'name' : 'Brazil Real'},
+	            {'code' : 'BSD', 'name' : 'Bahamas Dollar'},
+	            {'code' : 'BTN', 'name' : 'Bhutan Ngultrum'},
+	            {'code' : 'BWP', 'name' : 'Botswana Pula'},
+	            {'code' : 'BYR', 'name' : 'Belarus Ruble'},
+	            {'code' : 'BZD', 'name' : 'Belize Dollar'},
+	            {'code' : 'CAD', 'name' : 'Canada Dollar'},
+	            {'code' : 'CDF', 'name' : 'Congo/Kinshasa Franc'},
+	            {'code' : 'CHF', 'name' : 'Switzerland Franc'},
+	            {'code' : 'CLP', 'name' : 'Chile Peso'},
+	            {'code' : 'CNY', 'name' : 'China Yuan Renminbi'},
+	            {'code' : 'COP', 'name' : 'Colombia Peso'},
+	            {'code' : 'CRC', 'name' : 'Costa Rica Colon'},
+	            {'code' : 'CUC', 'name' : 'Cuba Convertible Peso'},
+	            {'code' : 'CUP', 'name' : 'Cuba Peso'},
+	            {'code' : 'CVE', 'name' : 'Cape Verde Escudo'},
+	            {'code' : 'CZK', 'name' : 'Czech Republic Koruna'},
+	            {'code' : 'DJF', 'name' : 'Djibouti Franc'},
+	            {'code' : 'DKK', 'name' : 'Denmark Krone'},
+	            {'code' : 'DOP', 'name' : 'Dominican Republic Peso'},
+	            {'code' : 'DZD', 'name' : 'Algeria Dinar'},
+	            {'code' : 'EGP', 'name' : 'Egypt Pound'},
+	            {'code' : 'ERN', 'name' : 'Eritrea Nakfa'},
+	            {'code' : 'ETB', 'name' : 'Ethiopia Birr'},
+	            {'code' : 'EUR', 'name' : 'Euro Member Countries'},
+	            {'code' : 'FJD', 'name' : 'Fiji Dollar'},
+	            {'code' : 'FKP', 'name' : 'Falkland Islands (Malvinas) Pound'},
+	            {'code' : 'GBP', 'name' : 'United Kingdom Pound'},
+	            {'code' : 'GEL', 'name' : 'Georgia Lari'},
+	            {'code' : 'GGP', 'name' : 'Guernsey Pound'},
+	            {'code' : 'GHS', 'name' : 'Ghana Cedi'},
+	            {'code' : 'GIP', 'name' : 'Gibraltar Pound'},
+	            {'code' : 'GMD', 'name' : 'Gambia Dalasi'},
+	            {'code' : 'GNF', 'name' : 'Guinea Franc'},
+	            {'code' : 'GTQ', 'name' : 'Guatemala Quetzal'},
+	            {'code' : 'GYD', 'name' : 'Guyana Dollar'},
+	            {'code' : 'HKD', 'name' : 'Hong Kong Dollar'},
+	            {'code' : 'HNL', 'name' : 'Honduras Lempira'},
+	            {'code' : 'HRK', 'name' : 'Croatia Kuna'},
+	            {'code' : 'HTG', 'name' : 'Haiti Gourde'},
+	            {'code' : 'HUF', 'name' : 'Hungary Forint'},
+	            {'code' : 'IDR', 'name' : 'Indonesia Rupiah'},
+	            {'code' : 'ILS', 'name' : 'Israel Shekel'},
+	            {'code' : 'IMP', 'name' : 'Isle of Man Pound'},
+	            {'code' : 'INR', 'name' : 'India Rupee'},
+	            {'code' : 'IQD', 'name' : 'Iraq Dinar'},
+	            {'code' : 'IRR', 'name' : 'Iran Rial'},
+	            {'code' : 'ISK', 'name' : 'Iceland Krona'},
+	            {'code' : 'JEP', 'name' : 'Jersey Pound'},
+	            {'code' : 'JMD', 'name' : 'Jamaica Dollar'},
+	            {'code' : 'JOD', 'name' : 'Jordan Dinar'},
+	            {'code' : 'JPY', 'name' : 'Japan Yen'},
+	            {'code' : 'KES', 'name' : 'Kenya Shilling'},
+	            {'code' : 'KGS', 'name' : 'Kyrgyzstan Som'},
+	            {'code' : 'KHR', 'name' : 'Cambodia Riel'},
+	            {'code' : 'KMF', 'name' : 'Comoros Franc'},
+	            {'code' : 'KPW', 'name' : 'Korea (North) Won'},
+	            {'code' : 'KRW', 'name' : 'Korea (South) Won'},
+	            {'code' : 'KWD', 'name' : 'Kuwait Dinar'},
+	            {'code' : 'KYD', 'name' : 'Cayman Islands Dollar'},
+	            {'code' : 'KZT', 'name' : 'Kazakhstan Tenge'},
+	            {'code' : 'LAK', 'name' : 'Laos Kip'},
+	            {'code' : 'LBP', 'name' : 'Lebanon Pound'},
+	            {'code' : 'LKR', 'name' : 'Sri Lanka Rupee'},
+	            {'code' : 'LRD', 'name' : 'Liberia Dollar'},
+	            {'code' : 'LSL', 'name' : 'Lesotho Loti'},
+	            {'code' : 'LTL', 'name' : 'Lithuania Litas'},
+	            {'code' : 'LYD', 'name' : 'Libya Dinar'},
+	            {'code' : 'MAD', 'name' : 'Morocco Dirham'},
+	            {'code' : 'MDL', 'name' : 'Moldova Leu'},
+	            {'code' : 'MGA', 'name' : 'Madagascar Ariary'},
+	            {'code' : 'MKD', 'name' : 'Macedonia Denar'},
+	            {'code' : 'MMK', 'name' : 'Myanmar (Burma) Kyat'},
+	            {'code' : 'MNT', 'name' : 'Mongolia Tughrik'},
+	            {'code' : 'MOP', 'name' : 'Macau Pataca'},
+	            {'code' : 'MRO', 'name' : 'Mauritania Ouguiya'},
+	            {'code' : 'MUR', 'name' : 'Mauritius Rupee'},
+	            {'code' : 'MVR', 'name' : 'Maldives (Maldive Islands) Rufiyaa'},
+	            {'code' : 'MWK', 'name' : 'Malawi Kwacha'},
+	            {'code' : 'MXN', 'name' : 'Mexico Peso'},
+	            {'code' : 'MYR', 'name' : 'Malaysia Ringgit'},
+	            {'code' : 'MZN', 'name' : 'Mozambique Metical'},
+	            {'code' : 'NAD', 'name' : 'Namibia Dollar'},
+	            {'code' : 'NGN', 'name' : 'Nigeria Naira'},
+	            {'code' : 'NIO', 'name' : 'Nicaragua Cordoba'},
+	            {'code' : 'NOK', 'name' : 'Norway Krone'},
+	            {'code' : 'NPR', 'name' : 'Nepal Rupee'},
+	            {'code' : 'NZD', 'name' : 'New Zealand Dollar'},
+	            {'code' : 'OMR', 'name' : 'Oman Rial'},
+	            {'code' : 'PAB', 'name' : 'Panama Balboa'},
+	            {'code' : 'PEN', 'name' : 'Peru Nuevo Sol'},
+	            {'code' : 'PGK', 'name' : 'Papua New Guinea Kina'},
+	            {'code' : 'PHP', 'name' : 'Philippines Peso'},
+	            {'code' : 'PKR', 'name' : 'Pakistan Rupee'},
+	            {'code' : 'PLN', 'name' : 'Poland Zloty'},
+	            {'code' : 'PYG', 'name' : 'Paraguay Guarani'},
+	            {'code' : 'QAR', 'name' : 'Qatar Riyal'},
+	            {'code' : 'RON', 'name' : 'Romania New Leu'},
+	            {'code' : 'RSD', 'name' : 'Serbia Dinar'},
+	            {'code' : 'RUB', 'name' : 'Russia Ruble'},
+	            {'code' : 'RWF', 'name' : 'Rwanda Franc'},
+	            {'code' : 'SAR', 'name' : 'Saudi Arabia Riyal'},
+	            {'code' : 'SBD', 'name' : 'Solomon Islands Dollar'},
+	            {'code' : 'SCR', 'name' : 'Seychelles Rupee'},
+	            {'code' : 'SDG', 'name' : 'Sudan Pound'},
+	            {'code' : 'SEK', 'name' : 'Sweden Krona'},
+	            {'code' : 'SGD', 'name' : 'Singapore Dollar'},
+	            {'code' : 'SHP', 'name' : 'Saint Helena Pound'},
+	            {'code' : 'SLL', 'name' : 'Sierra Leone Leone'},
+	            {'code' : 'SOS', 'name' : 'Somalia Shilling'},
+	            {'code' : 'SPL', 'name' : 'Seborga Luigino'},
+	            {'code' : 'SRD', 'name' : 'Suriname Dollar'},
+	            {'code' : 'STD', 'name' : 'São Tomé and Príncipe Dobra'},
+	            {'code' : 'SVC', 'name' : 'El Salvador Colon'},
+	            {'code' : 'SYP', 'name' : 'Syria Pound'},
+	            {'code' : 'SZL', 'name' : 'Swaziland Lilangeni'},
+	            {'code' : 'THB', 'name' : 'Thailand Baht'},
+	            {'code' : 'TJS', 'name' : 'Tajikistan Somoni'},
+	            {'code' : 'TMT', 'name' : 'Turkmenistan Manat'},
+	            {'code' : 'TND', 'name' : 'Tunisia Dinar'},
+	            {'code' : 'TOP', 'name' : 'Tonga Pa\'anga'},
+	            {'code' : 'TRY', 'name' : 'Turkey Lira'},
+	            {'code' : 'TTD', 'name' : 'Trinidad and Tobago Dollar'},
+	            {'code' : 'TVD', 'name' : 'Tuvalu Dollar'},
+	            {'code' : 'TWD', 'name' : 'Taiwan New Dollar'},
+	            {'code' : 'TZS', 'name' : 'Tanzania Shilling'},
+	            {'code' : 'UAH', 'name' : 'Ukraine Hryvnia'},
+	            {'code' : 'UGX', 'name' : 'Uganda Shilling'},
+	            {'code' : 'USD', 'name' : 'United States Dollar'},
+	            {'code' : 'UYU', 'name' : 'Uruguay Peso'},
+	            {'code' : 'UZS', 'name' : 'Uzbekistan Som'},
+	            {'code' : 'VEF', 'name' : 'Venezuela Bolivar'},
+	            {'code' : 'VND', 'name' : 'Viet Nam Dong'},
+	            {'code' : 'VUV', 'name' : 'Vanuatu Vatu'},
+	            {'code' : 'WST', 'name' : 'Samoa Tala'},
+	            {'code' : 'XAF', 'name' : 'Communauté Financière Africaine (BEAC) CFA Franc BEAC'},
+	            {'code' : 'XCD', 'name' : 'East Caribbean Dollar'},
+	            {'code' : 'XDR', 'name' : 'International Monetary Fund (IMF) Special Drawing Rights'},
+	            {'code' : 'XOF', 'name' : 'Communauté Financière Africaine (BCEAO) Franc'},
+	            {'code' : 'XPF', 'name' : 'Comptoirs Français du Pacifique (CFP) Franc'},
+	            {'code' : 'YER', 'name' : 'Yemen Rial'},
+	            {'code' : 'ZAR', 'name' : 'South Africa Rand'},
+	            {'code' : 'ZMW', 'name' : 'Zambia Kwacha'},
+	            {'code' : 'ZWD', 'name' : 'Zimbabwe Dollar'}
+	        ],
+
+	        // return the names of all valide colors
+	        colorNames : [  "AliceBlue", "Black", "Navy", "DarkBlue", "MediumBlue", "Blue", "DarkGreen", "Green", "Teal", "DarkCyan", "DeepSkyBlue", "DarkTurquoise", "MediumSpringGreen", "Lime", "SpringGreen",
+	            "Aqua", "Cyan", "MidnightBlue", "DodgerBlue", "LightSeaGreen", "ForestGreen", "SeaGreen", "DarkSlateGray", "LimeGreen", "MediumSeaGreen", "Turquoise", "RoyalBlue", "SteelBlue", "DarkSlateBlue", "MediumTurquoise",
+	            "Indigo", "DarkOliveGreen", "CadetBlue", "CornflowerBlue", "RebeccaPurple", "MediumAquaMarine", "DimGray", "SlateBlue", "OliveDrab", "SlateGray", "LightSlateGray", "MediumSlateBlue", "LawnGreen", "Chartreuse",
+	            "Aquamarine", "Maroon", "Purple", "Olive", "Gray", "SkyBlue", "LightSkyBlue", "BlueViolet", "DarkRed", "DarkMagenta", "SaddleBrown", "Ivory", "White",
+	            "DarkSeaGreen", "LightGreen", "MediumPurple", "DarkViolet", "PaleGreen", "DarkOrchid", "YellowGreen", "Sienna", "Brown", "DarkGray", "LightBlue", "GreenYellow", "PaleTurquoise", "LightSteelBlue", "PowderBlue",
+	            "FireBrick", "DarkGoldenRod", "MediumOrchid", "RosyBrown", "DarkKhaki", "Silver", "MediumVioletRed", "IndianRed", "Peru", "Chocolate", "Tan", "LightGray", "Thistle", "Orchid", "GoldenRod", "PaleVioletRed",
+	            "Crimson", "Gainsboro", "Plum", "BurlyWood", "LightCyan", "Lavender", "DarkSalmon", "Violet", "PaleGoldenRod", "LightCoral", "Khaki", "AliceBlue", "HoneyDew", "Azure", "SandyBrown", "Wheat", "Beige", "WhiteSmoke",
+	            "MintCream", "GhostWhite", "Salmon", "AntiqueWhite", "Linen", "LightGoldenRodYellow", "OldLace", "Red", "Fuchsia", "Magenta", "DeepPink", "OrangeRed", "Tomato", "HotPink", "Coral", "DarkOrange", "LightSalmon", "Orange",
+	            "LightPink", "Pink", "Gold", "PeachPuff", "NavajoWhite", "Moccasin", "Bisque", "MistyRose", "BlanchedAlmond", "PapayaWhip", "LavenderBlush", "SeaShell", "Cornsilk", "LemonChiffon", "FloralWhite", "Snow", "Yellow", "LightYellow"
+	        ],
+
+	        fileExtension : {
+	            "raster"    : ["bmp", "gif", "gpl", "ico", "jpeg", "psd", "png", "psp", "raw", "tiff"],
+	            "vector"    : ["3dv", "amf", "awg", "ai", "cgm", "cdr", "cmx", "dxf", "e2d", "egt", "eps", "fs", "odg", "svg", "xar"],
+	            "3d"        : ["3dmf", "3dm", "3mf", "3ds", "an8", "aoi", "blend", "cal3d", "cob", "ctm", "iob", "jas", "max", "mb", "mdx", "obj", "x", "x3d"],
+	            "document"  : ["doc", "docx", "dot", "html", "xml", "odt", "odm", "ott", "csv", "rtf", "tex", "xhtml", "xps"]
+	        },
+
+	        // Data taken from https://github.com/dmfilipenko/timezones.json/blob/master/timezones.json
+	        timezones: [
+	                  {
+	                    "name": "Dateline Standard Time",
+	                    "abbr": "DST",
+	                    "offset": -12,
+	                    "isdst": false,
+	                    "text": "(UTC-12:00) International Date Line West",
+	                    "utc": [
+	                      "Etc/GMT+12"
+	                    ]
+	                  },
+	                  {
+	                    "name": "UTC-11",
+	                    "abbr": "U",
+	                    "offset": -11,
+	                    "isdst": false,
+	                    "text": "(UTC-11:00) Coordinated Universal Time-11",
+	                    "utc": [
+	                      "Etc/GMT+11",
+	                      "Pacific/Midway",
+	                      "Pacific/Niue",
+	                      "Pacific/Pago_Pago"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Hawaiian Standard Time",
+	                    "abbr": "HST",
+	                    "offset": -10,
+	                    "isdst": false,
+	                    "text": "(UTC-10:00) Hawaii",
+	                    "utc": [
+	                      "Etc/GMT+10",
+	                      "Pacific/Honolulu",
+	                      "Pacific/Johnston",
+	                      "Pacific/Rarotonga",
+	                      "Pacific/Tahiti"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Alaskan Standard Time",
+	                    "abbr": "AKDT",
+	                    "offset": -8,
+	                    "isdst": true,
+	                    "text": "(UTC-09:00) Alaska",
+	                    "utc": [
+	                      "America/Anchorage",
+	                      "America/Juneau",
+	                      "America/Nome",
+	                      "America/Sitka",
+	                      "America/Yakutat"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Pacific Standard Time (Mexico)",
+	                    "abbr": "PDT",
+	                    "offset": -7,
+	                    "isdst": true,
+	                    "text": "(UTC-08:00) Baja California",
+	                    "utc": [
+	                      "America/Santa_Isabel"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Pacific Standard Time",
+	                    "abbr": "PDT",
+	                    "offset": -7,
+	                    "isdst": true,
+	                    "text": "(UTC-08:00) Pacific Time (US & Canada)",
+	                    "utc": [
+	                      "America/Dawson",
+	                      "America/Los_Angeles",
+	                      "America/Tijuana",
+	                      "America/Vancouver",
+	                      "America/Whitehorse",
+	                      "PST8PDT"
+	                    ]
+	                  },
+	                  {
+	                    "name": "US Mountain Standard Time",
+	                    "abbr": "UMST",
+	                    "offset": -7,
+	                    "isdst": false,
+	                    "text": "(UTC-07:00) Arizona",
+	                    "utc": [
+	                      "America/Creston",
+	                      "America/Dawson_Creek",
+	                      "America/Hermosillo",
+	                      "America/Phoenix",
+	                      "Etc/GMT+7"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Mountain Standard Time (Mexico)",
+	                    "abbr": "MDT",
+	                    "offset": -6,
+	                    "isdst": true,
+	                    "text": "(UTC-07:00) Chihuahua, La Paz, Mazatlan",
+	                    "utc": [
+	                      "America/Chihuahua",
+	                      "America/Mazatlan"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Mountain Standard Time",
+	                    "abbr": "MDT",
+	                    "offset": -6,
+	                    "isdst": true,
+	                    "text": "(UTC-07:00) Mountain Time (US & Canada)",
+	                    "utc": [
+	                      "America/Boise",
+	                      "America/Cambridge_Bay",
+	                      "America/Denver",
+	                      "America/Edmonton",
+	                      "America/Inuvik",
+	                      "America/Ojinaga",
+	                      "America/Yellowknife",
+	                      "MST7MDT"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Central America Standard Time",
+	                    "abbr": "CAST",
+	                    "offset": -6,
+	                    "isdst": false,
+	                    "text": "(UTC-06:00) Central America",
+	                    "utc": [
+	                      "America/Belize",
+	                      "America/Costa_Rica",
+	                      "America/El_Salvador",
+	                      "America/Guatemala",
+	                      "America/Managua",
+	                      "America/Tegucigalpa",
+	                      "Etc/GMT+6",
+	                      "Pacific/Galapagos"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Central Standard Time",
+	                    "abbr": "CDT",
+	                    "offset": -5,
+	                    "isdst": true,
+	                    "text": "(UTC-06:00) Central Time (US & Canada)",
+	                    "utc": [
+	                      "America/Chicago",
+	                      "America/Indiana/Knox",
+	                      "America/Indiana/Tell_City",
+	                      "America/Matamoros",
+	                      "America/Menominee",
+	                      "America/North_Dakota/Beulah",
+	                      "America/North_Dakota/Center",
+	                      "America/North_Dakota/New_Salem",
+	                      "America/Rainy_River",
+	                      "America/Rankin_Inlet",
+	                      "America/Resolute",
+	                      "America/Winnipeg",
+	                      "CST6CDT"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Central Standard Time (Mexico)",
+	                    "abbr": "CDT",
+	                    "offset": -5,
+	                    "isdst": true,
+	                    "text": "(UTC-06:00) Guadalajara, Mexico City, Monterrey",
+	                    "utc": [
+	                      "America/Bahia_Banderas",
+	                      "America/Cancun",
+	                      "America/Merida",
+	                      "America/Mexico_City",
+	                      "America/Monterrey"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Canada Central Standard Time",
+	                    "abbr": "CCST",
+	                    "offset": -6,
+	                    "isdst": false,
+	                    "text": "(UTC-06:00) Saskatchewan",
+	                    "utc": [
+	                      "America/Regina",
+	                      "America/Swift_Current"
+	                    ]
+	                  },
+	                  {
+	                    "name": "SA Pacific Standard Time",
+	                    "abbr": "SPST",
+	                    "offset": -5,
+	                    "isdst": false,
+	                    "text": "(UTC-05:00) Bogota, Lima, Quito",
+	                    "utc": [
+	                      "America/Bogota",
+	                      "America/Cayman",
+	                      "America/Coral_Harbour",
+	                      "America/Eirunepe",
+	                      "America/Guayaquil",
+	                      "America/Jamaica",
+	                      "America/Lima",
+	                      "America/Panama",
+	                      "America/Rio_Branco",
+	                      "Etc/GMT+5"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Eastern Standard Time",
+	                    "abbr": "EDT",
+	                    "offset": -4,
+	                    "isdst": true,
+	                    "text": "(UTC-05:00) Eastern Time (US & Canada)",
+	                    "utc": [
+	                      "America/Detroit",
+	                      "America/Havana",
+	                      "America/Indiana/Petersburg",
+	                      "America/Indiana/Vincennes",
+	                      "America/Indiana/Winamac",
+	                      "America/Iqaluit",
+	                      "America/Kentucky/Monticello",
+	                      "America/Louisville",
+	                      "America/Montreal",
+	                      "America/Nassau",
+	                      "America/New_York",
+	                      "America/Nipigon",
+	                      "America/Pangnirtung",
+	                      "America/Port-au-Prince",
+	                      "America/Thunder_Bay",
+	                      "America/Toronto",
+	                      "EST5EDT"
+	                    ]
+	                  },
+	                  {
+	                    "name": "US Eastern Standard Time",
+	                    "abbr": "UEDT",
+	                    "offset": -4,
+	                    "isdst": true,
+	                    "text": "(UTC-05:00) Indiana (East)",
+	                    "utc": [
+	                      "America/Indiana/Marengo",
+	                      "America/Indiana/Vevay",
+	                      "America/Indianapolis"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Venezuela Standard Time",
+	                    "abbr": "VST",
+	                    "offset": -4.5,
+	                    "isdst": false,
+	                    "text": "(UTC-04:30) Caracas",
+	                    "utc": [
+	                      "America/Caracas"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Paraguay Standard Time",
+	                    "abbr": "PST",
+	                    "offset": -4,
+	                    "isdst": false,
+	                    "text": "(UTC-04:00) Asuncion",
+	                    "utc": [
+	                      "America/Asuncion"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Atlantic Standard Time",
+	                    "abbr": "ADT",
+	                    "offset": -3,
+	                    "isdst": true,
+	                    "text": "(UTC-04:00) Atlantic Time (Canada)",
+	                    "utc": [
+	                      "America/Glace_Bay",
+	                      "America/Goose_Bay",
+	                      "America/Halifax",
+	                      "America/Moncton",
+	                      "America/Thule",
+	                      "Atlantic/Bermuda"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Central Brazilian Standard Time",
+	                    "abbr": "CBST",
+	                    "offset": -4,
+	                    "isdst": false,
+	                    "text": "(UTC-04:00) Cuiaba",
+	                    "utc": [
+	                      "America/Campo_Grande",
+	                      "America/Cuiaba"
+	                    ]
+	                  },
+	                  {
+	                    "name": "SA Western Standard Time",
+	                    "abbr": "SWST",
+	                    "offset": -4,
+	                    "isdst": false,
+	                    "text": "(UTC-04:00) Georgetown, La Paz, Manaus, San Juan",
+	                    "utc": [
+	                      "America/Anguilla",
+	                      "America/Antigua",
+	                      "America/Aruba",
+	                      "America/Barbados",
+	                      "America/Blanc-Sablon",
+	                      "America/Boa_Vista",
+	                      "America/Curacao",
+	                      "America/Dominica",
+	                      "America/Grand_Turk",
+	                      "America/Grenada",
+	                      "America/Guadeloupe",
+	                      "America/Guyana",
+	                      "America/Kralendijk",
+	                      "America/La_Paz",
+	                      "America/Lower_Princes",
+	                      "America/Manaus",
+	                      "America/Marigot",
+	                      "America/Martinique",
+	                      "America/Montserrat",
+	                      "America/Port_of_Spain",
+	                      "America/Porto_Velho",
+	                      "America/Puerto_Rico",
+	                      "America/Santo_Domingo",
+	                      "America/St_Barthelemy",
+	                      "America/St_Kitts",
+	                      "America/St_Lucia",
+	                      "America/St_Thomas",
+	                      "America/St_Vincent",
+	                      "America/Tortola",
+	                      "Etc/GMT+4"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Pacific SA Standard Time",
+	                    "abbr": "PSST",
+	                    "offset": -4,
+	                    "isdst": false,
+	                    "text": "(UTC-04:00) Santiago",
+	                    "utc": [
+	                      "America/Santiago",
+	                      "Antarctica/Palmer"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Newfoundland Standard Time",
+	                    "abbr": "NDT",
+	                    "offset": -2.5,
+	                    "isdst": true,
+	                    "text": "(UTC-03:30) Newfoundland",
+	                    "utc": [
+	                      "America/St_Johns"
+	                    ]
+	                  },
+	                  {
+	                    "name": "E. South America Standard Time",
+	                    "abbr": "ESAST",
+	                    "offset": -3,
+	                    "isdst": false,
+	                    "text": "(UTC-03:00) Brasilia",
+	                    "utc": [
+	                      "America/Sao_Paulo"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Argentina Standard Time",
+	                    "abbr": "AST",
+	                    "offset": -3,
+	                    "isdst": false,
+	                    "text": "(UTC-03:00) Buenos Aires",
+	                    "utc": [
+	                      "America/Argentina/La_Rioja",
+	                      "America/Argentina/Rio_Gallegos",
+	                      "America/Argentina/Salta",
+	                      "America/Argentina/San_Juan",
+	                      "America/Argentina/San_Luis",
+	                      "America/Argentina/Tucuman",
+	                      "America/Argentina/Ushuaia",
+	                      "America/Buenos_Aires",
+	                      "America/Catamarca",
+	                      "America/Cordoba",
+	                      "America/Jujuy",
+	                      "America/Mendoza"
+	                    ]
+	                  },
+	                  {
+	                    "name": "SA Eastern Standard Time",
+	                    "abbr": "SEST",
+	                    "offset": -3,
+	                    "isdst": false,
+	                    "text": "(UTC-03:00) Cayenne, Fortaleza",
+	                    "utc": [
+	                      "America/Araguaina",
+	                      "America/Belem",
+	                      "America/Cayenne",
+	                      "America/Fortaleza",
+	                      "America/Maceio",
+	                      "America/Paramaribo",
+	                      "America/Recife",
+	                      "America/Santarem",
+	                      "Antarctica/Rothera",
+	                      "Atlantic/Stanley",
+	                      "Etc/GMT+3"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Greenland Standard Time",
+	                    "abbr": "GDT",
+	                    "offset": -2,
+	                    "isdst": true,
+	                    "text": "(UTC-03:00) Greenland",
+	                    "utc": [
+	                      "America/Godthab"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Montevideo Standard Time",
+	                    "abbr": "MST",
+	                    "offset": -3,
+	                    "isdst": false,
+	                    "text": "(UTC-03:00) Montevideo",
+	                    "utc": [
+	                      "America/Montevideo"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Bahia Standard Time",
+	                    "abbr": "BST",
+	                    "offset": -3,
+	                    "isdst": false,
+	                    "text": "(UTC-03:00) Salvador",
+	                    "utc": [
+	                      "America/Bahia"
+	                    ]
+	                  },
+	                  {
+	                    "name": "UTC-02",
+	                    "abbr": "U",
+	                    "offset": -2,
+	                    "isdst": false,
+	                    "text": "(UTC-02:00) Coordinated Universal Time-02",
+	                    "utc": [
+	                      "America/Noronha",
+	                      "Atlantic/South_Georgia",
+	                      "Etc/GMT+2"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Mid-Atlantic Standard Time",
+	                    "abbr": "MDT",
+	                    "offset": -1,
+	                    "isdst": true,
+	                    "text": "(UTC-02:00) Mid-Atlantic - Old"
+	                  },
+	                  {
+	                    "name": "Azores Standard Time",
+	                    "abbr": "ADT",
+	                    "offset": 0,
+	                    "isdst": true,
+	                    "text": "(UTC-01:00) Azores",
+	                    "utc": [
+	                      "America/Scoresbysund",
+	                      "Atlantic/Azores"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Cape Verde Standard Time",
+	                    "abbr": "CVST",
+	                    "offset": -1,
+	                    "isdst": false,
+	                    "text": "(UTC-01:00) Cape Verde Is.",
+	                    "utc": [
+	                      "Atlantic/Cape_Verde",
+	                      "Etc/GMT+1"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Morocco Standard Time",
+	                    "abbr": "MDT",
+	                    "offset": 1,
+	                    "isdst": true,
+	                    "text": "(UTC) Casablanca",
+	                    "utc": [
+	                      "Africa/Casablanca",
+	                      "Africa/El_Aaiun"
+	                    ]
+	                  },
+	                  {
+	                    "name": "UTC",
+	                    "abbr": "CUT",
+	                    "offset": 0,
+	                    "isdst": false,
+	                    "text": "(UTC) Coordinated Universal Time",
+	                    "utc": [
+	                      "America/Danmarkshavn",
+	                      "Etc/GMT"
+	                    ]
+	                  },
+	                  {
+	                    "name": "GMT Standard Time",
+	                    "abbr": "GDT",
+	                    "offset": 1,
+	                    "isdst": true,
+	                    "text": "(UTC) Dublin, Edinburgh, Lisbon, London",
+	                    "utc": [
+	                      "Atlantic/Canary",
+	                      "Atlantic/Faeroe",
+	                      "Atlantic/Madeira",
+	                      "Europe/Dublin",
+	                      "Europe/Guernsey",
+	                      "Europe/Isle_of_Man",
+	                      "Europe/Jersey",
+	                      "Europe/Lisbon",
+	                      "Europe/London"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Greenwich Standard Time",
+	                    "abbr": "GST",
+	                    "offset": 0,
+	                    "isdst": false,
+	                    "text": "(UTC) Monrovia, Reykjavik",
+	                    "utc": [
+	                      "Africa/Abidjan",
+	                      "Africa/Accra",
+	                      "Africa/Bamako",
+	                      "Africa/Banjul",
+	                      "Africa/Bissau",
+	                      "Africa/Conakry",
+	                      "Africa/Dakar",
+	                      "Africa/Freetown",
+	                      "Africa/Lome",
+	                      "Africa/Monrovia",
+	                      "Africa/Nouakchott",
+	                      "Africa/Ouagadougou",
+	                      "Africa/Sao_Tome",
+	                      "Atlantic/Reykjavik",
+	                      "Atlantic/St_Helena"
+	                    ]
+	                  },
+	                  {
+	                    "name": "W. Europe Standard Time",
+	                    "abbr": "WEDT",
+	                    "offset": 2,
+	                    "isdst": true,
+	                    "text": "(UTC+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna",
+	                    "utc": [
+	                      "Arctic/Longyearbyen",
+	                      "Europe/Amsterdam",
+	                      "Europe/Andorra",
+	                      "Europe/Berlin",
+	                      "Europe/Busingen",
+	                      "Europe/Gibraltar",
+	                      "Europe/Luxembourg",
+	                      "Europe/Malta",
+	                      "Europe/Monaco",
+	                      "Europe/Oslo",
+	                      "Europe/Rome",
+	                      "Europe/San_Marino",
+	                      "Europe/Stockholm",
+	                      "Europe/Vaduz",
+	                      "Europe/Vatican",
+	                      "Europe/Vienna",
+	                      "Europe/Zurich"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Central Europe Standard Time",
+	                    "abbr": "CEDT",
+	                    "offset": 2,
+	                    "isdst": true,
+	                    "text": "(UTC+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague",
+	                    "utc": [
+	                      "Europe/Belgrade",
+	                      "Europe/Bratislava",
+	                      "Europe/Budapest",
+	                      "Europe/Ljubljana",
+	                      "Europe/Podgorica",
+	                      "Europe/Prague",
+	                      "Europe/Tirane"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Romance Standard Time",
+	                    "abbr": "RDT",
+	                    "offset": 2,
+	                    "isdst": true,
+	                    "text": "(UTC+01:00) Brussels, Copenhagen, Madrid, Paris",
+	                    "utc": [
+	                      "Africa/Ceuta",
+	                      "Europe/Brussels",
+	                      "Europe/Copenhagen",
+	                      "Europe/Madrid",
+	                      "Europe/Paris"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Central European Standard Time",
+	                    "abbr": "CEDT",
+	                    "offset": 2,
+	                    "isdst": true,
+	                    "text": "(UTC+01:00) Sarajevo, Skopje, Warsaw, Zagreb",
+	                    "utc": [
+	                      "Europe/Sarajevo",
+	                      "Europe/Skopje",
+	                      "Europe/Warsaw",
+	                      "Europe/Zagreb"
+	                    ]
+	                  },
+	                  {
+	                    "name": "W. Central Africa Standard Time",
+	                    "abbr": "WCAST",
+	                    "offset": 1,
+	                    "isdst": false,
+	                    "text": "(UTC+01:00) West Central Africa",
+	                    "utc": [
+	                      "Africa/Algiers",
+	                      "Africa/Bangui",
+	                      "Africa/Brazzaville",
+	                      "Africa/Douala",
+	                      "Africa/Kinshasa",
+	                      "Africa/Lagos",
+	                      "Africa/Libreville",
+	                      "Africa/Luanda",
+	                      "Africa/Malabo",
+	                      "Africa/Ndjamena",
+	                      "Africa/Niamey",
+	                      "Africa/Porto-Novo",
+	                      "Africa/Tunis",
+	                      "Etc/GMT-1"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Namibia Standard Time",
+	                    "abbr": "NST",
+	                    "offset": 1,
+	                    "isdst": false,
+	                    "text": "(UTC+01:00) Windhoek",
+	                    "utc": [
+	                      "Africa/Windhoek"
+	                    ]
+	                  },
+	                  {
+	                    "name": "GTB Standard Time",
+	                    "abbr": "GDT",
+	                    "offset": 3,
+	                    "isdst": true,
+	                    "text": "(UTC+02:00) Athens, Bucharest",
+	                    "utc": [
+	                      "Asia/Nicosia",
+	                      "Europe/Athens",
+	                      "Europe/Bucharest",
+	                      "Europe/Chisinau"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Middle East Standard Time",
+	                    "abbr": "MEDT",
+	                    "offset": 3,
+	                    "isdst": true,
+	                    "text": "(UTC+02:00) Beirut",
+	                    "utc": [
+	                      "Asia/Beirut"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Egypt Standard Time",
+	                    "abbr": "EST",
+	                    "offset": 2,
+	                    "isdst": false,
+	                    "text": "(UTC+02:00) Cairo",
+	                    "utc": [
+	                      "Africa/Cairo"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Syria Standard Time",
+	                    "abbr": "SDT",
+	                    "offset": 3,
+	                    "isdst": true,
+	                    "text": "(UTC+02:00) Damascus",
+	                    "utc": [
+	                      "Asia/Damascus"
+	                    ]
+	                  },
+	                  {
+	                    "name": "E. Europe Standard Time",
+	                    "abbr": "EEDT",
+	                    "offset": 3,
+	                    "isdst": true,
+	                    "text": "(UTC+02:00) E. Europe"
+	                  },
+	                  {
+	                    "name": "South Africa Standard Time",
+	                    "abbr": "SAST",
+	                    "offset": 2,
+	                    "isdst": false,
+	                    "text": "(UTC+02:00) Harare, Pretoria",
+	                    "utc": [
+	                      "Africa/Blantyre",
+	                      "Africa/Bujumbura",
+	                      "Africa/Gaborone",
+	                      "Africa/Harare",
+	                      "Africa/Johannesburg",
+	                      "Africa/Kigali",
+	                      "Africa/Lubumbashi",
+	                      "Africa/Lusaka",
+	                      "Africa/Maputo",
+	                      "Africa/Maseru",
+	                      "Africa/Mbabane",
+	                      "Etc/GMT-2"
+	                    ]
+	                  },
+	                  {
+	                    "name": "FLE Standard Time",
+	                    "abbr": "FDT",
+	                    "offset": 3,
+	                    "isdst": true,
+	                    "text": "(UTC+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius",
+	                    "utc": [
+	                      "Europe/Helsinki",
+	                      "Europe/Kiev",
+	                      "Europe/Mariehamn",
+	                      "Europe/Riga",
+	                      "Europe/Sofia",
+	                      "Europe/Tallinn",
+	                      "Europe/Uzhgorod",
+	                      "Europe/Vilnius",
+	                      "Europe/Zaporozhye"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Turkey Standard Time",
+	                    "abbr": "TDT",
+	                    "offset": 3,
+	                    "isdst": true,
+	                    "text": "(UTC+02:00) Istanbul",
+	                    "utc": [
+	                      "Europe/Istanbul"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Israel Standard Time",
+	                    "abbr": "JDT",
+	                    "offset": 3,
+	                    "isdst": true,
+	                    "text": "(UTC+02:00) Jerusalem",
+	                    "utc": [
+	                      "Asia/Jerusalem"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Libya Standard Time",
+	                    "abbr": "LST",
+	                    "offset": 2,
+	                    "isdst": false,
+	                    "text": "(UTC+02:00) Tripoli",
+	                    "utc": [
+	                      "Africa/Tripoli"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Jordan Standard Time",
+	                    "abbr": "JST",
+	                    "offset": 3,
+	                    "isdst": false,
+	                    "text": "(UTC+03:00) Amman",
+	                    "utc": [
+	                      "Asia/Amman"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Arabic Standard Time",
+	                    "abbr": "AST",
+	                    "offset": 3,
+	                    "isdst": false,
+	                    "text": "(UTC+03:00) Baghdad",
+	                    "utc": [
+	                      "Asia/Baghdad"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Kaliningrad Standard Time",
+	                    "abbr": "KST",
+	                    "offset": 3,
+	                    "isdst": false,
+	                    "text": "(UTC+03:00) Kaliningrad, Minsk",
+	                    "utc": [
+	                      "Europe/Kaliningrad",
+	                      "Europe/Minsk"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Arab Standard Time",
+	                    "abbr": "AST",
+	                    "offset": 3,
+	                    "isdst": false,
+	                    "text": "(UTC+03:00) Kuwait, Riyadh",
+	                    "utc": [
+	                      "Asia/Aden",
+	                      "Asia/Bahrain",
+	                      "Asia/Kuwait",
+	                      "Asia/Qatar",
+	                      "Asia/Riyadh"
+	                    ]
+	                  },
+	                  {
+	                    "name": "E. Africa Standard Time",
+	                    "abbr": "EAST",
+	                    "offset": 3,
+	                    "isdst": false,
+	                    "text": "(UTC+03:00) Nairobi",
+	                    "utc": [
+	                      "Africa/Addis_Ababa",
+	                      "Africa/Asmera",
+	                      "Africa/Dar_es_Salaam",
+	                      "Africa/Djibouti",
+	                      "Africa/Juba",
+	                      "Africa/Kampala",
+	                      "Africa/Khartoum",
+	                      "Africa/Mogadishu",
+	                      "Africa/Nairobi",
+	                      "Antarctica/Syowa",
+	                      "Etc/GMT-3",
+	                      "Indian/Antananarivo",
+	                      "Indian/Comoro",
+	                      "Indian/Mayotte"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Iran Standard Time",
+	                    "abbr": "IDT",
+	                    "offset": 4.5,
+	                    "isdst": true,
+	                    "text": "(UTC+03:30) Tehran",
+	                    "utc": [
+	                      "Asia/Tehran"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Arabian Standard Time",
+	                    "abbr": "AST",
+	                    "offset": 4,
+	                    "isdst": false,
+	                    "text": "(UTC+04:00) Abu Dhabi, Muscat",
+	                    "utc": [
+	                      "Asia/Dubai",
+	                      "Asia/Muscat",
+	                      "Etc/GMT-4"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Azerbaijan Standard Time",
+	                    "abbr": "ADT",
+	                    "offset": 5,
+	                    "isdst": true,
+	                    "text": "(UTC+04:00) Baku",
+	                    "utc": [
+	                      "Asia/Baku"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Russian Standard Time",
+	                    "abbr": "RST",
+	                    "offset": 4,
+	                    "isdst": false,
+	                    "text": "(UTC+04:00) Moscow, St. Petersburg, Volgograd",
+	                    "utc": [
+	                      "Europe/Moscow",
+	                      "Europe/Samara",
+	                      "Europe/Simferopol",
+	                      "Europe/Volgograd"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Mauritius Standard Time",
+	                    "abbr": "MST",
+	                    "offset": 4,
+	                    "isdst": false,
+	                    "text": "(UTC+04:00) Port Louis",
+	                    "utc": [
+	                      "Indian/Mahe",
+	                      "Indian/Mauritius",
+	                      "Indian/Reunion"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Georgian Standard Time",
+	                    "abbr": "GST",
+	                    "offset": 4,
+	                    "isdst": false,
+	                    "text": "(UTC+04:00) Tbilisi",
+	                    "utc": [
+	                      "Asia/Tbilisi"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Caucasus Standard Time",
+	                    "abbr": "CST",
+	                    "offset": 4,
+	                    "isdst": false,
+	                    "text": "(UTC+04:00) Yerevan",
+	                    "utc": [
+	                      "Asia/Yerevan"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Afghanistan Standard Time",
+	                    "abbr": "AST",
+	                    "offset": 4.5,
+	                    "isdst": false,
+	                    "text": "(UTC+04:30) Kabul",
+	                    "utc": [
+	                      "Asia/Kabul"
+	                    ]
+	                  },
+	                  {
+	                    "name": "West Asia Standard Time",
+	                    "abbr": "WAST",
+	                    "offset": 5,
+	                    "isdst": false,
+	                    "text": "(UTC+05:00) Ashgabat, Tashkent",
+	                    "utc": [
+	                      "Antarctica/Mawson",
+	                      "Asia/Aqtau",
+	                      "Asia/Aqtobe",
+	                      "Asia/Ashgabat",
+	                      "Asia/Dushanbe",
+	                      "Asia/Oral",
+	                      "Asia/Samarkand",
+	                      "Asia/Tashkent",
+	                      "Etc/GMT-5",
+	                      "Indian/Kerguelen",
+	                      "Indian/Maldives"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Pakistan Standard Time",
+	                    "abbr": "PST",
+	                    "offset": 5,
+	                    "isdst": false,
+	                    "text": "(UTC+05:00) Islamabad, Karachi",
+	                    "utc": [
+	                      "Asia/Karachi"
+	                    ]
+	                  },
+	                  {
+	                    "name": "India Standard Time",
+	                    "abbr": "IST",
+	                    "offset": 5.5,
+	                    "isdst": false,
+	                    "text": "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi",
+	                    "utc": [
+	                      "Asia/Calcutta"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Sri Lanka Standard Time",
+	                    "abbr": "SLST",
+	                    "offset": 5.5,
+	                    "isdst": false,
+	                    "text": "(UTC+05:30) Sri Jayawardenepura",
+	                    "utc": [
+	                      "Asia/Colombo"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Nepal Standard Time",
+	                    "abbr": "NST",
+	                    "offset": 5.75,
+	                    "isdst": false,
+	                    "text": "(UTC+05:45) Kathmandu",
+	                    "utc": [
+	                      "Asia/Katmandu"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Central Asia Standard Time",
+	                    "abbr": "CAST",
+	                    "offset": 6,
+	                    "isdst": false,
+	                    "text": "(UTC+06:00) Astana",
+	                    "utc": [
+	                      "Antarctica/Vostok",
+	                      "Asia/Almaty",
+	                      "Asia/Bishkek",
+	                      "Asia/Qyzylorda",
+	                      "Asia/Urumqi",
+	                      "Etc/GMT-6",
+	                      "Indian/Chagos"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Bangladesh Standard Time",
+	                    "abbr": "BST",
+	                    "offset": 6,
+	                    "isdst": false,
+	                    "text": "(UTC+06:00) Dhaka",
+	                    "utc": [
+	                      "Asia/Dhaka",
+	                      "Asia/Thimphu"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Ekaterinburg Standard Time",
+	                    "abbr": "EST",
+	                    "offset": 6,
+	                    "isdst": false,
+	                    "text": "(UTC+06:00) Ekaterinburg",
+	                    "utc": [
+	                      "Asia/Yekaterinburg"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Myanmar Standard Time",
+	                    "abbr": "MST",
+	                    "offset": 6.5,
+	                    "isdst": false,
+	                    "text": "(UTC+06:30) Yangon (Rangoon)",
+	                    "utc": [
+	                      "Asia/Rangoon",
+	                      "Indian/Cocos"
+	                    ]
+	                  },
+	                  {
+	                    "name": "SE Asia Standard Time",
+	                    "abbr": "SAST",
+	                    "offset": 7,
+	                    "isdst": false,
+	                    "text": "(UTC+07:00) Bangkok, Hanoi, Jakarta",
+	                    "utc": [
+	                      "Antarctica/Davis",
+	                      "Asia/Bangkok",
+	                      "Asia/Hovd",
+	                      "Asia/Jakarta",
+	                      "Asia/Phnom_Penh",
+	                      "Asia/Pontianak",
+	                      "Asia/Saigon",
+	                      "Asia/Vientiane",
+	                      "Etc/GMT-7",
+	                      "Indian/Christmas"
+	                    ]
+	                  },
+	                  {
+	                    "name": "N. Central Asia Standard Time",
+	                    "abbr": "NCAST",
+	                    "offset": 7,
+	                    "isdst": false,
+	                    "text": "(UTC+07:00) Novosibirsk",
+	                    "utc": [
+	                      "Asia/Novokuznetsk",
+	                      "Asia/Novosibirsk",
+	                      "Asia/Omsk"
+	                    ]
+	                  },
+	                  {
+	                    "name": "China Standard Time",
+	                    "abbr": "CST",
+	                    "offset": 8,
+	                    "isdst": false,
+	                    "text": "(UTC+08:00) Beijing, Chongqing, Hong Kong, Urumqi",
+	                    "utc": [
+	                      "Asia/Hong_Kong",
+	                      "Asia/Macau",
+	                      "Asia/Shanghai"
+	                    ]
+	                  },
+	                  {
+	                    "name": "North Asia Standard Time",
+	                    "abbr": "NAST",
+	                    "offset": 8,
+	                    "isdst": false,
+	                    "text": "(UTC+08:00) Krasnoyarsk",
+	                    "utc": [
+	                      "Asia/Krasnoyarsk"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Singapore Standard Time",
+	                    "abbr": "MPST",
+	                    "offset": 8,
+	                    "isdst": false,
+	                    "text": "(UTC+08:00) Kuala Lumpur, Singapore",
+	                    "utc": [
+	                      "Asia/Brunei",
+	                      "Asia/Kuala_Lumpur",
+	                      "Asia/Kuching",
+	                      "Asia/Makassar",
+	                      "Asia/Manila",
+	                      "Asia/Singapore",
+	                      "Etc/GMT-8"
+	                    ]
+	                  },
+	                  {
+	                    "name": "W. Australia Standard Time",
+	                    "abbr": "WAST",
+	                    "offset": 8,
+	                    "isdst": false,
+	                    "text": "(UTC+08:00) Perth",
+	                    "utc": [
+	                      "Antarctica/Casey",
+	                      "Australia/Perth"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Taipei Standard Time",
+	                    "abbr": "TST",
+	                    "offset": 8,
+	                    "isdst": false,
+	                    "text": "(UTC+08:00) Taipei",
+	                    "utc": [
+	                      "Asia/Taipei"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Ulaanbaatar Standard Time",
+	                    "abbr": "UST",
+	                    "offset": 8,
+	                    "isdst": false,
+	                    "text": "(UTC+08:00) Ulaanbaatar",
+	                    "utc": [
+	                      "Asia/Choibalsan",
+	                      "Asia/Ulaanbaatar"
+	                    ]
+	                  },
+	                  {
+	                    "name": "North Asia East Standard Time",
+	                    "abbr": "NAEST",
+	                    "offset": 9,
+	                    "isdst": false,
+	                    "text": "(UTC+09:00) Irkutsk",
+	                    "utc": [
+	                      "Asia/Irkutsk"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Tokyo Standard Time",
+	                    "abbr": "TST",
+	                    "offset": 9,
+	                    "isdst": false,
+	                    "text": "(UTC+09:00) Osaka, Sapporo, Tokyo",
+	                    "utc": [
+	                      "Asia/Dili",
+	                      "Asia/Jayapura",
+	                      "Asia/Tokyo",
+	                      "Etc/GMT-9",
+	                      "Pacific/Palau"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Korea Standard Time",
+	                    "abbr": "KST",
+	                    "offset": 9,
+	                    "isdst": false,
+	                    "text": "(UTC+09:00) Seoul",
+	                    "utc": [
+	                      "Asia/Pyongyang",
+	                      "Asia/Seoul"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Cen. Australia Standard Time",
+	                    "abbr": "CAST",
+	                    "offset": 9.5,
+	                    "isdst": false,
+	                    "text": "(UTC+09:30) Adelaide",
+	                    "utc": [
+	                      "Australia/Adelaide",
+	                      "Australia/Broken_Hill"
+	                    ]
+	                  },
+	                  {
+	                    "name": "AUS Central Standard Time",
+	                    "abbr": "ACST",
+	                    "offset": 9.5,
+	                    "isdst": false,
+	                    "text": "(UTC+09:30) Darwin",
+	                    "utc": [
+	                      "Australia/Darwin"
+	                    ]
+	                  },
+	                  {
+	                    "name": "E. Australia Standard Time",
+	                    "abbr": "EAST",
+	                    "offset": 10,
+	                    "isdst": false,
+	                    "text": "(UTC+10:00) Brisbane",
+	                    "utc": [
+	                      "Australia/Brisbane",
+	                      "Australia/Lindeman"
+	                    ]
+	                  },
+	                  {
+	                    "name": "AUS Eastern Standard Time",
+	                    "abbr": "AEST",
+	                    "offset": 10,
+	                    "isdst": false,
+	                    "text": "(UTC+10:00) Canberra, Melbourne, Sydney",
+	                    "utc": [
+	                      "Australia/Melbourne",
+	                      "Australia/Sydney"
+	                    ]
+	                  },
+	                  {
+	                    "name": "West Pacific Standard Time",
+	                    "abbr": "WPST",
+	                    "offset": 10,
+	                    "isdst": false,
+	                    "text": "(UTC+10:00) Guam, Port Moresby",
+	                    "utc": [
+	                      "Antarctica/DumontDUrville",
+	                      "Etc/GMT-10",
+	                      "Pacific/Guam",
+	                      "Pacific/Port_Moresby",
+	                      "Pacific/Saipan",
+	                      "Pacific/Truk"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Tasmania Standard Time",
+	                    "abbr": "TST",
+	                    "offset": 10,
+	                    "isdst": false,
+	                    "text": "(UTC+10:00) Hobart",
+	                    "utc": [
+	                      "Australia/Currie",
+	                      "Australia/Hobart"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Yakutsk Standard Time",
+	                    "abbr": "YST",
+	                    "offset": 10,
+	                    "isdst": false,
+	                    "text": "(UTC+10:00) Yakutsk",
+	                    "utc": [
+	                      "Asia/Chita",
+	                      "Asia/Khandyga",
+	                      "Asia/Yakutsk"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Central Pacific Standard Time",
+	                    "abbr": "CPST",
+	                    "offset": 11,
+	                    "isdst": false,
+	                    "text": "(UTC+11:00) Solomon Is., New Caledonia",
+	                    "utc": [
+	                      "Antarctica/Macquarie",
+	                      "Etc/GMT-11",
+	                      "Pacific/Efate",
+	                      "Pacific/Guadalcanal",
+	                      "Pacific/Kosrae",
+	                      "Pacific/Noumea",
+	                      "Pacific/Ponape"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Vladivostok Standard Time",
+	                    "abbr": "VST",
+	                    "offset": 11,
+	                    "isdst": false,
+	                    "text": "(UTC+11:00) Vladivostok",
+	                    "utc": [
+	                      "Asia/Sakhalin",
+	                      "Asia/Ust-Nera",
+	                      "Asia/Vladivostok"
+	                    ]
+	                  },
+	                  {
+	                    "name": "New Zealand Standard Time",
+	                    "abbr": "NZST",
+	                    "offset": 12,
+	                    "isdst": false,
+	                    "text": "(UTC+12:00) Auckland, Wellington",
+	                    "utc": [
+	                      "Antarctica/McMurdo",
+	                      "Pacific/Auckland"
+	                    ]
+	                  },
+	                  {
+	                    "name": "UTC+12",
+	                    "abbr": "U",
+	                    "offset": 12,
+	                    "isdst": false,
+	                    "text": "(UTC+12:00) Coordinated Universal Time+12",
+	                    "utc": [
+	                      "Etc/GMT-12",
+	                      "Pacific/Funafuti",
+	                      "Pacific/Kwajalein",
+	                      "Pacific/Majuro",
+	                      "Pacific/Nauru",
+	                      "Pacific/Tarawa",
+	                      "Pacific/Wake",
+	                      "Pacific/Wallis"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Fiji Standard Time",
+	                    "abbr": "FST",
+	                    "offset": 12,
+	                    "isdst": false,
+	                    "text": "(UTC+12:00) Fiji",
+	                    "utc": [
+	                      "Pacific/Fiji"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Magadan Standard Time",
+	                    "abbr": "MST",
+	                    "offset": 12,
+	                    "isdst": false,
+	                    "text": "(UTC+12:00) Magadan",
+	                    "utc": [
+	                      "Asia/Anadyr",
+	                      "Asia/Kamchatka",
+	                      "Asia/Magadan",
+	                      "Asia/Srednekolymsk"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Kamchatka Standard Time",
+	                    "abbr": "KDT",
+	                    "offset": 13,
+	                    "isdst": true,
+	                    "text": "(UTC+12:00) Petropavlovsk-Kamchatsky - Old"
+	                  },
+	                  {
+	                    "name": "Tonga Standard Time",
+	                    "abbr": "TST",
+	                    "offset": 13,
+	                    "isdst": false,
+	                    "text": "(UTC+13:00) Nuku'alofa",
+	                    "utc": [
+	                      "Etc/GMT-13",
+	                      "Pacific/Enderbury",
+	                      "Pacific/Fakaofo",
+	                      "Pacific/Tongatapu"
+	                    ]
+	                  },
+	                  {
+	                    "name": "Samoa Standard Time",
+	                    "abbr": "SST",
+	                    "offset": 13,
+	                    "isdst": false,
+	                    "text": "(UTC+13:00) Samoa",
+	                    "utc": [
+	                      "Pacific/Apia"
+	                    ]
+	                  }
+	                ]
+	    };
+
+	    var o_hasOwnProperty = Object.prototype.hasOwnProperty;
+	    var o_keys = (Object.keys || function(obj) {
+	      var result = [];
+	      for (var key in obj) {
+	        if (o_hasOwnProperty.call(obj, key)) {
+	          result.push(key);
+	        }
+	      }
+
+	      return result;
+	    });
+
+	    function _copyObject(source, target) {
+	      var keys = o_keys(source);
+	      var key;
+
+	      for (var i = 0, l = keys.length; i < l; i++) {
+	        key = keys[i];
+	        target[key] = source[key] || target[key];
+	      }
+	    }
+
+	    function _copyArray(source, target) {
+	      for (var i = 0, l = source.length; i < l; i++) {
+	        target[i] = source[i];
+	      }
+	    }
+
+	    function copyObject(source, _target) {
+	        var isArray = Array.isArray(source);
+	        var target = _target || (isArray ? new Array(source.length) : {});
+
+	        if (isArray) {
+	          _copyArray(source, target);
+	        } else {
+	          _copyObject(source, target);
+	        }
+
+	        return target;
+	    }
+
+	    /** Get the data based on key**/
+	    Chance.prototype.get = function (name) {
+	        return copyObject(data[name]);
+	    };
+
+	    // Mac Address
+	    Chance.prototype.mac_address = function(options){
+	        // typically mac addresses are separated by ":"
+	        // however they can also be separated by "-"
+	        // the network variant uses a dot every fourth byte
+
+	        options = initOptions(options);
+	        if(!options.separator) {
+	            options.separator =  options.networkVersion ? "." : ":";
+	        }
+
+	        var mac_pool="ABCDEF1234567890",
+	            mac = "";
+	        if(!options.networkVersion) {
+	            mac = this.n(this.string, 6, { pool: mac_pool, length:2 }).join(options.separator);
+	        } else {
+	            mac = this.n(this.string, 3, { pool: mac_pool, length:4 }).join(options.separator);
+	        }
+
+	        return mac;
+	    };
+
+	    Chance.prototype.normal = function (options) {
+	        options = initOptions(options, {mean : 0, dev : 1, pool : []});
+
+	        testRange(
+	            options.pool.constructor !== Array,
+	            "Chance: The pool option must be a valid array."
+	        );
+
+	        // If a pool has been passed, then we are returning an item from that pool,
+	        // using the normal distribution settings that were passed in
+	        if (options.pool.length > 0) {
+	            return this.normal_pool(options);
+	        }
+
+	        // The Marsaglia Polar method
+	        var s, u, v, norm,
+	            mean = options.mean,
+	            dev = options.dev;
+
+	        do {
+	            // U and V are from the uniform distribution on (-1, 1)
+	            u = this.random() * 2 - 1;
+	            v = this.random() * 2 - 1;
+
+	            s = u * u + v * v;
+	        } while (s >= 1);
+
+	        // Compute the standard normal variate
+	        norm = u * Math.sqrt(-2 * Math.log(s) / s);
+
+	        // Shape and scale
+	        return dev * norm + mean;
+	    };
+
+	    Chance.prototype.normal_pool = function(options) {
+	        var performanceCounter = 0;
+	        do {
+	            var idx = Math.round(this.normal({ mean: options.mean, dev: options.dev }));
+	            if (idx < options.pool.length && idx >= 0) {
+	                return options.pool[idx];
+	            } else {
+	                performanceCounter++;
+	            }
+	        } while(performanceCounter < 100);
+
+	        throw new RangeError("Chance: Your pool is too small for the given mean and standard deviation. Please adjust.");
+	    };
+
+	    Chance.prototype.radio = function (options) {
+	        // Initial Letter (Typically Designated by Side of Mississippi River)
+	        options = initOptions(options, {side : "?"});
+	        var fl = "";
+	        switch (options.side.toLowerCase()) {
+	        case "east":
+	        case "e":
+	            fl = "W";
+	            break;
+	        case "west":
+	        case "w":
+	            fl = "K";
+	            break;
+	        default:
+	            fl = this.character({pool: "KW"});
+	            break;
+	        }
+
+	        return fl + this.character({alpha: true, casing: "upper"}) +
+	                this.character({alpha: true, casing: "upper"}) +
+	                this.character({alpha: true, casing: "upper"});
+	    };
+
+	    // Set the data as key and data or the data map
+	    Chance.prototype.set = function (name, values) {
+	        if (typeof name === "string") {
+	            data[name] = values;
+	        } else {
+	            data = copyObject(name, data);
+	        }
+	    };
+
+	    Chance.prototype.tv = function (options) {
+	        return this.radio(options);
+	    };
+
+	    // ID number for Brazil companies
+	    Chance.prototype.cnpj = function () {
+	        var n = this.n(this.natural, 8, { max: 9 });
+	        var d1 = 2+n[7]*6+n[6]*7+n[5]*8+n[4]*9+n[3]*2+n[2]*3+n[1]*4+n[0]*5;
+	        d1 = 11 - (d1 % 11);
+	        if (d1>=10){
+	            d1 = 0;
+	        }
+	        var d2 = d1*2+3+n[7]*7+n[6]*8+n[5]*9+n[4]*2+n[3]*3+n[2]*4+n[1]*5+n[0]*6;
+	        d2 = 11 - (d2 % 11);
+	        if (d2>=10){
+	            d2 = 0;
+	        }
+	        return ''+n[0]+n[1]+'.'+n[2]+n[3]+n[4]+'.'+n[5]+n[6]+n[7]+'/0001-'+d1+d2;
+	    };
+
+	    // -- End Miscellaneous --
+
+	    Chance.prototype.mersenne_twister = function (seed) {
+	        return new MersenneTwister(seed);
+	    };
+
+	    Chance.prototype.blueimp_md5 = function () {
+	        return new BlueImpMD5();
+	    };
+
+	    // Mersenne Twister from https://gist.github.com/banksean/300494
+	    var MersenneTwister = function (seed) {
+	        if (seed === undefined) {
+	            // kept random number same size as time used previously to ensure no unexpected results downstream
+	            seed = Math.floor(Math.random()*Math.pow(10,13));
+	        }
+	        /* Period parameters */
+	        this.N = 624;
+	        this.M = 397;
+	        this.MATRIX_A = 0x9908b0df;   /* constant vector a */
+	        this.UPPER_MASK = 0x80000000; /* most significant w-r bits */
+	        this.LOWER_MASK = 0x7fffffff; /* least significant r bits */
+
+	        this.mt = new Array(this.N); /* the array for the state vector */
+	        this.mti = this.N + 1; /* mti==N + 1 means mt[N] is not initialized */
+
+	        this.init_genrand(seed);
+	    };
+
+	    /* initializes mt[N] with a seed */
+	    MersenneTwister.prototype.init_genrand = function (s) {
+	        this.mt[0] = s >>> 0;
+	        for (this.mti = 1; this.mti < this.N; this.mti++) {
+	            s = this.mt[this.mti - 1] ^ (this.mt[this.mti - 1] >>> 30);
+	            this.mt[this.mti] = (((((s & 0xffff0000) >>> 16) * 1812433253) << 16) + (s & 0x0000ffff) * 1812433253) + this.mti;
+	            /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
+	            /* In the previous versions, MSBs of the seed affect   */
+	            /* only MSBs of the array mt[].                        */
+	            /* 2002/01/09 modified by Makoto Matsumoto             */
+	            this.mt[this.mti] >>>= 0;
+	            /* for >32 bit machines */
+	        }
+	    };
+
+	    /* initialize by an array with array-length */
+	    /* init_key is the array for initializing keys */
+	    /* key_length is its length */
+	    /* slight change for C++, 2004/2/26 */
+	    MersenneTwister.prototype.init_by_array = function (init_key, key_length) {
+	        var i = 1, j = 0, k, s;
+	        this.init_genrand(19650218);
+	        k = (this.N > key_length ? this.N : key_length);
+	        for (; k; k--) {
+	            s = this.mt[i - 1] ^ (this.mt[i - 1] >>> 30);
+	            this.mt[i] = (this.mt[i] ^ (((((s & 0xffff0000) >>> 16) * 1664525) << 16) + ((s & 0x0000ffff) * 1664525))) + init_key[j] + j; /* non linear */
+	            this.mt[i] >>>= 0; /* for WORDSIZE > 32 machines */
+	            i++;
+	            j++;
+	            if (i >= this.N) { this.mt[0] = this.mt[this.N - 1]; i = 1; }
+	            if (j >= key_length) { j = 0; }
+	        }
+	        for (k = this.N - 1; k; k--) {
+	            s = this.mt[i - 1] ^ (this.mt[i - 1] >>> 30);
+	            this.mt[i] = (this.mt[i] ^ (((((s & 0xffff0000) >>> 16) * 1566083941) << 16) + (s & 0x0000ffff) * 1566083941)) - i; /* non linear */
+	            this.mt[i] >>>= 0; /* for WORDSIZE > 32 machines */
+	            i++;
+	            if (i >= this.N) { this.mt[0] = this.mt[this.N - 1]; i = 1; }
+	        }
+
+	        this.mt[0] = 0x80000000; /* MSB is 1; assuring non-zero initial array */
+	    };
+
+	    /* generates a random number on [0,0xffffffff]-interval */
+	    MersenneTwister.prototype.genrand_int32 = function () {
+	        var y;
+	        var mag01 = new Array(0x0, this.MATRIX_A);
+	        /* mag01[x] = x * MATRIX_A  for x=0,1 */
+
+	        if (this.mti >= this.N) { /* generate N words at one time */
+	            var kk;
+
+	            if (this.mti === this.N + 1) {   /* if init_genrand() has not been called, */
+	                this.init_genrand(5489); /* a default initial seed is used */
+	            }
+	            for (kk = 0; kk < this.N - this.M; kk++) {
+	                y = (this.mt[kk]&this.UPPER_MASK)|(this.mt[kk + 1]&this.LOWER_MASK);
+	                this.mt[kk] = this.mt[kk + this.M] ^ (y >>> 1) ^ mag01[y & 0x1];
+	            }
+	            for (;kk < this.N - 1; kk++) {
+	                y = (this.mt[kk]&this.UPPER_MASK)|(this.mt[kk + 1]&this.LOWER_MASK);
+	                this.mt[kk] = this.mt[kk + (this.M - this.N)] ^ (y >>> 1) ^ mag01[y & 0x1];
+	            }
+	            y = (this.mt[this.N - 1]&this.UPPER_MASK)|(this.mt[0]&this.LOWER_MASK);
+	            this.mt[this.N - 1] = this.mt[this.M - 1] ^ (y >>> 1) ^ mag01[y & 0x1];
+
+	            this.mti = 0;
+	        }
+
+	        y = this.mt[this.mti++];
+
+	        /* Tempering */
+	        y ^= (y >>> 11);
+	        y ^= (y << 7) & 0x9d2c5680;
+	        y ^= (y << 15) & 0xefc60000;
+	        y ^= (y >>> 18);
+
+	        return y >>> 0;
+	    };
+
+	    /* generates a random number on [0,0x7fffffff]-interval */
+	    MersenneTwister.prototype.genrand_int31 = function () {
+	        return (this.genrand_int32() >>> 1);
+	    };
+
+	    /* generates a random number on [0,1]-real-interval */
+	    MersenneTwister.prototype.genrand_real1 = function () {
+	        return this.genrand_int32() * (1.0 / 4294967295.0);
+	        /* divided by 2^32-1 */
+	    };
+
+	    /* generates a random number on [0,1)-real-interval */
+	    MersenneTwister.prototype.random = function () {
+	        return this.genrand_int32() * (1.0 / 4294967296.0);
+	        /* divided by 2^32 */
+	    };
+
+	    /* generates a random number on (0,1)-real-interval */
+	    MersenneTwister.prototype.genrand_real3 = function () {
+	        return (this.genrand_int32() + 0.5) * (1.0 / 4294967296.0);
+	        /* divided by 2^32 */
+	    };
+
+	    /* generates a random number on [0,1) with 53-bit resolution*/
+	    MersenneTwister.prototype.genrand_res53 = function () {
+	        var a = this.genrand_int32()>>>5, b = this.genrand_int32()>>>6;
+	        return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0);
+	    };
+
+	    // BlueImp MD5 hashing algorithm from https://github.com/blueimp/JavaScript-MD5
+	    var BlueImpMD5 = function () {};
+
+	    BlueImpMD5.prototype.VERSION = '1.0.1';
+
+	    /*
+	    * Add integers, wrapping at 2^32. This uses 16-bit operations internally
+	    * to work around bugs in some JS interpreters.
+	    */
+	    BlueImpMD5.prototype.safe_add = function safe_add(x, y) {
+	        var lsw = (x & 0xFFFF) + (y & 0xFFFF),
+	            msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+	        return (msw << 16) | (lsw & 0xFFFF);
+	    };
+
+	    /*
+	    * Bitwise rotate a 32-bit number to the left.
+	    */
+	    BlueImpMD5.prototype.bit_roll = function (num, cnt) {
+	        return (num << cnt) | (num >>> (32 - cnt));
+	    };
+
+	    /*
+	    * These functions implement the five basic operations the algorithm uses.
+	    */
+	    BlueImpMD5.prototype.md5_cmn = function (q, a, b, x, s, t) {
+	        return this.safe_add(this.bit_roll(this.safe_add(this.safe_add(a, q), this.safe_add(x, t)), s), b);
+	    };
+	    BlueImpMD5.prototype.md5_ff = function (a, b, c, d, x, s, t) {
+	        return this.md5_cmn((b & c) | ((~b) & d), a, b, x, s, t);
+	    };
+	    BlueImpMD5.prototype.md5_gg = function (a, b, c, d, x, s, t) {
+	        return this.md5_cmn((b & d) | (c & (~d)), a, b, x, s, t);
+	    };
+	    BlueImpMD5.prototype.md5_hh = function (a, b, c, d, x, s, t) {
+	        return this.md5_cmn(b ^ c ^ d, a, b, x, s, t);
+	    };
+	    BlueImpMD5.prototype.md5_ii = function (a, b, c, d, x, s, t) {
+	        return this.md5_cmn(c ^ (b | (~d)), a, b, x, s, t);
+	    };
+
+	    /*
+	    * Calculate the MD5 of an array of little-endian words, and a bit length.
+	    */
+	    BlueImpMD5.prototype.binl_md5 = function (x, len) {
+	        /* append padding */
+	        x[len >> 5] |= 0x80 << (len % 32);
+	        x[(((len + 64) >>> 9) << 4) + 14] = len;
+
+	        var i, olda, oldb, oldc, oldd,
+	            a =  1732584193,
+	            b = -271733879,
+	            c = -1732584194,
+	            d =  271733878;
+
+	        for (i = 0; i < x.length; i += 16) {
+	            olda = a;
+	            oldb = b;
+	            oldc = c;
+	            oldd = d;
+
+	            a = this.md5_ff(a, b, c, d, x[i],       7, -680876936);
+	            d = this.md5_ff(d, a, b, c, x[i +  1], 12, -389564586);
+	            c = this.md5_ff(c, d, a, b, x[i +  2], 17,  606105819);
+	            b = this.md5_ff(b, c, d, a, x[i +  3], 22, -1044525330);
+	            a = this.md5_ff(a, b, c, d, x[i +  4],  7, -176418897);
+	            d = this.md5_ff(d, a, b, c, x[i +  5], 12,  1200080426);
+	            c = this.md5_ff(c, d, a, b, x[i +  6], 17, -1473231341);
+	            b = this.md5_ff(b, c, d, a, x[i +  7], 22, -45705983);
+	            a = this.md5_ff(a, b, c, d, x[i +  8],  7,  1770035416);
+	            d = this.md5_ff(d, a, b, c, x[i +  9], 12, -1958414417);
+	            c = this.md5_ff(c, d, a, b, x[i + 10], 17, -42063);
+	            b = this.md5_ff(b, c, d, a, x[i + 11], 22, -1990404162);
+	            a = this.md5_ff(a, b, c, d, x[i + 12],  7,  1804603682);
+	            d = this.md5_ff(d, a, b, c, x[i + 13], 12, -40341101);
+	            c = this.md5_ff(c, d, a, b, x[i + 14], 17, -1502002290);
+	            b = this.md5_ff(b, c, d, a, x[i + 15], 22,  1236535329);
+
+	            a = this.md5_gg(a, b, c, d, x[i +  1],  5, -165796510);
+	            d = this.md5_gg(d, a, b, c, x[i +  6],  9, -1069501632);
+	            c = this.md5_gg(c, d, a, b, x[i + 11], 14,  643717713);
+	            b = this.md5_gg(b, c, d, a, x[i],      20, -373897302);
+	            a = this.md5_gg(a, b, c, d, x[i +  5],  5, -701558691);
+	            d = this.md5_gg(d, a, b, c, x[i + 10],  9,  38016083);
+	            c = this.md5_gg(c, d, a, b, x[i + 15], 14, -660478335);
+	            b = this.md5_gg(b, c, d, a, x[i +  4], 20, -405537848);
+	            a = this.md5_gg(a, b, c, d, x[i +  9],  5,  568446438);
+	            d = this.md5_gg(d, a, b, c, x[i + 14],  9, -1019803690);
+	            c = this.md5_gg(c, d, a, b, x[i +  3], 14, -187363961);
+	            b = this.md5_gg(b, c, d, a, x[i +  8], 20,  1163531501);
+	            a = this.md5_gg(a, b, c, d, x[i + 13],  5, -1444681467);
+	            d = this.md5_gg(d, a, b, c, x[i +  2],  9, -51403784);
+	            c = this.md5_gg(c, d, a, b, x[i +  7], 14,  1735328473);
+	            b = this.md5_gg(b, c, d, a, x[i + 12], 20, -1926607734);
+
+	            a = this.md5_hh(a, b, c, d, x[i +  5],  4, -378558);
+	            d = this.md5_hh(d, a, b, c, x[i +  8], 11, -2022574463);
+	            c = this.md5_hh(c, d, a, b, x[i + 11], 16,  1839030562);
+	            b = this.md5_hh(b, c, d, a, x[i + 14], 23, -35309556);
+	            a = this.md5_hh(a, b, c, d, x[i +  1],  4, -1530992060);
+	            d = this.md5_hh(d, a, b, c, x[i +  4], 11,  1272893353);
+	            c = this.md5_hh(c, d, a, b, x[i +  7], 16, -155497632);
+	            b = this.md5_hh(b, c, d, a, x[i + 10], 23, -1094730640);
+	            a = this.md5_hh(a, b, c, d, x[i + 13],  4,  681279174);
+	            d = this.md5_hh(d, a, b, c, x[i],      11, -358537222);
+	            c = this.md5_hh(c, d, a, b, x[i +  3], 16, -722521979);
+	            b = this.md5_hh(b, c, d, a, x[i +  6], 23,  76029189);
+	            a = this.md5_hh(a, b, c, d, x[i +  9],  4, -640364487);
+	            d = this.md5_hh(d, a, b, c, x[i + 12], 11, -421815835);
+	            c = this.md5_hh(c, d, a, b, x[i + 15], 16,  530742520);
+	            b = this.md5_hh(b, c, d, a, x[i +  2], 23, -995338651);
+
+	            a = this.md5_ii(a, b, c, d, x[i],       6, -198630844);
+	            d = this.md5_ii(d, a, b, c, x[i +  7], 10,  1126891415);
+	            c = this.md5_ii(c, d, a, b, x[i + 14], 15, -1416354905);
+	            b = this.md5_ii(b, c, d, a, x[i +  5], 21, -57434055);
+	            a = this.md5_ii(a, b, c, d, x[i + 12],  6,  1700485571);
+	            d = this.md5_ii(d, a, b, c, x[i +  3], 10, -1894986606);
+	            c = this.md5_ii(c, d, a, b, x[i + 10], 15, -1051523);
+	            b = this.md5_ii(b, c, d, a, x[i +  1], 21, -2054922799);
+	            a = this.md5_ii(a, b, c, d, x[i +  8],  6,  1873313359);
+	            d = this.md5_ii(d, a, b, c, x[i + 15], 10, -30611744);
+	            c = this.md5_ii(c, d, a, b, x[i +  6], 15, -1560198380);
+	            b = this.md5_ii(b, c, d, a, x[i + 13], 21,  1309151649);
+	            a = this.md5_ii(a, b, c, d, x[i +  4],  6, -145523070);
+	            d = this.md5_ii(d, a, b, c, x[i + 11], 10, -1120210379);
+	            c = this.md5_ii(c, d, a, b, x[i +  2], 15,  718787259);
+	            b = this.md5_ii(b, c, d, a, x[i +  9], 21, -343485551);
+
+	            a = this.safe_add(a, olda);
+	            b = this.safe_add(b, oldb);
+	            c = this.safe_add(c, oldc);
+	            d = this.safe_add(d, oldd);
+	        }
+	        return [a, b, c, d];
+	    };
+
+	    /*
+	    * Convert an array of little-endian words to a string
+	    */
+	    BlueImpMD5.prototype.binl2rstr = function (input) {
+	        var i,
+	            output = '';
+	        for (i = 0; i < input.length * 32; i += 8) {
+	            output += String.fromCharCode((input[i >> 5] >>> (i % 32)) & 0xFF);
+	        }
+	        return output;
+	    };
+
+	    /*
+	    * Convert a raw string to an array of little-endian words
+	    * Characters >255 have their high-byte silently ignored.
+	    */
+	    BlueImpMD5.prototype.rstr2binl = function (input) {
+	        var i,
+	            output = [];
+	        output[(input.length >> 2) - 1] = undefined;
+	        for (i = 0; i < output.length; i += 1) {
+	            output[i] = 0;
+	        }
+	        for (i = 0; i < input.length * 8; i += 8) {
+	            output[i >> 5] |= (input.charCodeAt(i / 8) & 0xFF) << (i % 32);
+	        }
+	        return output;
+	    };
+
+	    /*
+	    * Calculate the MD5 of a raw string
+	    */
+	    BlueImpMD5.prototype.rstr_md5 = function (s) {
+	        return this.binl2rstr(this.binl_md5(this.rstr2binl(s), s.length * 8));
+	    };
+
+	    /*
+	    * Calculate the HMAC-MD5, of a key and some data (raw strings)
+	    */
+	    BlueImpMD5.prototype.rstr_hmac_md5 = function (key, data) {
+	        var i,
+	            bkey = this.rstr2binl(key),
+	            ipad = [],
+	            opad = [],
+	            hash;
+	        ipad[15] = opad[15] = undefined;
+	        if (bkey.length > 16) {
+	            bkey = this.binl_md5(bkey, key.length * 8);
+	        }
+	        for (i = 0; i < 16; i += 1) {
+	            ipad[i] = bkey[i] ^ 0x36363636;
+	            opad[i] = bkey[i] ^ 0x5C5C5C5C;
+	        }
+	        hash = this.binl_md5(ipad.concat(this.rstr2binl(data)), 512 + data.length * 8);
+	        return this.binl2rstr(this.binl_md5(opad.concat(hash), 512 + 128));
+	    };
+
+	    /*
+	    * Convert a raw string to a hex string
+	    */
+	    BlueImpMD5.prototype.rstr2hex = function (input) {
+	        var hex_tab = '0123456789abcdef',
+	            output = '',
+	            x,
+	            i;
+	        for (i = 0; i < input.length; i += 1) {
+	            x = input.charCodeAt(i);
+	            output += hex_tab.charAt((x >>> 4) & 0x0F) +
+	                hex_tab.charAt(x & 0x0F);
+	        }
+	        return output;
+	    };
+
+	    /*
+	    * Encode a string as utf-8
+	    */
+	    BlueImpMD5.prototype.str2rstr_utf8 = function (input) {
+	        return unescape(encodeURIComponent(input));
+	    };
+
+	    /*
+	    * Take string arguments and return either raw or hex encoded strings
+	    */
+	    BlueImpMD5.prototype.raw_md5 = function (s) {
+	        return this.rstr_md5(this.str2rstr_utf8(s));
+	    };
+	    BlueImpMD5.prototype.hex_md5 = function (s) {
+	        return this.rstr2hex(this.raw_md5(s));
+	    };
+	    BlueImpMD5.prototype.raw_hmac_md5 = function (k, d) {
+	        return this.rstr_hmac_md5(this.str2rstr_utf8(k), this.str2rstr_utf8(d));
+	    };
+	    BlueImpMD5.prototype.hex_hmac_md5 = function (k, d) {
+	        return this.rstr2hex(this.raw_hmac_md5(k, d));
+	    };
+
+	    BlueImpMD5.prototype.md5 = function (string, key, raw) {
+	        if (!key) {
+	            if (!raw) {
+	                return this.hex_md5(string);
+	            }
+
+	            return this.raw_md5(string);
+	        }
+
+	        if (!raw) {
+	            return this.hex_hmac_md5(key, string);
+	        }
+
+	        return this.raw_hmac_md5(key, string);
+	    };
+
+	    // CommonJS module
+	    if (true) {
+	        if (typeof module !== 'undefined' && module.exports) {
+	            exports = module.exports = Chance;
+	        }
+	        exports.Chance = Chance;
+	    }
+
+	    // Register as an anonymous AMD module
+	    if (true) {
+	        !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
+	            return Chance;
+	        }.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	    }
+
+	    // if there is a importsScrips object define chance for worker
+	    if (typeof importScripts !== 'undefined') {
+	        chance = new Chance();
+	    }
+
+	    // If there is a window object, that at least has a document property,
+	    // instantiate and define chance on the window
+	    if (typeof window === "object" && typeof window.document === "object") {
+	        window.Chance = Chance;
+	        window.chance = new Chance();
+	    }
+	})();
+
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(183).Buffer))
+
+/***/ },
+/* 183 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {/*!
+	 * The buffer module from node.js, for the browser.
+	 *
+	 * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
+	 * @license  MIT
+	 */
+	/* eslint-disable no-proto */
+
+	'use strict'
+
+	var base64 = __webpack_require__(184)
+	var ieee754 = __webpack_require__(185)
+	var isArray = __webpack_require__(186)
+
+	exports.Buffer = Buffer
+	exports.SlowBuffer = SlowBuffer
+	exports.INSPECT_MAX_BYTES = 50
+
+	/**
+	 * If `Buffer.TYPED_ARRAY_SUPPORT`:
+	 *   === true    Use Uint8Array implementation (fastest)
+	 *   === false   Use Object implementation (most compatible, even IE6)
+	 *
+	 * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
+	 * Opera 11.6+, iOS 4.2+.
+	 *
+	 * Due to various browser bugs, sometimes the Object implementation will be used even
+	 * when the browser supports typed arrays.
+	 *
+	 * Note:
+	 *
+	 *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
+	 *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
+	 *
+	 *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
+	 *
+	 *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
+	 *     incorrect length in some situations.
+
+	 * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
+	 * get the Object implementation, which is slower but behaves correctly.
+	 */
+	Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined
+	  ? global.TYPED_ARRAY_SUPPORT
+	  : typedArraySupport()
+
+	/*
+	 * Export kMaxLength after typed array support is determined.
+	 */
+	exports.kMaxLength = kMaxLength()
+
+	function typedArraySupport () {
+	  try {
+	    var arr = new Uint8Array(1)
+	    arr.__proto__ = {__proto__: Uint8Array.prototype, foo: function () { return 42 }}
+	    return arr.foo() === 42 && // typed array instances can be augmented
+	        typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
+	        arr.subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
+	  } catch (e) {
+	    return false
+	  }
+	}
+
+	function kMaxLength () {
+	  return Buffer.TYPED_ARRAY_SUPPORT
+	    ? 0x7fffffff
+	    : 0x3fffffff
+	}
+
+	function createBuffer (that, length) {
+	  if (kMaxLength() < length) {
+	    throw new RangeError('Invalid typed array length')
+	  }
+	  if (Buffer.TYPED_ARRAY_SUPPORT) {
+	    // Return an augmented `Uint8Array` instance, for best performance
+	    that = new Uint8Array(length)
+	    that.__proto__ = Buffer.prototype
+	  } else {
+	    // Fallback: Return an object instance of the Buffer class
+	    if (that === null) {
+	      that = new Buffer(length)
+	    }
+	    that.length = length
+	  }
+
+	  return that
+	}
+
+	/**
+	 * The Buffer constructor returns instances of `Uint8Array` that have their
+	 * prototype changed to `Buffer.prototype`. Furthermore, `Buffer` is a subclass of
+	 * `Uint8Array`, so the returned instances will have all the node `Buffer` methods
+	 * and the `Uint8Array` methods. Square bracket notation works as expected -- it
+	 * returns a single octet.
+	 *
+	 * The `Uint8Array` prototype remains unmodified.
+	 */
+
+	function Buffer (arg, encodingOrOffset, length) {
+	  if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
+	    return new Buffer(arg, encodingOrOffset, length)
+	  }
+
+	  // Common case.
+	  if (typeof arg === 'number') {
+	    if (typeof encodingOrOffset === 'string') {
+	      throw new Error(
+	        'If encoding is specified then the first argument must be a string'
+	      )
+	    }
+	    return allocUnsafe(this, arg)
+	  }
+	  return from(this, arg, encodingOrOffset, length)
+	}
+
+	Buffer.poolSize = 8192 // not used by this implementation
+
+	// TODO: Legacy, not needed anymore. Remove in next major version.
+	Buffer._augment = function (arr) {
+	  arr.__proto__ = Buffer.prototype
+	  return arr
+	}
+
+	function from (that, value, encodingOrOffset, length) {
+	  if (typeof value === 'number') {
+	    throw new TypeError('"value" argument must not be a number')
+	  }
+
+	  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
+	    return fromArrayBuffer(that, value, encodingOrOffset, length)
+	  }
+
+	  if (typeof value === 'string') {
+	    return fromString(that, value, encodingOrOffset)
+	  }
+
+	  return fromObject(that, value)
+	}
+
+	/**
+	 * Functionally equivalent to Buffer(arg, encoding) but throws a TypeError
+	 * if value is a number.
+	 * Buffer.from(str[, encoding])
+	 * Buffer.from(array)
+	 * Buffer.from(buffer)
+	 * Buffer.from(arrayBuffer[, byteOffset[, length]])
+	 **/
+	Buffer.from = function (value, encodingOrOffset, length) {
+	  return from(null, value, encodingOrOffset, length)
+	}
+
+	if (Buffer.TYPED_ARRAY_SUPPORT) {
+	  Buffer.prototype.__proto__ = Uint8Array.prototype
+	  Buffer.__proto__ = Uint8Array
+	  if (typeof Symbol !== 'undefined' && Symbol.species &&
+	      Buffer[Symbol.species] === Buffer) {
+	    // Fix subarray() in ES2016. See: https://github.com/feross/buffer/pull/97
+	    Object.defineProperty(Buffer, Symbol.species, {
+	      value: null,
+	      configurable: true
+	    })
+	  }
+	}
+
+	function assertSize (size) {
+	  if (typeof size !== 'number') {
+	    throw new TypeError('"size" argument must be a number')
+	  } else if (size < 0) {
+	    throw new RangeError('"size" argument must not be negative')
+	  }
+	}
+
+	function alloc (that, size, fill, encoding) {
+	  assertSize(size)
+	  if (size <= 0) {
+	    return createBuffer(that, size)
+	  }
+	  if (fill !== undefined) {
+	    // Only pay attention to encoding if it's a string. This
+	    // prevents accidentally sending in a number that would
+	    // be interpretted as a start offset.
+	    return typeof encoding === 'string'
+	      ? createBuffer(that, size).fill(fill, encoding)
+	      : createBuffer(that, size).fill(fill)
+	  }
+	  return createBuffer(that, size)
+	}
+
+	/**
+	 * Creates a new filled Buffer instance.
+	 * alloc(size[, fill[, encoding]])
+	 **/
+	Buffer.alloc = function (size, fill, encoding) {
+	  return alloc(null, size, fill, encoding)
+	}
+
+	function allocUnsafe (that, size) {
+	  assertSize(size)
+	  that = createBuffer(that, size < 0 ? 0 : checked(size) | 0)
+	  if (!Buffer.TYPED_ARRAY_SUPPORT) {
+	    for (var i = 0; i < size; ++i) {
+	      that[i] = 0
+	    }
+	  }
+	  return that
+	}
+
+	/**
+	 * Equivalent to Buffer(num), by default creates a non-zero-filled Buffer instance.
+	 * */
+	Buffer.allocUnsafe = function (size) {
+	  return allocUnsafe(null, size)
+	}
+	/**
+	 * Equivalent to SlowBuffer(num), by default creates a non-zero-filled Buffer instance.
+	 */
+	Buffer.allocUnsafeSlow = function (size) {
+	  return allocUnsafe(null, size)
+	}
+
+	function fromString (that, string, encoding) {
+	  if (typeof encoding !== 'string' || encoding === '') {
+	    encoding = 'utf8'
+	  }
+
+	  if (!Buffer.isEncoding(encoding)) {
+	    throw new TypeError('"encoding" must be a valid string encoding')
+	  }
+
+	  var length = byteLength(string, encoding) | 0
+	  that = createBuffer(that, length)
+
+	  var actual = that.write(string, encoding)
+
+	  if (actual !== length) {
+	    // Writing a hex string, for example, that contains invalid characters will
+	    // cause everything after the first invalid character to be ignored. (e.g.
+	    // 'abxxcd' will be treated as 'ab')
+	    that = that.slice(0, actual)
+	  }
+
+	  return that
+	}
+
+	function fromArrayLike (that, array) {
+	  var length = array.length < 0 ? 0 : checked(array.length) | 0
+	  that = createBuffer(that, length)
+	  for (var i = 0; i < length; i += 1) {
+	    that[i] = array[i] & 255
+	  }
+	  return that
+	}
+
+	function fromArrayBuffer (that, array, byteOffset, length) {
+	  array.byteLength // this throws if `array` is not a valid ArrayBuffer
+
+	  if (byteOffset < 0 || array.byteLength < byteOffset) {
+	    throw new RangeError('\'offset\' is out of bounds')
+	  }
+
+	  if (array.byteLength < byteOffset + (length || 0)) {
+	    throw new RangeError('\'length\' is out of bounds')
+	  }
+
+	  if (byteOffset === undefined && length === undefined) {
+	    array = new Uint8Array(array)
+	  } else if (length === undefined) {
+	    array = new Uint8Array(array, byteOffset)
+	  } else {
+	    array = new Uint8Array(array, byteOffset, length)
+	  }
+
+	  if (Buffer.TYPED_ARRAY_SUPPORT) {
+	    // Return an augmented `Uint8Array` instance, for best performance
+	    that = array
+	    that.__proto__ = Buffer.prototype
+	  } else {
+	    // Fallback: Return an object instance of the Buffer class
+	    that = fromArrayLike(that, array)
+	  }
+	  return that
+	}
+
+	function fromObject (that, obj) {
+	  if (Buffer.isBuffer(obj)) {
+	    var len = checked(obj.length) | 0
+	    that = createBuffer(that, len)
+
+	    if (that.length === 0) {
+	      return that
+	    }
+
+	    obj.copy(that, 0, 0, len)
+	    return that
+	  }
+
+	  if (obj) {
+	    if ((typeof ArrayBuffer !== 'undefined' &&
+	        obj.buffer instanceof ArrayBuffer) || 'length' in obj) {
+	      if (typeof obj.length !== 'number' || isnan(obj.length)) {
+	        return createBuffer(that, 0)
+	      }
+	      return fromArrayLike(that, obj)
+	    }
+
+	    if (obj.type === 'Buffer' && isArray(obj.data)) {
+	      return fromArrayLike(that, obj.data)
+	    }
+	  }
+
+	  throw new TypeError('First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.')
+	}
+
+	function checked (length) {
+	  // Note: cannot use `length < kMaxLength()` here because that fails when
+	  // length is NaN (which is otherwise coerced to zero.)
+	  if (length >= kMaxLength()) {
+	    throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
+	                         'size: 0x' + kMaxLength().toString(16) + ' bytes')
+	  }
+	  return length | 0
+	}
+
+	function SlowBuffer (length) {
+	  if (+length != length) { // eslint-disable-line eqeqeq
+	    length = 0
+	  }
+	  return Buffer.alloc(+length)
+	}
+
+	Buffer.isBuffer = function isBuffer (b) {
+	  return !!(b != null && b._isBuffer)
+	}
+
+	Buffer.compare = function compare (a, b) {
+	  if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
+	    throw new TypeError('Arguments must be Buffers')
+	  }
+
+	  if (a === b) return 0
+
+	  var x = a.length
+	  var y = b.length
+
+	  for (var i = 0, len = Math.min(x, y); i < len; ++i) {
+	    if (a[i] !== b[i]) {
+	      x = a[i]
+	      y = b[i]
+	      break
+	    }
+	  }
+
+	  if (x < y) return -1
+	  if (y < x) return 1
+	  return 0
+	}
+
+	Buffer.isEncoding = function isEncoding (encoding) {
+	  switch (String(encoding).toLowerCase()) {
+	    case 'hex':
+	    case 'utf8':
+	    case 'utf-8':
+	    case 'ascii':
+	    case 'latin1':
+	    case 'binary':
+	    case 'base64':
+	    case 'ucs2':
+	    case 'ucs-2':
+	    case 'utf16le':
+	    case 'utf-16le':
+	      return true
+	    default:
+	      return false
+	  }
+	}
+
+	Buffer.concat = function concat (list, length) {
+	  if (!isArray(list)) {
+	    throw new TypeError('"list" argument must be an Array of Buffers')
+	  }
+
+	  if (list.length === 0) {
+	    return Buffer.alloc(0)
+	  }
+
+	  var i
+	  if (length === undefined) {
+	    length = 0
+	    for (i = 0; i < list.length; ++i) {
+	      length += list[i].length
+	    }
+	  }
+
+	  var buffer = Buffer.allocUnsafe(length)
+	  var pos = 0
+	  for (i = 0; i < list.length; ++i) {
+	    var buf = list[i]
+	    if (!Buffer.isBuffer(buf)) {
+	      throw new TypeError('"list" argument must be an Array of Buffers')
+	    }
+	    buf.copy(buffer, pos)
+	    pos += buf.length
+	  }
+	  return buffer
+	}
+
+	function byteLength (string, encoding) {
+	  if (Buffer.isBuffer(string)) {
+	    return string.length
+	  }
+	  if (typeof ArrayBuffer !== 'undefined' && typeof ArrayBuffer.isView === 'function' &&
+	      (ArrayBuffer.isView(string) || string instanceof ArrayBuffer)) {
+	    return string.byteLength
+	  }
+	  if (typeof string !== 'string') {
+	    string = '' + string
+	  }
+
+	  var len = string.length
+	  if (len === 0) return 0
+
+	  // Use a for loop to avoid recursion
+	  var loweredCase = false
+	  for (;;) {
+	    switch (encoding) {
+	      case 'ascii':
+	      case 'latin1':
+	      case 'binary':
+	        return len
+	      case 'utf8':
+	      case 'utf-8':
+	      case undefined:
+	        return utf8ToBytes(string).length
+	      case 'ucs2':
+	      case 'ucs-2':
+	      case 'utf16le':
+	      case 'utf-16le':
+	        return len * 2
+	      case 'hex':
+	        return len >>> 1
+	      case 'base64':
+	        return base64ToBytes(string).length
+	      default:
+	        if (loweredCase) return utf8ToBytes(string).length // assume utf8
+	        encoding = ('' + encoding).toLowerCase()
+	        loweredCase = true
+	    }
+	  }
+	}
+	Buffer.byteLength = byteLength
+
+	function slowToString (encoding, start, end) {
+	  var loweredCase = false
+
+	  // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
+	  // property of a typed array.
+
+	  // This behaves neither like String nor Uint8Array in that we set start/end
+	  // to their upper/lower bounds if the value passed is out of range.
+	  // undefined is handled specially as per ECMA-262 6th Edition,
+	  // Section 13.3.3.7 Runtime Semantics: KeyedBindingInitialization.
+	  if (start === undefined || start < 0) {
+	    start = 0
+	  }
+	  // Return early if start > this.length. Done here to prevent potential uint32
+	  // coercion fail below.
+	  if (start > this.length) {
+	    return ''
+	  }
+
+	  if (end === undefined || end > this.length) {
+	    end = this.length
+	  }
+
+	  if (end <= 0) {
+	    return ''
+	  }
+
+	  // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
+	  end >>>= 0
+	  start >>>= 0
+
+	  if (end <= start) {
+	    return ''
+	  }
+
+	  if (!encoding) encoding = 'utf8'
+
+	  while (true) {
+	    switch (encoding) {
+	      case 'hex':
+	        return hexSlice(this, start, end)
+
+	      case 'utf8':
+	      case 'utf-8':
+	        return utf8Slice(this, start, end)
+
+	      case 'ascii':
+	        return asciiSlice(this, start, end)
+
+	      case 'latin1':
+	      case 'binary':
+	        return latin1Slice(this, start, end)
+
+	      case 'base64':
+	        return base64Slice(this, start, end)
+
+	      case 'ucs2':
+	      case 'ucs-2':
+	      case 'utf16le':
+	      case 'utf-16le':
+	        return utf16leSlice(this, start, end)
+
+	      default:
+	        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+	        encoding = (encoding + '').toLowerCase()
+	        loweredCase = true
+	    }
+	  }
+	}
+
+	// The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
+	// Buffer instances.
+	Buffer.prototype._isBuffer = true
+
+	function swap (b, n, m) {
+	  var i = b[n]
+	  b[n] = b[m]
+	  b[m] = i
+	}
+
+	Buffer.prototype.swap16 = function swap16 () {
+	  var len = this.length
+	  if (len % 2 !== 0) {
+	    throw new RangeError('Buffer size must be a multiple of 16-bits')
+	  }
+	  for (var i = 0; i < len; i += 2) {
+	    swap(this, i, i + 1)
+	  }
+	  return this
+	}
+
+	Buffer.prototype.swap32 = function swap32 () {
+	  var len = this.length
+	  if (len % 4 !== 0) {
+	    throw new RangeError('Buffer size must be a multiple of 32-bits')
+	  }
+	  for (var i = 0; i < len; i += 4) {
+	    swap(this, i, i + 3)
+	    swap(this, i + 1, i + 2)
+	  }
+	  return this
+	}
+
+	Buffer.prototype.swap64 = function swap64 () {
+	  var len = this.length
+	  if (len % 8 !== 0) {
+	    throw new RangeError('Buffer size must be a multiple of 64-bits')
+	  }
+	  for (var i = 0; i < len; i += 8) {
+	    swap(this, i, i + 7)
+	    swap(this, i + 1, i + 6)
+	    swap(this, i + 2, i + 5)
+	    swap(this, i + 3, i + 4)
+	  }
+	  return this
+	}
+
+	Buffer.prototype.toString = function toString () {
+	  var length = this.length | 0
+	  if (length === 0) return ''
+	  if (arguments.length === 0) return utf8Slice(this, 0, length)
+	  return slowToString.apply(this, arguments)
+	}
+
+	Buffer.prototype.equals = function equals (b) {
+	  if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
+	  if (this === b) return true
+	  return Buffer.compare(this, b) === 0
+	}
+
+	Buffer.prototype.inspect = function inspect () {
+	  var str = ''
+	  var max = exports.INSPECT_MAX_BYTES
+	  if (this.length > 0) {
+	    str = this.toString('hex', 0, max).match(/.{2}/g).join(' ')
+	    if (this.length > max) str += ' ... '
+	  }
+	  return '<Buffer ' + str + '>'
+	}
+
+	Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
+	  if (!Buffer.isBuffer(target)) {
+	    throw new TypeError('Argument must be a Buffer')
+	  }
+
+	  if (start === undefined) {
+	    start = 0
+	  }
+	  if (end === undefined) {
+	    end = target ? target.length : 0
+	  }
+	  if (thisStart === undefined) {
+	    thisStart = 0
+	  }
+	  if (thisEnd === undefined) {
+	    thisEnd = this.length
+	  }
+
+	  if (start < 0 || end > target.length || thisStart < 0 || thisEnd > this.length) {
+	    throw new RangeError('out of range index')
+	  }
+
+	  if (thisStart >= thisEnd && start >= end) {
+	    return 0
+	  }
+	  if (thisStart >= thisEnd) {
+	    return -1
+	  }
+	  if (start >= end) {
+	    return 1
+	  }
+
+	  start >>>= 0
+	  end >>>= 0
+	  thisStart >>>= 0
+	  thisEnd >>>= 0
+
+	  if (this === target) return 0
+
+	  var x = thisEnd - thisStart
+	  var y = end - start
+	  var len = Math.min(x, y)
+
+	  var thisCopy = this.slice(thisStart, thisEnd)
+	  var targetCopy = target.slice(start, end)
+
+	  for (var i = 0; i < len; ++i) {
+	    if (thisCopy[i] !== targetCopy[i]) {
+	      x = thisCopy[i]
+	      y = targetCopy[i]
+	      break
+	    }
+	  }
+
+	  if (x < y) return -1
+	  if (y < x) return 1
+	  return 0
+	}
+
+	// Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
+	// OR the last index of `val` in `buffer` at offset <= `byteOffset`.
+	//
+	// Arguments:
+	// - buffer - a Buffer to search
+	// - val - a string, Buffer, or number
+	// - byteOffset - an index into `buffer`; will be clamped to an int32
+	// - encoding - an optional encoding, relevant is val is a string
+	// - dir - true for indexOf, false for lastIndexOf
+	function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
+	  // Empty buffer means no match
+	  if (buffer.length === 0) return -1
+
+	  // Normalize byteOffset
+	  if (typeof byteOffset === 'string') {
+	    encoding = byteOffset
+	    byteOffset = 0
+	  } else if (byteOffset > 0x7fffffff) {
+	    byteOffset = 0x7fffffff
+	  } else if (byteOffset < -0x80000000) {
+	    byteOffset = -0x80000000
+	  }
+	  byteOffset = +byteOffset  // Coerce to Number.
+	  if (isNaN(byteOffset)) {
+	    // byteOffset: it it's undefined, null, NaN, "foo", etc, search whole buffer
+	    byteOffset = dir ? 0 : (buffer.length - 1)
+	  }
+
+	  // Normalize byteOffset: negative offsets start from the end of the buffer
+	  if (byteOffset < 0) byteOffset = buffer.length + byteOffset
+	  if (byteOffset >= buffer.length) {
+	    if (dir) return -1
+	    else byteOffset = buffer.length - 1
+	  } else if (byteOffset < 0) {
+	    if (dir) byteOffset = 0
+	    else return -1
+	  }
+
+	  // Normalize val
+	  if (typeof val === 'string') {
+	    val = Buffer.from(val, encoding)
+	  }
+
+	  // Finally, search either indexOf (if dir is true) or lastIndexOf
+	  if (Buffer.isBuffer(val)) {
+	    // Special case: looking for empty string/buffer always fails
+	    if (val.length === 0) {
+	      return -1
+	    }
+	    return arrayIndexOf(buffer, val, byteOffset, encoding, dir)
+	  } else if (typeof val === 'number') {
+	    val = val & 0xFF // Search for a byte value [0-255]
+	    if (Buffer.TYPED_ARRAY_SUPPORT &&
+	        typeof Uint8Array.prototype.indexOf === 'function') {
+	      if (dir) {
+	        return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset)
+	      } else {
+	        return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset)
+	      }
+	    }
+	    return arrayIndexOf(buffer, [ val ], byteOffset, encoding, dir)
+	  }
+
+	  throw new TypeError('val must be string, number or Buffer')
+	}
+
+	function arrayIndexOf (arr, val, byteOffset, encoding, dir) {
+	  var indexSize = 1
+	  var arrLength = arr.length
+	  var valLength = val.length
+
+	  if (encoding !== undefined) {
+	    encoding = String(encoding).toLowerCase()
+	    if (encoding === 'ucs2' || encoding === 'ucs-2' ||
+	        encoding === 'utf16le' || encoding === 'utf-16le') {
+	      if (arr.length < 2 || val.length < 2) {
+	        return -1
+	      }
+	      indexSize = 2
+	      arrLength /= 2
+	      valLength /= 2
+	      byteOffset /= 2
+	    }
+	  }
+
+	  function read (buf, i) {
+	    if (indexSize === 1) {
+	      return buf[i]
+	    } else {
+	      return buf.readUInt16BE(i * indexSize)
+	    }
+	  }
+
+	  var i
+	  if (dir) {
+	    var foundIndex = -1
+	    for (i = byteOffset; i < arrLength; i++) {
+	      if (read(arr, i) === read(val, foundIndex === -1 ? 0 : i - foundIndex)) {
+	        if (foundIndex === -1) foundIndex = i
+	        if (i - foundIndex + 1 === valLength) return foundIndex * indexSize
+	      } else {
+	        if (foundIndex !== -1) i -= i - foundIndex
+	        foundIndex = -1
+	      }
+	    }
+	  } else {
+	    if (byteOffset + valLength > arrLength) byteOffset = arrLength - valLength
+	    for (i = byteOffset; i >= 0; i--) {
+	      var found = true
+	      for (var j = 0; j < valLength; j++) {
+	        if (read(arr, i + j) !== read(val, j)) {
+	          found = false
+	          break
+	        }
+	      }
+	      if (found) return i
+	    }
+	  }
+
+	  return -1
+	}
+
+	Buffer.prototype.includes = function includes (val, byteOffset, encoding) {
+	  return this.indexOf(val, byteOffset, encoding) !== -1
+	}
+
+	Buffer.prototype.indexOf = function indexOf (val, byteOffset, encoding) {
+	  return bidirectionalIndexOf(this, val, byteOffset, encoding, true)
+	}
+
+	Buffer.prototype.lastIndexOf = function lastIndexOf (val, byteOffset, encoding) {
+	  return bidirectionalIndexOf(this, val, byteOffset, encoding, false)
+	}
+
+	function hexWrite (buf, string, offset, length) {
+	  offset = Number(offset) || 0
+	  var remaining = buf.length - offset
+	  if (!length) {
+	    length = remaining
+	  } else {
+	    length = Number(length)
+	    if (length > remaining) {
+	      length = remaining
+	    }
+	  }
+
+	  // must be an even number of digits
+	  var strLen = string.length
+	  if (strLen % 2 !== 0) throw new TypeError('Invalid hex string')
+
+	  if (length > strLen / 2) {
+	    length = strLen / 2
+	  }
+	  for (var i = 0; i < length; ++i) {
+	    var parsed = parseInt(string.substr(i * 2, 2), 16)
+	    if (isNaN(parsed)) return i
+	    buf[offset + i] = parsed
+	  }
+	  return i
+	}
+
+	function utf8Write (buf, string, offset, length) {
+	  return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
+	}
+
+	function asciiWrite (buf, string, offset, length) {
+	  return blitBuffer(asciiToBytes(string), buf, offset, length)
+	}
+
+	function latin1Write (buf, string, offset, length) {
+	  return asciiWrite(buf, string, offset, length)
+	}
+
+	function base64Write (buf, string, offset, length) {
+	  return blitBuffer(base64ToBytes(string), buf, offset, length)
+	}
+
+	function ucs2Write (buf, string, offset, length) {
+	  return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
+	}
+
+	Buffer.prototype.write = function write (string, offset, length, encoding) {
+	  // Buffer#write(string)
+	  if (offset === undefined) {
+	    encoding = 'utf8'
+	    length = this.length
+	    offset = 0
+	  // Buffer#write(string, encoding)
+	  } else if (length === undefined && typeof offset === 'string') {
+	    encoding = offset
+	    length = this.length
+	    offset = 0
+	  // Buffer#write(string, offset[, length][, encoding])
+	  } else if (isFinite(offset)) {
+	    offset = offset | 0
+	    if (isFinite(length)) {
+	      length = length | 0
+	      if (encoding === undefined) encoding = 'utf8'
+	    } else {
+	      encoding = length
+	      length = undefined
+	    }
+	  // legacy write(string, encoding, offset, length) - remove in v0.13
+	  } else {
+	    throw new Error(
+	      'Buffer.write(string, encoding, offset[, length]) is no longer supported'
+	    )
+	  }
+
+	  var remaining = this.length - offset
+	  if (length === undefined || length > remaining) length = remaining
+
+	  if ((string.length > 0 && (length < 0 || offset < 0)) || offset > this.length) {
+	    throw new RangeError('Attempt to write outside buffer bounds')
+	  }
+
+	  if (!encoding) encoding = 'utf8'
+
+	  var loweredCase = false
+	  for (;;) {
+	    switch (encoding) {
+	      case 'hex':
+	        return hexWrite(this, string, offset, length)
+
+	      case 'utf8':
+	      case 'utf-8':
+	        return utf8Write(this, string, offset, length)
+
+	      case 'ascii':
+	        return asciiWrite(this, string, offset, length)
+
+	      case 'latin1':
+	      case 'binary':
+	        return latin1Write(this, string, offset, length)
+
+	      case 'base64':
+	        // Warning: maxLength not taken into account in base64Write
+	        return base64Write(this, string, offset, length)
+
+	      case 'ucs2':
+	      case 'ucs-2':
+	      case 'utf16le':
+	      case 'utf-16le':
+	        return ucs2Write(this, string, offset, length)
+
+	      default:
+	        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+	        encoding = ('' + encoding).toLowerCase()
+	        loweredCase = true
+	    }
+	  }
+	}
+
+	Buffer.prototype.toJSON = function toJSON () {
+	  return {
+	    type: 'Buffer',
+	    data: Array.prototype.slice.call(this._arr || this, 0)
+	  }
+	}
+
+	function base64Slice (buf, start, end) {
+	  if (start === 0 && end === buf.length) {
+	    return base64.fromByteArray(buf)
+	  } else {
+	    return base64.fromByteArray(buf.slice(start, end))
+	  }
+	}
+
+	function utf8Slice (buf, start, end) {
+	  end = Math.min(buf.length, end)
+	  var res = []
+
+	  var i = start
+	  while (i < end) {
+	    var firstByte = buf[i]
+	    var codePoint = null
+	    var bytesPerSequence = (firstByte > 0xEF) ? 4
+	      : (firstByte > 0xDF) ? 3
+	      : (firstByte > 0xBF) ? 2
+	      : 1
+
+	    if (i + bytesPerSequence <= end) {
+	      var secondByte, thirdByte, fourthByte, tempCodePoint
+
+	      switch (bytesPerSequence) {
+	        case 1:
+	          if (firstByte < 0x80) {
+	            codePoint = firstByte
+	          }
+	          break
+	        case 2:
+	          secondByte = buf[i + 1]
+	          if ((secondByte & 0xC0) === 0x80) {
+	            tempCodePoint = (firstByte & 0x1F) << 0x6 | (secondByte & 0x3F)
+	            if (tempCodePoint > 0x7F) {
+	              codePoint = tempCodePoint
+	            }
+	          }
+	          break
+	        case 3:
+	          secondByte = buf[i + 1]
+	          thirdByte = buf[i + 2]
+	          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
+	            tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | (thirdByte & 0x3F)
+	            if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
+	              codePoint = tempCodePoint
+	            }
+	          }
+	          break
+	        case 4:
+	          secondByte = buf[i + 1]
+	          thirdByte = buf[i + 2]
+	          fourthByte = buf[i + 3]
+	          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
+	            tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | (fourthByte & 0x3F)
+	            if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
+	              codePoint = tempCodePoint
+	            }
+	          }
+	      }
+	    }
+
+	    if (codePoint === null) {
+	      // we did not generate a valid codePoint so insert a
+	      // replacement char (U+FFFD) and advance only 1 byte
+	      codePoint = 0xFFFD
+	      bytesPerSequence = 1
+	    } else if (codePoint > 0xFFFF) {
+	      // encode to utf16 (surrogate pair dance)
+	      codePoint -= 0x10000
+	      res.push(codePoint >>> 10 & 0x3FF | 0xD800)
+	      codePoint = 0xDC00 | codePoint & 0x3FF
+	    }
+
+	    res.push(codePoint)
+	    i += bytesPerSequence
+	  }
+
+	  return decodeCodePointsArray(res)
+	}
+
+	// Based on http://stackoverflow.com/a/22747272/680742, the browser with
+	// the lowest limit is Chrome, with 0x10000 args.
+	// We go 1 magnitude less, for safety
+	var MAX_ARGUMENTS_LENGTH = 0x1000
+
+	function decodeCodePointsArray (codePoints) {
+	  var len = codePoints.length
+	  if (len <= MAX_ARGUMENTS_LENGTH) {
+	    return String.fromCharCode.apply(String, codePoints) // avoid extra slice()
+	  }
+
+	  // Decode in chunks to avoid "call stack size exceeded".
+	  var res = ''
+	  var i = 0
+	  while (i < len) {
+	    res += String.fromCharCode.apply(
+	      String,
+	      codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH)
+	    )
+	  }
+	  return res
+	}
+
+	function asciiSlice (buf, start, end) {
+	  var ret = ''
+	  end = Math.min(buf.length, end)
+
+	  for (var i = start; i < end; ++i) {
+	    ret += String.fromCharCode(buf[i] & 0x7F)
+	  }
+	  return ret
+	}
+
+	function latin1Slice (buf, start, end) {
+	  var ret = ''
+	  end = Math.min(buf.length, end)
+
+	  for (var i = start; i < end; ++i) {
+	    ret += String.fromCharCode(buf[i])
+	  }
+	  return ret
+	}
+
+	function hexSlice (buf, start, end) {
+	  var len = buf.length
+
+	  if (!start || start < 0) start = 0
+	  if (!end || end < 0 || end > len) end = len
+
+	  var out = ''
+	  for (var i = start; i < end; ++i) {
+	    out += toHex(buf[i])
+	  }
+	  return out
+	}
+
+	function utf16leSlice (buf, start, end) {
+	  var bytes = buf.slice(start, end)
+	  var res = ''
+	  for (var i = 0; i < bytes.length; i += 2) {
+	    res += String.fromCharCode(bytes[i] + bytes[i + 1] * 256)
+	  }
+	  return res
+	}
+
+	Buffer.prototype.slice = function slice (start, end) {
+	  var len = this.length
+	  start = ~~start
+	  end = end === undefined ? len : ~~end
+
+	  if (start < 0) {
+	    start += len
+	    if (start < 0) start = 0
+	  } else if (start > len) {
+	    start = len
+	  }
+
+	  if (end < 0) {
+	    end += len
+	    if (end < 0) end = 0
+	  } else if (end > len) {
+	    end = len
+	  }
+
+	  if (end < start) end = start
+
+	  var newBuf
+	  if (Buffer.TYPED_ARRAY_SUPPORT) {
+	    newBuf = this.subarray(start, end)
+	    newBuf.__proto__ = Buffer.prototype
+	  } else {
+	    var sliceLen = end - start
+	    newBuf = new Buffer(sliceLen, undefined)
+	    for (var i = 0; i < sliceLen; ++i) {
+	      newBuf[i] = this[i + start]
+	    }
+	  }
+
+	  return newBuf
+	}
+
+	/*
+	 * Need to make sure that buffer isn't trying to write out of bounds.
+	 */
+	function checkOffset (offset, ext, length) {
+	  if ((offset % 1) !== 0 || offset < 0) throw new RangeError('offset is not uint')
+	  if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
+	}
+
+	Buffer.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert) {
+	  offset = offset | 0
+	  byteLength = byteLength | 0
+	  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+	  var val = this[offset]
+	  var mul = 1
+	  var i = 0
+	  while (++i < byteLength && (mul *= 0x100)) {
+	    val += this[offset + i] * mul
+	  }
+
+	  return val
+	}
+
+	Buffer.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert) {
+	  offset = offset | 0
+	  byteLength = byteLength | 0
+	  if (!noAssert) {
+	    checkOffset(offset, byteLength, this.length)
+	  }
+
+	  var val = this[offset + --byteLength]
+	  var mul = 1
+	  while (byteLength > 0 && (mul *= 0x100)) {
+	    val += this[offset + --byteLength] * mul
+	  }
+
+	  return val
+	}
+
+	Buffer.prototype.readUInt8 = function readUInt8 (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 1, this.length)
+	  return this[offset]
+	}
+
+	Buffer.prototype.readUInt16LE = function readUInt16LE (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 2, this.length)
+	  return this[offset] | (this[offset + 1] << 8)
+	}
+
+	Buffer.prototype.readUInt16BE = function readUInt16BE (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 2, this.length)
+	  return (this[offset] << 8) | this[offset + 1]
+	}
+
+	Buffer.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 4, this.length)
+
+	  return ((this[offset]) |
+	      (this[offset + 1] << 8) |
+	      (this[offset + 2] << 16)) +
+	      (this[offset + 3] * 0x1000000)
+	}
+
+	Buffer.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 4, this.length)
+
+	  return (this[offset] * 0x1000000) +
+	    ((this[offset + 1] << 16) |
+	    (this[offset + 2] << 8) |
+	    this[offset + 3])
+	}
+
+	Buffer.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
+	  offset = offset | 0
+	  byteLength = byteLength | 0
+	  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+	  var val = this[offset]
+	  var mul = 1
+	  var i = 0
+	  while (++i < byteLength && (mul *= 0x100)) {
+	    val += this[offset + i] * mul
+	  }
+	  mul *= 0x80
+
+	  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
+
+	  return val
+	}
+
+	Buffer.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
+	  offset = offset | 0
+	  byteLength = byteLength | 0
+	  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+	  var i = byteLength
+	  var mul = 1
+	  var val = this[offset + --i]
+	  while (i > 0 && (mul *= 0x100)) {
+	    val += this[offset + --i] * mul
+	  }
+	  mul *= 0x80
+
+	  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
+
+	  return val
+	}
+
+	Buffer.prototype.readInt8 = function readInt8 (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 1, this.length)
+	  if (!(this[offset] & 0x80)) return (this[offset])
+	  return ((0xff - this[offset] + 1) * -1)
+	}
+
+	Buffer.prototype.readInt16LE = function readInt16LE (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 2, this.length)
+	  var val = this[offset] | (this[offset + 1] << 8)
+	  return (val & 0x8000) ? val | 0xFFFF0000 : val
+	}
+
+	Buffer.prototype.readInt16BE = function readInt16BE (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 2, this.length)
+	  var val = this[offset + 1] | (this[offset] << 8)
+	  return (val & 0x8000) ? val | 0xFFFF0000 : val
+	}
+
+	Buffer.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 4, this.length)
+
+	  return (this[offset]) |
+	    (this[offset + 1] << 8) |
+	    (this[offset + 2] << 16) |
+	    (this[offset + 3] << 24)
+	}
+
+	Buffer.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 4, this.length)
+
+	  return (this[offset] << 24) |
+	    (this[offset + 1] << 16) |
+	    (this[offset + 2] << 8) |
+	    (this[offset + 3])
+	}
+
+	Buffer.prototype.readFloatLE = function readFloatLE (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 4, this.length)
+	  return ieee754.read(this, offset, true, 23, 4)
+	}
+
+	Buffer.prototype.readFloatBE = function readFloatBE (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 4, this.length)
+	  return ieee754.read(this, offset, false, 23, 4)
+	}
+
+	Buffer.prototype.readDoubleLE = function readDoubleLE (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 8, this.length)
+	  return ieee754.read(this, offset, true, 52, 8)
+	}
+
+	Buffer.prototype.readDoubleBE = function readDoubleBE (offset, noAssert) {
+	  if (!noAssert) checkOffset(offset, 8, this.length)
+	  return ieee754.read(this, offset, false, 52, 8)
+	}
+
+	function checkInt (buf, value, offset, ext, max, min) {
+	  if (!Buffer.isBuffer(buf)) throw new TypeError('"buffer" argument must be a Buffer instance')
+	  if (value > max || value < min) throw new RangeError('"value" argument is out of bounds')
+	  if (offset + ext > buf.length) throw new RangeError('Index out of range')
+	}
+
+	Buffer.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  byteLength = byteLength | 0
+	  if (!noAssert) {
+	    var maxBytes = Math.pow(2, 8 * byteLength) - 1
+	    checkInt(this, value, offset, byteLength, maxBytes, 0)
+	  }
+
+	  var mul = 1
+	  var i = 0
+	  this[offset] = value & 0xFF
+	  while (++i < byteLength && (mul *= 0x100)) {
+	    this[offset + i] = (value / mul) & 0xFF
+	  }
+
+	  return offset + byteLength
+	}
+
+	Buffer.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  byteLength = byteLength | 0
+	  if (!noAssert) {
+	    var maxBytes = Math.pow(2, 8 * byteLength) - 1
+	    checkInt(this, value, offset, byteLength, maxBytes, 0)
+	  }
+
+	  var i = byteLength - 1
+	  var mul = 1
+	  this[offset + i] = value & 0xFF
+	  while (--i >= 0 && (mul *= 0x100)) {
+	    this[offset + i] = (value / mul) & 0xFF
+	  }
+
+	  return offset + byteLength
+	}
+
+	Buffer.prototype.writeUInt8 = function writeUInt8 (value, offset, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  if (!noAssert) checkInt(this, value, offset, 1, 0xff, 0)
+	  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
+	  this[offset] = (value & 0xff)
+	  return offset + 1
+	}
+
+	function objectWriteUInt16 (buf, value, offset, littleEndian) {
+	  if (value < 0) value = 0xffff + value + 1
+	  for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; ++i) {
+	    buf[offset + i] = (value & (0xff << (8 * (littleEndian ? i : 1 - i)))) >>>
+	      (littleEndian ? i : 1 - i) * 8
+	  }
+	}
+
+	Buffer.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0)
+	  if (Buffer.TYPED_ARRAY_SUPPORT) {
+	    this[offset] = (value & 0xff)
+	    this[offset + 1] = (value >>> 8)
+	  } else {
+	    objectWriteUInt16(this, value, offset, true)
+	  }
+	  return offset + 2
+	}
+
+	Buffer.prototype.writeUInt16BE = function writeUInt16BE (value, offset, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0)
+	  if (Buffer.TYPED_ARRAY_SUPPORT) {
+	    this[offset] = (value >>> 8)
+	    this[offset + 1] = (value & 0xff)
+	  } else {
+	    objectWriteUInt16(this, value, offset, false)
+	  }
+	  return offset + 2
+	}
+
+	function objectWriteUInt32 (buf, value, offset, littleEndian) {
+	  if (value < 0) value = 0xffffffff + value + 1
+	  for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; ++i) {
+	    buf[offset + i] = (value >>> (littleEndian ? i : 3 - i) * 8) & 0xff
+	  }
+	}
+
+	Buffer.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0)
+	  if (Buffer.TYPED_ARRAY_SUPPORT) {
+	    this[offset + 3] = (value >>> 24)
+	    this[offset + 2] = (value >>> 16)
+	    this[offset + 1] = (value >>> 8)
+	    this[offset] = (value & 0xff)
+	  } else {
+	    objectWriteUInt32(this, value, offset, true)
+	  }
+	  return offset + 4
+	}
+
+	Buffer.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0)
+	  if (Buffer.TYPED_ARRAY_SUPPORT) {
+	    this[offset] = (value >>> 24)
+	    this[offset + 1] = (value >>> 16)
+	    this[offset + 2] = (value >>> 8)
+	    this[offset + 3] = (value & 0xff)
+	  } else {
+	    objectWriteUInt32(this, value, offset, false)
+	  }
+	  return offset + 4
+	}
+
+	Buffer.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  if (!noAssert) {
+	    var limit = Math.pow(2, 8 * byteLength - 1)
+
+	    checkInt(this, value, offset, byteLength, limit - 1, -limit)
+	  }
+
+	  var i = 0
+	  var mul = 1
+	  var sub = 0
+	  this[offset] = value & 0xFF
+	  while (++i < byteLength && (mul *= 0x100)) {
+	    if (value < 0 && sub === 0 && this[offset + i - 1] !== 0) {
+	      sub = 1
+	    }
+	    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
+	  }
+
+	  return offset + byteLength
+	}
+
+	Buffer.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  if (!noAssert) {
+	    var limit = Math.pow(2, 8 * byteLength - 1)
+
+	    checkInt(this, value, offset, byteLength, limit - 1, -limit)
+	  }
+
+	  var i = byteLength - 1
+	  var mul = 1
+	  var sub = 0
+	  this[offset + i] = value & 0xFF
+	  while (--i >= 0 && (mul *= 0x100)) {
+	    if (value < 0 && sub === 0 && this[offset + i + 1] !== 0) {
+	      sub = 1
+	    }
+	    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
+	  }
+
+	  return offset + byteLength
+	}
+
+	Buffer.prototype.writeInt8 = function writeInt8 (value, offset, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  if (!noAssert) checkInt(this, value, offset, 1, 0x7f, -0x80)
+	  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
+	  if (value < 0) value = 0xff + value + 1
+	  this[offset] = (value & 0xff)
+	  return offset + 1
+	}
+
+	Buffer.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000)
+	  if (Buffer.TYPED_ARRAY_SUPPORT) {
+	    this[offset] = (value & 0xff)
+	    this[offset + 1] = (value >>> 8)
+	  } else {
+	    objectWriteUInt16(this, value, offset, true)
+	  }
+	  return offset + 2
+	}
+
+	Buffer.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000)
+	  if (Buffer.TYPED_ARRAY_SUPPORT) {
+	    this[offset] = (value >>> 8)
+	    this[offset + 1] = (value & 0xff)
+	  } else {
+	    objectWriteUInt16(this, value, offset, false)
+	  }
+	  return offset + 2
+	}
+
+	Buffer.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
+	  if (Buffer.TYPED_ARRAY_SUPPORT) {
+	    this[offset] = (value & 0xff)
+	    this[offset + 1] = (value >>> 8)
+	    this[offset + 2] = (value >>> 16)
+	    this[offset + 3] = (value >>> 24)
+	  } else {
+	    objectWriteUInt32(this, value, offset, true)
+	  }
+	  return offset + 4
+	}
+
+	Buffer.prototype.writeInt32BE = function writeInt32BE (value, offset, noAssert) {
+	  value = +value
+	  offset = offset | 0
+	  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
+	  if (value < 0) value = 0xffffffff + value + 1
+	  if (Buffer.TYPED_ARRAY_SUPPORT) {
+	    this[offset] = (value >>> 24)
+	    this[offset + 1] = (value >>> 16)
+	    this[offset + 2] = (value >>> 8)
+	    this[offset + 3] = (value & 0xff)
+	  } else {
+	    objectWriteUInt32(this, value, offset, false)
+	  }
+	  return offset + 4
+	}
+
+	function checkIEEE754 (buf, value, offset, ext, max, min) {
+	  if (offset + ext > buf.length) throw new RangeError('Index out of range')
+	  if (offset < 0) throw new RangeError('Index out of range')
+	}
+
+	function writeFloat (buf, value, offset, littleEndian, noAssert) {
+	  if (!noAssert) {
+	    checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38)
+	  }
+	  ieee754.write(buf, value, offset, littleEndian, 23, 4)
+	  return offset + 4
+	}
+
+	Buffer.prototype.writeFloatLE = function writeFloatLE (value, offset, noAssert) {
+	  return writeFloat(this, value, offset, true, noAssert)
+	}
+
+	Buffer.prototype.writeFloatBE = function writeFloatBE (value, offset, noAssert) {
+	  return writeFloat(this, value, offset, false, noAssert)
+	}
+
+	function writeDouble (buf, value, offset, littleEndian, noAssert) {
+	  if (!noAssert) {
+	    checkIEEE754(buf, value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308)
+	  }
+	  ieee754.write(buf, value, offset, littleEndian, 52, 8)
+	  return offset + 8
+	}
+
+	Buffer.prototype.writeDoubleLE = function writeDoubleLE (value, offset, noAssert) {
+	  return writeDouble(this, value, offset, true, noAssert)
+	}
+
+	Buffer.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert) {
+	  return writeDouble(this, value, offset, false, noAssert)
+	}
+
+	// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
+	Buffer.prototype.copy = function copy (target, targetStart, start, end) {
+	  if (!start) start = 0
+	  if (!end && end !== 0) end = this.length
+	  if (targetStart >= target.length) targetStart = target.length
+	  if (!targetStart) targetStart = 0
+	  if (end > 0 && end < start) end = start
+
+	  // Copy 0 bytes; we're done
+	  if (end === start) return 0
+	  if (target.length === 0 || this.length === 0) return 0
+
+	  // Fatal error conditions
+	  if (targetStart < 0) {
+	    throw new RangeError('targetStart out of bounds')
+	  }
+	  if (start < 0 || start >= this.length) throw new RangeError('sourceStart out of bounds')
+	  if (end < 0) throw new RangeError('sourceEnd out of bounds')
+
+	  // Are we oob?
+	  if (end > this.length) end = this.length
+	  if (target.length - targetStart < end - start) {
+	    end = target.length - targetStart + start
+	  }
+
+	  var len = end - start
+	  var i
+
+	  if (this === target && start < targetStart && targetStart < end) {
+	    // descending copy from end
+	    for (i = len - 1; i >= 0; --i) {
+	      target[i + targetStart] = this[i + start]
+	    }
+	  } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
+	    // ascending copy from start
+	    for (i = 0; i < len; ++i) {
+	      target[i + targetStart] = this[i + start]
+	    }
+	  } else {
+	    Uint8Array.prototype.set.call(
+	      target,
+	      this.subarray(start, start + len),
+	      targetStart
+	    )
+	  }
+
+	  return len
+	}
+
+	// Usage:
+	//    buffer.fill(number[, offset[, end]])
+	//    buffer.fill(buffer[, offset[, end]])
+	//    buffer.fill(string[, offset[, end]][, encoding])
+	Buffer.prototype.fill = function fill (val, start, end, encoding) {
+	  // Handle string cases:
+	  if (typeof val === 'string') {
+	    if (typeof start === 'string') {
+	      encoding = start
+	      start = 0
+	      end = this.length
+	    } else if (typeof end === 'string') {
+	      encoding = end
+	      end = this.length
+	    }
+	    if (val.length === 1) {
+	      var code = val.charCodeAt(0)
+	      if (code < 256) {
+	        val = code
+	      }
+	    }
+	    if (encoding !== undefined && typeof encoding !== 'string') {
+	      throw new TypeError('encoding must be a string')
+	    }
+	    if (typeof encoding === 'string' && !Buffer.isEncoding(encoding)) {
+	      throw new TypeError('Unknown encoding: ' + encoding)
+	    }
+	  } else if (typeof val === 'number') {
+	    val = val & 255
+	  }
+
+	  // Invalid ranges are not set to a default, so can range check early.
+	  if (start < 0 || this.length < start || this.length < end) {
+	    throw new RangeError('Out of range index')
+	  }
+
+	  if (end <= start) {
+	    return this
+	  }
+
+	  start = start >>> 0
+	  end = end === undefined ? this.length : end >>> 0
+
+	  if (!val) val = 0
+
+	  var i
+	  if (typeof val === 'number') {
+	    for (i = start; i < end; ++i) {
+	      this[i] = val
+	    }
+	  } else {
+	    var bytes = Buffer.isBuffer(val)
+	      ? val
+	      : utf8ToBytes(new Buffer(val, encoding).toString())
+	    var len = bytes.length
+	    for (i = 0; i < end - start; ++i) {
+	      this[i + start] = bytes[i % len]
+	    }
+	  }
+
+	  return this
+	}
+
+	// HELPER FUNCTIONS
+	// ================
+
+	var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g
+
+	function base64clean (str) {
+	  // Node strips out invalid characters like \n and \t from the string, base64-js does not
+	  str = stringtrim(str).replace(INVALID_BASE64_RE, '')
+	  // Node converts strings with length < 2 to ''
+	  if (str.length < 2) return ''
+	  // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
+	  while (str.length % 4 !== 0) {
+	    str = str + '='
+	  }
+	  return str
+	}
+
+	function stringtrim (str) {
+	  if (str.trim) return str.trim()
+	  return str.replace(/^\s+|\s+$/g, '')
+	}
+
+	function toHex (n) {
+	  if (n < 16) return '0' + n.toString(16)
+	  return n.toString(16)
+	}
+
+	function utf8ToBytes (string, units) {
+	  units = units || Infinity
+	  var codePoint
+	  var length = string.length
+	  var leadSurrogate = null
+	  var bytes = []
+
+	  for (var i = 0; i < length; ++i) {
+	    codePoint = string.charCodeAt(i)
+
+	    // is surrogate component
+	    if (codePoint > 0xD7FF && codePoint < 0xE000) {
+	      // last char was a lead
+	      if (!leadSurrogate) {
+	        // no lead yet
+	        if (codePoint > 0xDBFF) {
+	          // unexpected trail
+	          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+	          continue
+	        } else if (i + 1 === length) {
+	          // unpaired lead
+	          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+	          continue
+	        }
+
+	        // valid lead
+	        leadSurrogate = codePoint
+
+	        continue
+	      }
+
+	      // 2 leads in a row
+	      if (codePoint < 0xDC00) {
+	        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+	        leadSurrogate = codePoint
+	        continue
+	      }
+
+	      // valid surrogate pair
+	      codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000
+	    } else if (leadSurrogate) {
+	      // valid bmp char, but last char was a lead
+	      if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+	    }
+
+	    leadSurrogate = null
+
+	    // encode utf8
+	    if (codePoint < 0x80) {
+	      if ((units -= 1) < 0) break
+	      bytes.push(codePoint)
+	    } else if (codePoint < 0x800) {
+	      if ((units -= 2) < 0) break
+	      bytes.push(
+	        codePoint >> 0x6 | 0xC0,
+	        codePoint & 0x3F | 0x80
+	      )
+	    } else if (codePoint < 0x10000) {
+	      if ((units -= 3) < 0) break
+	      bytes.push(
+	        codePoint >> 0xC | 0xE0,
+	        codePoint >> 0x6 & 0x3F | 0x80,
+	        codePoint & 0x3F | 0x80
+	      )
+	    } else if (codePoint < 0x110000) {
+	      if ((units -= 4) < 0) break
+	      bytes.push(
+	        codePoint >> 0x12 | 0xF0,
+	        codePoint >> 0xC & 0x3F | 0x80,
+	        codePoint >> 0x6 & 0x3F | 0x80,
+	        codePoint & 0x3F | 0x80
+	      )
+	    } else {
+	      throw new Error('Invalid code point')
+	    }
+	  }
+
+	  return bytes
+	}
+
+	function asciiToBytes (str) {
+	  var byteArray = []
+	  for (var i = 0; i < str.length; ++i) {
+	    // Node's code seems to be doing this and not & 0x7F..
+	    byteArray.push(str.charCodeAt(i) & 0xFF)
+	  }
+	  return byteArray
+	}
+
+	function utf16leToBytes (str, units) {
+	  var c, hi, lo
+	  var byteArray = []
+	  for (var i = 0; i < str.length; ++i) {
+	    if ((units -= 2) < 0) break
+
+	    c = str.charCodeAt(i)
+	    hi = c >> 8
+	    lo = c % 256
+	    byteArray.push(lo)
+	    byteArray.push(hi)
+	  }
+
+	  return byteArray
+	}
+
+	function base64ToBytes (str) {
+	  return base64.toByteArray(base64clean(str))
+	}
+
+	function blitBuffer (src, dst, offset, length) {
+	  for (var i = 0; i < length; ++i) {
+	    if ((i + offset >= dst.length) || (i >= src.length)) break
+	    dst[i + offset] = src[i]
+	  }
+	  return i
+	}
+
+	function isnan (val) {
+	  return val !== val // eslint-disable-line no-self-compare
+	}
+
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 184 */
+/***/ function(module, exports) {
+
+	'use strict'
+
+	exports.byteLength = byteLength
+	exports.toByteArray = toByteArray
+	exports.fromByteArray = fromByteArray
+
+	var lookup = []
+	var revLookup = []
+	var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array
+
+	var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+	for (var i = 0, len = code.length; i < len; ++i) {
+	  lookup[i] = code[i]
+	  revLookup[code.charCodeAt(i)] = i
+	}
+
+	revLookup['-'.charCodeAt(0)] = 62
+	revLookup['_'.charCodeAt(0)] = 63
+
+	function placeHoldersCount (b64) {
+	  var len = b64.length
+	  if (len % 4 > 0) {
+	    throw new Error('Invalid string. Length must be a multiple of 4')
+	  }
+
+	  // the number of equal signs (place holders)
+	  // if there are two placeholders, than the two characters before it
+	  // represent one byte
+	  // if there is only one, then the three characters before it represent 2 bytes
+	  // this is just a cheap hack to not do indexOf twice
+	  return b64[len - 2] === '=' ? 2 : b64[len - 1] === '=' ? 1 : 0
+	}
+
+	function byteLength (b64) {
+	  // base64 is 4/3 + up to two characters of the original data
+	  return b64.length * 3 / 4 - placeHoldersCount(b64)
+	}
+
+	function toByteArray (b64) {
+	  var i, j, l, tmp, placeHolders, arr
+	  var len = b64.length
+	  placeHolders = placeHoldersCount(b64)
+
+	  arr = new Arr(len * 3 / 4 - placeHolders)
+
+	  // if there are placeholders, only get up to the last complete 4 chars
+	  l = placeHolders > 0 ? len - 4 : len
+
+	  var L = 0
+
+	  for (i = 0, j = 0; i < l; i += 4, j += 3) {
+	    tmp = (revLookup[b64.charCodeAt(i)] << 18) | (revLookup[b64.charCodeAt(i + 1)] << 12) | (revLookup[b64.charCodeAt(i + 2)] << 6) | revLookup[b64.charCodeAt(i + 3)]
+	    arr[L++] = (tmp >> 16) & 0xFF
+	    arr[L++] = (tmp >> 8) & 0xFF
+	    arr[L++] = tmp & 0xFF
+	  }
+
+	  if (placeHolders === 2) {
+	    tmp = (revLookup[b64.charCodeAt(i)] << 2) | (revLookup[b64.charCodeAt(i + 1)] >> 4)
+	    arr[L++] = tmp & 0xFF
+	  } else if (placeHolders === 1) {
+	    tmp = (revLookup[b64.charCodeAt(i)] << 10) | (revLookup[b64.charCodeAt(i + 1)] << 4) | (revLookup[b64.charCodeAt(i + 2)] >> 2)
+	    arr[L++] = (tmp >> 8) & 0xFF
+	    arr[L++] = tmp & 0xFF
+	  }
+
+	  return arr
+	}
+
+	function tripletToBase64 (num) {
+	  return lookup[num >> 18 & 0x3F] + lookup[num >> 12 & 0x3F] + lookup[num >> 6 & 0x3F] + lookup[num & 0x3F]
+	}
+
+	function encodeChunk (uint8, start, end) {
+	  var tmp
+	  var output = []
+	  for (var i = start; i < end; i += 3) {
+	    tmp = (uint8[i] << 16) + (uint8[i + 1] << 8) + (uint8[i + 2])
+	    output.push(tripletToBase64(tmp))
+	  }
+	  return output.join('')
+	}
+
+	function fromByteArray (uint8) {
+	  var tmp
+	  var len = uint8.length
+	  var extraBytes = len % 3 // if we have 1 byte left, pad 2 bytes
+	  var output = ''
+	  var parts = []
+	  var maxChunkLength = 16383 // must be multiple of 3
+
+	  // go through the array every three bytes, we'll deal with trailing stuff later
+	  for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
+	    parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)))
+	  }
+
+	  // pad the end with zeros, but make sure to not forget the extra bytes
+	  if (extraBytes === 1) {
+	    tmp = uint8[len - 1]
+	    output += lookup[tmp >> 2]
+	    output += lookup[(tmp << 4) & 0x3F]
+	    output += '=='
+	  } else if (extraBytes === 2) {
+	    tmp = (uint8[len - 2] << 8) + (uint8[len - 1])
+	    output += lookup[tmp >> 10]
+	    output += lookup[(tmp >> 4) & 0x3F]
+	    output += lookup[(tmp << 2) & 0x3F]
+	    output += '='
+	  }
+
+	  parts.push(output)
+
+	  return parts.join('')
+	}
+
+
+/***/ },
+/* 185 */
+/***/ function(module, exports) {
+
+	exports.read = function (buffer, offset, isLE, mLen, nBytes) {
+	  var e, m
+	  var eLen = nBytes * 8 - mLen - 1
+	  var eMax = (1 << eLen) - 1
+	  var eBias = eMax >> 1
+	  var nBits = -7
+	  var i = isLE ? (nBytes - 1) : 0
+	  var d = isLE ? -1 : 1
+	  var s = buffer[offset + i]
+
+	  i += d
+
+	  e = s & ((1 << (-nBits)) - 1)
+	  s >>= (-nBits)
+	  nBits += eLen
+	  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {}
+
+	  m = e & ((1 << (-nBits)) - 1)
+	  e >>= (-nBits)
+	  nBits += mLen
+	  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {}
+
+	  if (e === 0) {
+	    e = 1 - eBias
+	  } else if (e === eMax) {
+	    return m ? NaN : ((s ? -1 : 1) * Infinity)
+	  } else {
+	    m = m + Math.pow(2, mLen)
+	    e = e - eBias
+	  }
+	  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
+	}
+
+	exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
+	  var e, m, c
+	  var eLen = nBytes * 8 - mLen - 1
+	  var eMax = (1 << eLen) - 1
+	  var eBias = eMax >> 1
+	  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0)
+	  var i = isLE ? 0 : (nBytes - 1)
+	  var d = isLE ? 1 : -1
+	  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
+
+	  value = Math.abs(value)
+
+	  if (isNaN(value) || value === Infinity) {
+	    m = isNaN(value) ? 1 : 0
+	    e = eMax
+	  } else {
+	    e = Math.floor(Math.log(value) / Math.LN2)
+	    if (value * (c = Math.pow(2, -e)) < 1) {
+	      e--
+	      c *= 2
+	    }
+	    if (e + eBias >= 1) {
+	      value += rt / c
+	    } else {
+	      value += rt * Math.pow(2, 1 - eBias)
+	    }
+	    if (value * c >= 2) {
+	      e++
+	      c /= 2
+	    }
+
+	    if (e + eBias >= eMax) {
+	      m = 0
+	      e = eMax
+	    } else if (e + eBias >= 1) {
+	      m = (value * c - 1) * Math.pow(2, mLen)
+	      e = e + eBias
+	    } else {
+	      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen)
+	      e = 0
+	    }
+	  }
+
+	  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
+
+	  e = (e << mLen) | m
+	  eLen += mLen
+	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
+
+	  buffer[offset + i - d] |= s * 128
+	}
+
+
+/***/ },
+/* 186 */
+/***/ function(module, exports) {
+
+	var toString = {}.toString;
+
+	module.exports = Array.isArray || function (arr) {
+	  return toString.call(arr) == '[object Array]';
+	};
+
 
 /***/ }
 /******/ ]);

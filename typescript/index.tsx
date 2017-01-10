@@ -20,6 +20,7 @@ const React = require("react");
 const ReactDOM = require("react-dom");
 const Howler = require("howler");
 const Raphael = require("raphael");
+const Chance = require("chance");
 
 import {Component} from "react";
 
@@ -31,34 +32,47 @@ class GamePadButton {
     props: ISimonButtonProps;
     sound: Howl;
     path: RaphaelPath;
-    
+    callback: any;
+
     constructor(canvas: RaphaelPaper, props: ISimonButtonProps) {
-        debugger;
+       
         this.path = canvas.path(props.path);
         this.pathId = this.path.id;
         this.props = props;
 
         this.path.attr({"type":"path","stroke":"#333333","stroke-width":"15","fill":props.color})
-                .mousedown(props.mousedown)
-                .mouseup(props.mouseup);
-        
-        let howlProps : IHowlProperties = { src: "https://s3.amazonaws.com/freecodecamp/" + props.soundFile, volume: 0.25 }; 
+                .mousedown(props.mousedown);
+                //.mouseup(props.mouseup);
+        let self:GamePadButton = this;
+        let howlProps : IHowlProperties = { 
+            src: "https://s3.amazonaws.com/freecodecamp/" + props.soundFile, 
+            volume: 0.25,
+            onend: function() {
+                self.release();                
+            }
+        }; 
         this.sound = new Howl(howlProps);
     }
 
-    lightUp() {
+    push(callback:any = undefined) {
         debugger;
+        
         this.path.animate({fill: this.props.clickColor}, 0);
-        this.sound.play();
+        this.sound.play(); 
+
+        if (callback !== undefined) {
+            this.callback = callback;
+        }
     }
 
-    lightOff() {
+    release() {
+        debugger;
         this.path.animate({fill: this.props.color}, 0);
+        if (this.callback !== undefined) {
+            this.callback();
+        }        
     }
 
-    playSound() {
-
-    }
     render() {
         return (
             <div>
@@ -69,7 +83,7 @@ class GamePadButton {
 
 class SimonGame extends Component<any,any> {
     gamePad: GamePad;    
-
+    game: Game;
     constructor() 
     {
         super();   
@@ -77,8 +91,9 @@ class SimonGame extends Component<any,any> {
         this.mouseUp = this.mouseUp.bind(this);
         this.mouseDown = this.mouseDown.bind(this);
         this.gamePad = new GamePad(); 
-
-        debugger;
+        this.game = new Game();
+        this.start = this.start.bind(this);
+       
 
         let props: ISimonButtonProps[] = [];
         //green
@@ -88,7 +103,8 @@ class SimonGame extends Component<any,any> {
             color:"#00a74a",
             clickColor: "#13FF7C",
             mouseup: this.mouseUp,
-            mousedown: this.mouseDown
+            mousedown: this.mouseDown,
+            index: 0
         };
 
         props.push(buttonProps);
@@ -100,7 +116,8 @@ class SimonGame extends Component<any,any> {
             color: "#9f0f17",
             clickColor: "#FF4C4C",
             mouseup: this.mouseUp,
-            mousedown: this.mouseDown
+            mousedown: this.mouseDown,
+            index: 1
         };
         props.push(buttonProps);
 
@@ -111,7 +128,8 @@ class SimonGame extends Component<any,any> {
             color:"#cca707",
             clickColor: "#FED93F",
             mouseup: this.mouseUp,
-            mousedown: this.mouseDown
+            mousedown: this.mouseDown,
+            index: 2
         };
         props.push(buttonProps);
 
@@ -122,7 +140,8 @@ class SimonGame extends Component<any,any> {
                 color: "#094a8f",
                 clickColor: "#1C8CFF",
                 mouseup: this.mouseUp,
-                mousedown: this.mouseDown
+                mousedown: this.mouseDown,
+                index: 3
         }
         props.push(buttonProps);
 
@@ -143,19 +162,60 @@ class SimonGame extends Component<any,any> {
         return button[0];
     }
 
-    mouseDown(e) {
-        let id:string = $(e.target)[0].raphaelid;
-        let button:GamePadButton = this.findButton(id);
-        
-        button.lightUp();
-        button.sound.play();
+    start() {
+        this.playSequence();
     }
 
-    mouseUp(e) {
-        let id:string = $(e.target)[0].raphaelid;
-        let button:GamePadButton = this.findButton(id);
+    playSequence(index:number = -1) {
+        index+= 1;
+        let buttonIndex = this.game.sequence[index];
+        if (index < this.game.sequence.length - 1) {
+            let self: any = this;
+            let callback: any = function() {
+                self.playSequence(index);                          
+            }
+            this.gamePad.buttons[buttonIndex].push(callback);          
+        } else {
+            buttonIndex = this.game.addStep();
+            this.gamePad.buttons[buttonIndex].push();
+        }
+    }
 
-        button.lightOff();
+    mouseDown(e) {
+        let id:string = $(e.target)[0].raphaelid;
+        
+        let self:any = this;
+        let callback:any = function() {
+            self.mouseUp(id);
+        }
+        
+        let button:GamePadButton = this.findButton(id);
+        button.push(callback);
+    }
+
+    mouseUp(buttonId:string) {
+        debugger;
+        
+        let button:GamePadButton = this.findButton(buttonId);
+        
+        this.game.addUserInput(button.props.index);
+                     
+        //hit 20 then win
+        if (this.game.sequence.length === this.game.userInput.length) {
+            
+            if (this.game.isCorrect()) {
+                this.game.addStep();
+            } else {
+                alert("Wrong!");
+            }
+            
+            let self:any = this;
+            setTimeout(function() {
+                self.playSequence();
+            }, 2000);  
+        }
+       
+        //strict mode?
     }
 
     render() {
@@ -167,11 +227,11 @@ class SimonGame extends Component<any,any> {
                 <div></div>
                 <div>Strict Mode</div>
                 <div className="btn-group" role="group" aria-label="Strict Mode">
-                    <button type="button" className="btn btn-default">On</button>
+                    <button type="button" className="btn btn-default" onClick={this.start}>On</button>
                     <button type="button" className="btn btn-default">Off</button>
                 </div>
                 <div className="btn-group" role="group" aria-label="Strict Mode">
-                    <button type="button" className="btn btn-default">On</button>
+                    <button type="button" className="btn btn-default" >On</button>
                     <button type="button" className="btn btn-default">Off</button>
                 </div>
                 
@@ -192,15 +252,14 @@ interface ISimonButtonProps
     clickColor: string;
     mouseup: any;
     mousedown: any;
+    index: number;
 }
 
 class GamePad {
     gameCanvas: any;
-    buttons: GamePadButton[];
-    sequence: number[];
+    buttons: GamePadButton[];  
 
     constructor() {
-        debugger;
         this.gameCanvas = Raphael("gameCanvas");
         this.gameCanvas.setViewBox(0, 0, 400, 400, true); //decrease numbers to increase size
         this.gameCanvas.canvas.setAttribute('preserveAspectRatio', 'none');
@@ -214,8 +273,39 @@ class GamePad {
     //as user clicks check if correct button pushed
 }
 
-class Player {
-    correctPlays: number;
+class Game {
+    sequence:Array<number>;
+    userInput:Array<number>;
+
+    constructor() {
+        this.sequence = [];
+        this.userInput = []
+    }
+    countDisplay():string {
+        let count = this.sequence.length;
+        return "00".substring(0, count) +  count;
+    }
+    addStep():number {
+        let chance = new Chance();
+        let randomNum:number = chance.integer({min: 0, max: 3});
+        this.sequence.push(randomNum);
+        return randomNum;
+    }
+    addUserInput(buttonIndex: number) {
+        this.userInput.push(buttonIndex);
+    }
+    isCorrect() {
+        let diff = this.difference();
+        return diff.length === 0;
+    }
+
+    difference() {
+        var differences = this.sequence.filter((item) => {
+            return this.userInput.indexOf(item) < 0;
+        });
+        return differences;
+    }
 }
+
 
 ReactDOM.render(<SimonGame />, document.getElementById("gameControls"));
