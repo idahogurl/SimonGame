@@ -5,6 +5,11 @@ body {
     margin: 20px;
 }
 
+@font-face {
+  font-family: 'Digital-7 Mono';
+  src: url('../digital-7-mono.ttf');
+}
+
 h1 {    
     font: 40pt 'Alfa Slab One', serif;
     text-transform: none;
@@ -19,6 +24,7 @@ h1 {
     -moz-box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.75);
     box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.75); 
     margin: 0px auto 10px auto;
+    cursor: pointer;
 }
 
 #count {
@@ -29,7 +35,7 @@ h1 {
     width: 75px;
     height: 50px;
     text-align: center;
-    font-size: 28pt;
+    font: 28pt 'Digital-7 Mono';
     margin: 0px auto 10px auto;
     vertical-align: middle;
 }
@@ -71,4 +77,9 @@ h1 {
     top: 50%;
     left: 50%;
     margin: -400px 0 0 -400px;
+    cursor: pointer;
+}
+
+.status {
+    margin-top: -10px;
 }

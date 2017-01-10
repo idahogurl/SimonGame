@@ -1,4 +1,4 @@
-// User Story: I am presented with a random series of button presses.
+// User Story: I can play in strict mode where if I get a button press wrong, it notifies me that I have done so, and the game restarts at a new random series of button presses.
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -6,15 +6,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-// User Story: Each time I input a series of button presses correctly, I see the same series of button presses but with an additional step.
-// User Story: I hear a sound that corresponds to each button both when the series of button presses plays, and when I personally press a button.
-// User Story: If I press the wrong button, I am notified that I have done so, and that series of button presses starts again to remind me of the pattern so I can try again.
-// User Story: I can see how many steps are in the current series of button presses.
-// User Story: If I want to restart, I can hit a button to do so, and the game will return to a single step.
-// User Story: I can play in strict mode where if I get a button press wrong, it notifies me that I have done so, and the game restarts at a new random series of button presses.
 // User Story: I can win the game by getting a series of 20 steps correct. I am notified of my victory, then the game starts over.
-// Hint: Here are mp3s you can use for each button: https://s3.amazonaws.com/freecodecamp/simonSound1.mp3, https://s3.amazonaws.com/freecodecamp/simonSound2.mp3, https://s3.amazonaws.com/freecodecamp/simonSound3.mp3, https://s3.amazonaws.com/freecodecamp/simonSound4.mp3.
-const $ = require("jQuery");
+// import * as $ from 'jquery';
+// window["$"] = $; //get bootstrap js to work
+// window["jQuery"] = $;
+const $ = require("jquery");
 const React = require("react");
 const ReactDOM = require("react-dom");
 const Howler = require("howler");
@@ -126,10 +122,18 @@ let SimonGame = class SimonGame extends react_1.Component {
         });
         return button[0];
     }
-    start() {
+    reset() {
         this.game.sequence = [];
-        this.game.addStep();
-        this.playSequence();
+        this.game.userInput = [];
+        this.game.count = 0;
+    }
+    start() {
+        if (this.gamePad.on) {
+            this.reset();
+            this.game.addStep();
+            this.gamePad.updateCountDisplay(this.game.count);
+            this.playSequence();
+        }
     }
     playSequence(index = 0) {
         if (index < this.game.sequence.length) {
@@ -144,10 +148,11 @@ let SimonGame = class SimonGame extends react_1.Component {
         this.game.userInput = [];
     }
     handleClick(e) {
-        let id = $(e.target)[0].raphaelid;
+        debugger;
+        let id = eval("$(e.target)[0].raphaelid"); //jQuery typing does not have raphaelid as property
         let self = this;
         let callback = function () {
-            self.clickComplete(id);
+            self.pushComplete(id);
         };
         let button = this.findButton(id);
         button.push(callback);
@@ -159,7 +164,9 @@ let SimonGame = class SimonGame extends react_1.Component {
         let self = this;
         //TODO: hit 20 then win, what happens?
         if (this.game.userInput[index] === this.game.sequence[index]) {
-            if (this.game.userInput.length === this.game.sequence.length) {
+            if (this.game.userInput.length == 20) {
+            }
+            else if (this.game.userInput.length === this.game.sequence.length) {
                 this.game.addStep();
                 //pause for a moment
                 setTimeout(function () {
@@ -168,10 +175,9 @@ let SimonGame = class SimonGame extends react_1.Component {
             }
         }
         else {
-            alert("Wrong!");
-            this.game.count = "!!";
+            this.gamePad.countDisplay = "!!";
             if (this.game.strictMode) {
-                this.game.sequence = [];
+                this.start();
             }
             else {
                 //pause for a moment
@@ -186,11 +192,12 @@ let SimonGame = class SimonGame extends react_1.Component {
         this.game.strictMode = !this.game.strictMode;
     }
     on() {
-        this.game.count = "--";
+        this.gamePad.countDisplay = "- -";
     }
     off() {
-        this.game.count = "";
+        this.gamePad.countDisplay = "";
         this.game.strictMode = false;
+        //change color?
     }
     render() {
         return (React.createElement("div", { id: "control-text" },
@@ -200,7 +207,7 @@ let SimonGame = class SimonGame extends react_1.Component {
                     React.createElement("div", { className: "strict " + (this.game.strictMode ? "strict-on" : "strict-off") }))),
             React.createElement("div", { className: "row" },
                 React.createElement("div", { className: "col-xs-5 text-center" },
-                    React.createElement("div", { id: "count" }, this.game.count),
+                    React.createElement(CountDisplay, { count: this.gamePad.countDisplay }),
                     "Count"),
                 React.createElement("div", { className: "col-xs-3" },
                     React.createElement(ControlButton, { handleClick: this.start, color: "red" }),
@@ -208,14 +215,23 @@ let SimonGame = class SimonGame extends react_1.Component {
                 React.createElement("div", { className: "col-xs-4" },
                     React.createElement(ControlButton, { handleClick: this.setStrictMode, color: "yellow" }),
                     "Strict")),
-            React.createElement("div", { className: "btn-group", role: "group", id: "" },
-                React.createElement("button", { type: "button", className: "btn btn-default", onClick: this.on }, "On"),
-                React.createElement("button", { type: "button", className: "btn btn-default", onClick: this.off }, "Off"))));
+            React.createElement(PowerSwitch, { state: this.gamePad.on })));
     }
 };
 SimonGame = __decorate([
     mobx_react_1.observer
 ], SimonGame);
+let CountDisplay = class CountDisplay extends react_1.Component {
+    constructor(props) {
+        super(props);
+    }
+    render() {
+        return (React.createElement("div", { id: "count" }, this.props.countDisplay));
+    }
+};
+CountDisplay = __decorate([
+    mobx_react_1.observer
+], CountDisplay);
 class ControlButton extends react_1.Component {
     constructor(props) {
         super(props);
@@ -227,6 +243,21 @@ class ControlButton extends react_1.Component {
         return (React.createElement("div", { onClick: this.props.handleClick, className: "controlButton", style: backgroundColor }));
     }
 }
+class PowerSwitch extends react_1.Component {
+    constructor(props) {
+        super(props);
+    }
+    render() {
+        return (React.createElement("div", { id: "powerSwitch" },
+            React.createElement("span", { className: "status" }, "On"),
+            "\u00A0",
+            React.createElement("label", { className: "switch" },
+                React.createElement("input", { type: "checkbox", checked: this.props.state }),
+                React.createElement("div", { className: "slider" })),
+            "  ",
+            React.createElement("span", { className: "status" }, "Off")));
+    }
+}
 class GamePad {
     constructor() {
         this.gameCanvas = Raphael("gameCanvas");
@@ -235,44 +266,41 @@ class GamePad {
         this.gameCanvas.circle(300, 300, 275).glow();
         this.buttons = [];
     }
+    updateCountDisplay(count) {
+        if (count < 10) {
+            this.countDisplay = "0" + count;
+        }
+        this.countDisplay = count.toString();
+    }
 }
+__decorate([
+    mobx_1.observable
+], GamePad.prototype, "countDisplay", void 0);
 class Game {
     constructor() {
-        this.sequence = [];
-        this.userInput = [];
         this.strictMode = false;
-    }
-    getCountDisplay() {
-        let count = this.sequence.length;
-        if (count < 10) {
-            return "0" + count;
-        }
-        return count.toString();
     }
     addStep() {
         let chance = new Chance();
         let randomNum = chance.integer({ min: 0, max: 3 });
         this.sequence.push(randomNum);
-        this.count = this.getCountDisplay();
+        this.count++;
         return randomNum;
     }
     addUserInput(buttonIndex) {
         this.userInput.push(buttonIndex);
     }
     isCorrect() {
-        let diff = this.difference();
+        let diff = this.sequenceDifference();
         return diff.length === 0;
     }
-    difference() {
+    sequenceDifference() {
         var differences = this.sequence.filter((item) => {
             return this.userInput.indexOf(item) < 0;
         });
         return differences;
     }
 }
-__decorate([
-    mobx_1.observable
-], Game.prototype, "count", void 0);
 __decorate([
     mobx_1.observable
 ], Game.prototype, "strictMode", void 0);
