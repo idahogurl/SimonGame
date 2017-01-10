@@ -23,9 +23,8 @@ const Raphael = require("raphael");
 const Chance = require("chance");
 
 import {Component} from "react";
-
-//import {observable} from "mobx";
-//import {observer} from "mobx-react";
+import {observable} from "mobx";
+import {observer} from "mobx-react";
 
 class GamePadButton {
     pathId: string;
@@ -35,13 +34,12 @@ class GamePadButton {
     callback: any;
 
     constructor(canvas: RaphaelPaper, props: ISimonButtonProps) {
-       
         this.path = canvas.path(props.path);
         this.pathId = this.path.id;
         this.props = props;
 
         this.path.attr({"type":"path","stroke":"#333333","stroke-width":"15","fill":props.color})
-                .mousedown(props.mousedown);
+                .click(props.clickHandler);
                 //.mouseup(props.mouseup);
         let self:GamePadButton = this;
         let howlProps : IHowlProperties = { 
@@ -81,6 +79,7 @@ class GamePadButton {
     }
 }
 
+@observer
 class SimonGame extends Component<any,any> {
     gamePad: GamePad;    
     game: Game;
@@ -88,13 +87,16 @@ class SimonGame extends Component<any,any> {
     {
         super();   
 
-        this.mouseUp = this.mouseUp.bind(this);
-        this.mouseDown = this.mouseDown.bind(this);
+        this.handleClick = this.handleClick.bind(this);
+        this.pushComplete = this.pushComplete.bind(this);
+        this.setStrictMode = this.setStrictMode.bind(this);
+        this.on = this.on.bind(this);
+        this.off = this.off.bind(this);
+
         this.gamePad = new GamePad(); 
         this.game = new Game();
         this.start = this.start.bind(this);
        
-
         let props: ISimonButtonProps[] = [];
         //green
         let buttonProps: ISimonButtonProps = {
@@ -102,8 +104,7 @@ class SimonGame extends Component<any,any> {
             path: "M 300 300 L 30 300 A 270 270 0 0 1 300 30 L 300 300 A 0 0 0 0 0 300 300",
             color:"#00a74a",
             clickColor: "#13FF7C",
-            mouseup: this.mouseUp,
-            mousedown: this.mouseDown,
+            clickHandler: this.handleClick,
             index: 0
         };
 
@@ -115,8 +116,7 @@ class SimonGame extends Component<any,any> {
             path: "M 300 300 L 300 30 A 270 270 0 0 1 570 300 L 300 300 A 0 0 0 0 0 300 300", 
             color: "#9f0f17",
             clickColor: "#FF4C4C",
-            mouseup: this.mouseUp,
-            mousedown: this.mouseDown,
+            clickHandler: this.handleClick,
             index: 1
         };
         props.push(buttonProps);
@@ -127,8 +127,7 @@ class SimonGame extends Component<any,any> {
             path: "M 300 300 L 300 570 A 270 270 0 0 1 30 300 L 300 300 A 0 0 0 0 0 300 300",
             color:"#cca707",
             clickColor: "#FED93F",
-            mouseup: this.mouseUp,
-            mousedown: this.mouseDown,
+            clickHandler: this.handleClick,
             index: 2
         };
         props.push(buttonProps);
@@ -139,8 +138,7 @@ class SimonGame extends Component<any,any> {
                 path: "M 300 300 L 570 300 A 270 270 0 0 1 300 570 L 300 300 A 0 0 0 0 0 300 300",
                 color: "#094a8f",
                 clickColor: "#1C8CFF",
-                mouseup: this.mouseUp,
-                mousedown: this.mouseDown,
+                clickHandler: this.handleClick,
                 index: 3
         }
         props.push(buttonProps);
@@ -163,86 +161,128 @@ class SimonGame extends Component<any,any> {
     }
 
     start() {
+        this.game.sequence = [];
+        this.game.addStep();
         this.playSequence();
     }
 
-    playSequence(index:number = -1) {
-        index+= 1;
-        let buttonIndex = this.game.sequence[index];
-        if (index < this.game.sequence.length - 1) {
+    playSequence(index:number = 0) {
+        if (index < this.game.sequence.length) {
+            let buttonIndex = this.game.sequence[index];
+            index++;
             let self: any = this;
             let callback: any = function() {
-                self.playSequence(index);                          
+                self.playSequence(index);                  
             }
             this.gamePad.buttons[buttonIndex].push(callback);          
-        } else {
-            buttonIndex = this.game.addStep();
-            this.gamePad.buttons[buttonIndex].push();
         }
+        this.game.userInput = [];
     }
 
-    mouseDown(e) {
+    handleClick(e) {
         let id:string = $(e.target)[0].raphaelid;
         
         let self:any = this;
         let callback:any = function() {
-            self.mouseUp(id);
+            self.clickComplete(id);
         }
         
         let button:GamePadButton = this.findButton(id);
         button.push(callback);
     }
 
-    mouseUp(buttonId:string) {
-        debugger;
-        
+    pushComplete(buttonId:string) {
         let button:GamePadButton = this.findButton(buttonId);
-        
         this.game.addUserInput(button.props.index);
-                     
-        //hit 20 then win
-        if (this.game.sequence.length === this.game.userInput.length) {
-            
-            if (this.game.isCorrect()) {
+
+        let index = this.game.userInput.length - 1;
+
+        let self:any = this;
+        //TODO: hit 20 then win, what happens?
+        if (this.game.userInput[index] === this.game.sequence[index]) {
+            if (this.game.userInput.length === this.game.sequence.length) {
                 this.game.addStep();
-            } else {
-                alert("Wrong!");
+                
+                //pause for a moment
+                setTimeout(function() {
+                    self.playSequence();
+                }, 1000);
             }
-            
-            let self:any = this;
-            setTimeout(function() {
-                self.playSequence();
-            }, 2000);  
-        }
-       
-        //strict mode?
+        } else {
+            alert("Wrong!");
+            this.game.count = "!!";
+            if (this.game.strictMode) {
+                this.game.sequence = [];
+                //TODO: what should happen?
+            } else {
+                //pause for a moment
+                setTimeout(function() {
+                    self.game.count = self.game.getCountDisplay();
+                    self.playSequence();
+                }, 1000);
+            }
+        }    
+    }
+
+    setStrictMode() {
+        this.game.strictMode = !this.game.strictMode;
+    }
+
+    on() {
+        this.game.count = "--";
+    }
+
+    off() {
+        this.game.count = "";
+        this.game.strictMode = false;
     }
 
     render() {
         return (
-            <div>
+            <div id="control-text">
                 <h1>Simon</h1>
-
-                <div>Count</div>
-                <div></div>
-                <div>Strict Mode</div>
-                <div className="btn-group" role="group" aria-label="Strict Mode">
-                    <button type="button" className="btn btn-default" onClick={this.start}>On</button>
-                    <button type="button" className="btn btn-default">Off</button>
+                <div className="row">
+                    <div className="col-xs-4 col-xs-offset-8">
+                        <div className={"strict " + (this.game.strictMode ? "strict-on" : "strict-off")}>
+                        </div>
+                    </div>
                 </div>
-                <div className="btn-group" role="group" aria-label="Strict Mode">
-                    <button type="button" className="btn btn-default" >On</button>
-                    <button type="button" className="btn btn-default">Off</button>
+                <div className="row">
+                <div className="col-xs-5 text-center">
+                    <div id="count">{this.game.count}</div>
+                    Count
                 </div>
-                
-
-                <span className="fa fa-undo fa-2x">Restart</span>
+                <div className="col-xs-3">
+                    <ControlButton handleClick={this.start} color="red"/>
+                    Start
+                </div>
+                <div className="col-xs-4">
+                    <ControlButton handleClick={this.setStrictMode} color="yellow"/>
+                    Strict
+                    </div>
+                </div>
+                <div className="btn-group" role="group" id="">
+                   <button type="button" className="btn btn-default" onClick={this.on}>On</button>
+                   <button type="button" className="btn btn-default" onClick={this.off}>Off</button>
+                </div>
             </div>
         );
     }
 }
 
-//Restart button
+class ControlButton extends Component<any, any> {
+   constructor(props) {
+       super(props);
+   }
+    render() {
+        let backgroundColor: any = {
+            background: this.props.color
+        };
+         
+        return (<div onClick={this.props.handleClick} className="controlButton" 
+        style={backgroundColor}></div>);
+    }
+}
 
 interface ISimonButtonProps
 {
@@ -250,8 +290,7 @@ interface ISimonButtonProps
     path: string;
     color: string;
     clickColor: string;
-    mouseup: any;
-    mousedown: any;
+    clickHandler: any;
     index: number;
 }
 
@@ -261,39 +300,46 @@ class GamePad {
 
     constructor() {
         this.gameCanvas = Raphael("gameCanvas");
-        this.gameCanvas.setViewBox(0, 0, 400, 400, true); //decrease numbers to increase size
+        this.gameCanvas.setViewBox(0, 0, 600, 600, true); //decrease numbers to increase size
         this.gameCanvas.canvas.setAttribute('preserveAspectRatio', 'none');
         this.gameCanvas.circle(300,300,275).glow();
     
         this.buttons = [];
     }
-
-    //add new random # to sequence
-    //animate button to show user
-    //as user clicks check if correct button pushed
 }
 
 class Game {
-    sequence:Array<number>;
-    userInput:Array<number>;
+    sequence:number[];
+    userInput:number[];
+    @observable count:string;
+    @observable strictMode:boolean;
 
     constructor() {
         this.sequence = [];
-        this.userInput = []
+        this.userInput = [];
+        this.strictMode = false;
     }
-    countDisplay():string {
-        let count = this.sequence.length;
-        return "00".substring(0, count) +  count;
+
+    getCountDisplay():string {
+        let count:number = this.sequence.length;
+        if (count < 10) {
+            return "0" + count;
+        }
+        return count.toString();
     }
+
     addStep():number {
         let chance = new Chance();
         let randomNum:number = chance.integer({min: 0, max: 3});
         this.sequence.push(randomNum);
+        this.count = this.getCountDisplay();
         return randomNum;
     }
+
     addUserInput(buttonIndex: number) {
         this.userInput.push(buttonIndex);
     }
+
     isCorrect() {
         let diff = this.difference();
         return diff.length === 0;
@@ -306,6 +352,5 @@ class Game {
         return differences;
     }
 }
-
 
 ReactDOM.render(<SimonGame />, document.getElementById("gameControls"));

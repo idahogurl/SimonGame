@@ -6,31 +6,69 @@ body {
 }
 
 h1 {    
-    font: 56pt 'Alfa Slab One', serif;
+    font: 40pt 'Alfa Slab One', serif;
     text-transform: none;
 }
 
-#gameControls {
-    position: absolute;
+.controlButton {
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    width:350px;
-    height:350px;
-    background-color: snow;
-    top: 27%;
-    left: 50%;
+    border: 5px solid black;
+    -webkit-box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.75);
+    box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.75); 
+    margin: 0px auto 10px auto;
 }
 
 #count {
-    background-color: black;
+    background-color: #5D0F0D;
+    border-radius: 10px;
+    border: 5px solid black;
     color: red;
     width: 75px;
-    height: 75px;
+    height: 50px;
     text-align: center;
-    font-size: 36pt;
+    font-size: 28pt;
+    margin: 0px auto 10px auto;
+    vertical-align: middle;
+}
+
+.strict {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    margin: 0px auto 10px auto;
+    border: 2px solid black;
+}
+
+.strict-off {
+    background-color: black;
+}
+
+.strict-on {
+    background-color: red;
+}
+
+#gameControls {
+    width:350px;
+    height:350px;
+    border-radius: 50%;
+    background-color: snow;
+    border: 15px solid #333;
+    text-align: center;
+    position: absolute;
+    top:50%;
+    left:50%;
+    margin: -175px 0 0 -175px;
+    
 }
 
 #gameCanvas {
     width: 800px;
     height: 800px;
-    margin: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: -400px 0 0 -400px;
 }
