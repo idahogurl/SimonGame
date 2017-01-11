@@ -80,6 +80,6 @@ h1 {
     cursor: pointer;
 }
 
-.status {
-    margin-top: -10px;
+#powerSwitch {
+    margin-top: 30px;
 }

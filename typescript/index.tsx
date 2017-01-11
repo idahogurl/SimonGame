@@ -82,7 +82,7 @@ class SimonGame extends Component<any,any> {
         this.handleClick = this.handleClick.bind(this);
         this.pushComplete = this.pushComplete.bind(this);
         this.setStrictMode = this.setStrictMode.bind(this);
-        this.on = this.on.bind(this);
+        this.switch = this.switch.bind(this);
         this.off = this.off.bind(this);
 
         this.gamePad = new GamePad(); 
@@ -160,7 +160,6 @@ class SimonGame extends Component<any,any> {
 
     start() {
         if (this.gamePad.on) {            
-            this.reset();
             this.game.addStep();
             this.gamePad.updateCountDisplay(this.game.count);
             this.playSequence();
@@ -200,10 +199,15 @@ class SimonGame extends Component<any,any> {
         let index = this.game.userInput.length - 1;
 
         let self:any = this;
-        //TODO: hit 20 then win, what happens?
+        const winCount = 2;
+        
         if (this.game.userInput[index] === this.game.sequence[index]) {
-            if (this.game.userInput.length == 20) {
-                
+            if (this.game.userInput.length == winCount) {
+                this.gamePad.countDisplay = "* *";
+                //pause for a moment
+                setTimeout(function() {
+                    self.start();
+                }, 1000);
             } else if (this.game.userInput.length === this.game.sequence.length) {
                 this.game.addStep();
                 
@@ -216,7 +220,10 @@ class SimonGame extends Component<any,any> {
             this.gamePad.countDisplay = "!!";
 
             if (this.game.strictMode) {
-                this.start();
+               //pause for a moment
+                setTimeout(function() {
+                    self.start();
+                }, 1000);
             } else {
                 //pause for a moment
                 setTimeout(function() {
@@ -231,14 +238,20 @@ class SimonGame extends Component<any,any> {
         this.game.strictMode = !this.game.strictMode;
     }
 
-    on() {
-        this.gamePad.countDisplay = "- -";
+    switch(e) {
+        this.gamePad.on = !this.gamePad.on;
+        
+        this.reset();
+        if (this.gamePad.on) {            
+            this.gamePad.countDisplay = "- -";
+        } else {        
+            this.off();
+        }
     }
 
     off() {
         this.gamePad.countDisplay = "";
-        this.game.strictMode = false;
-        //change color?
+        this.game.strictMode = false;        
     }
 
     render() {
@@ -265,7 +278,8 @@ class SimonGame extends Component<any,any> {
                     Strict
                     </div>
                 </div>
-              <PowerSwitch state={this.gamePad.on}/>
+               
+                <PowerSwitch state={this.gamePad.on} switch={this.switch}/>
             </div>
         );
     }
@@ -295,15 +309,16 @@ class ControlButton extends Component<any, any> {
     }
 }
 
+@observer
 class PowerSwitch extends Component<any,any> {
     constructor(props) {
        super(props);
    }
 
     render() {
-        return (<div id="powerSwitch"><span className="status">On</span>&nbsp;
-            <label className="switch"><input type="checkbox" checked={this.props.state}/><div className="slider"></div>
-            </label>  <span className="status">Off</span></div>);
+        return (<div id="powerSwitch"><span className="status">Off</span>&nbsp;
+            <label className="switch"><input type="checkbox" checked={this.props.state} onChange={this.props.switch}/><div className="slider"></div>
+            </label>  <span className="status">On</span></div>);
     }
 }
 
@@ -320,7 +335,7 @@ interface ISimonButtonProps
 class GamePad {
     gameCanvas: any;
     buttons: GamePadButton[];  
-    on: boolean;
+    @observable on: boolean;
     @observable countDisplay:string;
 
     constructor() {
@@ -355,7 +370,7 @@ class Game {
         let randomNum:number = chance.integer({min: 0, max: 3});
         this.sequence.push(randomNum); 
 
-        this.count++;       
+        this.count++;
         
         return randomNum;
     }

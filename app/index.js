@@ -62,7 +62,7 @@ let SimonGame = class SimonGame extends react_1.Component {
         this.handleClick = this.handleClick.bind(this);
         this.pushComplete = this.pushComplete.bind(this);
         this.setStrictMode = this.setStrictMode.bind(this);
-        this.on = this.on.bind(this);
+        this.switch = this.switch.bind(this);
         this.off = this.off.bind(this);
         this.gamePad = new GamePad();
         this.game = new Game();
@@ -129,7 +129,6 @@ let SimonGame = class SimonGame extends react_1.Component {
     }
     start() {
         if (this.gamePad.on) {
-            this.reset();
             this.game.addStep();
             this.gamePad.updateCountDisplay(this.game.count);
             this.playSequence();
@@ -162,9 +161,14 @@ let SimonGame = class SimonGame extends react_1.Component {
         this.game.addUserInput(button.props.index);
         let index = this.game.userInput.length - 1;
         let self = this;
-        //TODO: hit 20 then win, what happens?
+        const winCount = 2;
         if (this.game.userInput[index] === this.game.sequence[index]) {
-            if (this.game.userInput.length == 20) {
+            if (this.game.userInput.length == winCount) {
+                this.gamePad.countDisplay = "* *";
+                //pause for a moment
+                setTimeout(function () {
+                    self.start();
+                }, 1000);
             }
             else if (this.game.userInput.length === this.game.sequence.length) {
                 this.game.addStep();
@@ -177,7 +181,10 @@ let SimonGame = class SimonGame extends react_1.Component {
         else {
             this.gamePad.countDisplay = "!!";
             if (this.game.strictMode) {
-                this.start();
+                //pause for a moment
+                setTimeout(function () {
+                    self.start();
+                }, 1000);
             }
             else {
                 //pause for a moment
@@ -191,13 +198,19 @@ let SimonGame = class SimonGame extends react_1.Component {
     setStrictMode() {
         this.game.strictMode = !this.game.strictMode;
     }
-    on() {
-        this.gamePad.countDisplay = "- -";
+    switch(e) {
+        this.gamePad.on = !this.gamePad.on;
+        this.reset();
+        if (this.gamePad.on) {
+            this.gamePad.countDisplay = "- -";
+        }
+        else {
+            this.off();
+        }
     }
     off() {
         this.gamePad.countDisplay = "";
         this.game.strictMode = false;
-        //change color?
     }
     render() {
         return (React.createElement("div", { id: "control-text" },
@@ -215,7 +228,7 @@ let SimonGame = class SimonGame extends react_1.Component {
                 React.createElement("div", { className: "col-xs-4" },
                     React.createElement(ControlButton, { handleClick: this.setStrictMode, color: "yellow" }),
                     "Strict")),
-            React.createElement(PowerSwitch, { state: this.gamePad.on })));
+            React.createElement(PowerSwitch, { state: this.gamePad.on, switch: this.switch })));
     }
 };
 SimonGame = __decorate([
@@ -243,21 +256,24 @@ class ControlButton extends react_1.Component {
         return (React.createElement("div", { onClick: this.props.handleClick, className: "controlButton", style: backgroundColor }));
     }
 }
-class PowerSwitch extends react_1.Component {
+let PowerSwitch = class PowerSwitch extends react_1.Component {
     constructor(props) {
         super(props);
     }
     render() {
         return (React.createElement("div", { id: "powerSwitch" },
-            React.createElement("span", { className: "status" }, "On"),
+            React.createElement("span", { className: "status" }, "Off"),
             "\u00A0",
             React.createElement("label", { className: "switch" },
-                React.createElement("input", { type: "checkbox", checked: this.props.state }),
+                React.createElement("input", { type: "checkbox", checked: this.props.state, onChange: this.props.switch }),
                 React.createElement("div", { className: "slider" })),
             "  ",
-            React.createElement("span", { className: "status" }, "Off")));
+            React.createElement("span", { className: "status" }, "On")));
     }
-}
+};
+PowerSwitch = __decorate([
+    mobx_react_1.observer
+], PowerSwitch);
 class GamePad {
     constructor() {
         this.gameCanvas = Raphael("gameCanvas");
@@ -273,6 +289,9 @@ class GamePad {
         this.countDisplay = count.toString();
     }
 }
+__decorate([
+    mobx_1.observable
+], GamePad.prototype, "on", void 0);
 __decorate([
     mobx_1.observable
 ], GamePad.prototype, "countDisplay", void 0);
