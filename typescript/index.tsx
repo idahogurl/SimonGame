@@ -70,23 +70,41 @@ class GamePadButton {
 
 @observer
 class SimonGame extends Component<any,any> {
-    gamePad: GamePad;
     game: Game;
     defaultCountDisplay: string = "--";
-   
+    
+    gameCanvas: any;
+    buttons: GamePadButton[];
+    @observable on: boolean;
+    @observable countVisible: boolean;
+    @observable count:string;
 
+    blinkTimeout: any;
+    playSequenceTimeout: any;
+    startTimeout: any;
+   
     constructor()
     {
         super();
+        
+        this.game = new Game();
+        this.playSequenceTimeout = null;
+        this.blinkTimeout = null;
+        this.startTimeout = null;
+        this.count = "--";
+        
+        this.gameCanvas = Raphael("gameCanvas");
+        this.gameCanvas.setViewBox(0, 0, 600, 600, true); //decrease numbers to increase size
+        this.gameCanvas.canvas.setAttribute('preserveAspectRatio', 'none');
+        this.gameCanvas.circle(300,300,275).glow();
+
+        this.buttons = [];
+        this.countVisible = true;
 
         this.handleClick = this.handleClick.bind(this);
         this.pushComplete = this.pushComplete.bind(this);
         this.setStrictMode = this.setStrictMode.bind(this);
         this.switch = this.switch.bind(this);
-        this.off = this.off.bind(this);
-
-        this.gamePad = new GamePad();
-        this.game = new Game();
         this.start = this.start.bind(this);
 
         let props: ISimonButtonProps[] = [];
@@ -138,30 +156,71 @@ class SimonGame extends Component<any,any> {
         this.addButtons(props);
     }
 
+    
     //add all the buttons to the game pad
     addButtons(buttonProps: ISimonButtonProps[]) {
         buttonProps.map(props => {
-            let button: GamePadButton = new GamePadButton(this.gamePad.gameCanvas, props);
-            this.gamePad.buttons.push(button);
+            let button: GamePadButton = new GamePadButton(this.gameCanvas, props);
+            this.buttons.push(button);
         });
     }
 
+    blink(callback:any, count:number = 1) {
+        
+        //callback to self 6 times to make display flash
+        let self:any = this;
+        if (count < 6) {
+            count++;
+            this.countVisible = !this.countVisible;
+            this.blinkTimeout = setTimeout(function() {
+                self.blink(callback, count);
+            }, 200);
+        } else {
+            this.countVisible = true;
+            this.blinkTimeout = null;
+
+            if (callback !== null) {
+                callback(); //function to call after flashing finishes
+            }
+        }
+   }
+
+    updateCountDisplay(count: number) {        
+        if (count < 10) {
+            this.count = "0" + count;
+        } else {
+            this.count = count.toString();
+        }
+    }
+    
     //get the button the user clicked
     findButton(id:string):GamePadButton {
-        let button:GamePadButton[] = this.gamePad.buttons.filter(button => {
+        let button:GamePadButton[] = this.buttons.filter(button => {
             return button.pathId === id;
         });
         return button[0];
     }
 
-    reset() {
-        if (this.game.timeoutHandle !== undefined) {
-            clearTimeout(this.game.timeoutHandle);
+    clearTimeouts() {
+        if (this.playSequenceTimeout !== null) {
+            clearTimeout(this.playSequenceTimeout);            
         }
+
+        if (this.blinkTimeout !== null) {
+            clearTimeout(this.blinkTimeout);
+        }
+
+        if (this.startTimeout !== null) {
+            clearTimeout(this.startTimeout);
+        }
+    }
+
+    reset() {       
+        this.clearTimeouts();
 
         //set count to 0 and show "--"
         this.game.count = 0;
-        this.gamePad.countDisplay = this.defaultCountDisplay;
+        this.count = this.defaultCountDisplay;
 
         //clear both sequences
         this.game.sequence = [];
@@ -169,28 +228,29 @@ class SimonGame extends Component<any,any> {
     }
 
     start() {
-        if (this.gamePad.on) {
-            
-            //when a reset pause for a moment
-            let wait: number = 0;
-            if (this.game.sequence !== undefined) {
-                wait = 2000;
-            }
+        if (this.on) {
+            this.reset(); //start button also acts as reset button
 
-            this.reset(); //start button also acts as reste button
             let self: any = this;
 
+            let callback: any = function() {
+                //when a reset pause for a moment
+              
+                debugger;
+                 
+                self.startTimeout = setTimeout(function() {
+                    self.game.addStep(); //add the first step to sequence
+                    
+                    //show new count
+                    self.updateCountDisplay(self.game.count);
+                    
+                    //play the sequence
+                    self.playSequenceTimeout = self.playSequence(); //enables us to stop playSequence
+                                                                    //when user presses incorrect button
+                    }, 250);
+            };
             
-            setTimeout(function() {
-                self.game.addStep(); //add the first step to sequence
-                
-                //show new count
-                self.gamePad.updateCountDisplay(self.game.count);
-                
-                //play the sequence
-                self.game.timeoutHandle = self.playSequence(); //enables us to stop playSequence
-                                                                //when user presses incorrect button
-                }, wait);
+            this.blinkTimeout = this.blink(callback);            
         }
     }
 
@@ -204,12 +264,12 @@ class SimonGame extends Component<any,any> {
 
             let self: any = this;
             let callback: any = function() {
-                self.game.timeoutHandle = self.playSequence(index);
+                self.playSequenceTimeout = self.playSequence(index);
             }
            
             setTimeout(function() {
-                self.gamePad.buttons[buttonIndex].push(callback);
-            }, 500);
+                self.buttons[buttonIndex].push(callback);
+            }, 250);
         } else {
             //user may now play
             this.game.userInput = [];
@@ -218,7 +278,7 @@ class SimonGame extends Component<any,any> {
     }
 
     handleClick(e) {
-        if (this.gamePad.on && this.game.userTurn) { //need to wait until sequence is played            
+        if (this.on && this.game.userTurn) { //need to wait until sequence is played            
             let id:string = eval("$(e.target)[0].raphaelid"); //jQuery typing does not have raphaelid as property
 
             let self:any = this;
@@ -233,55 +293,62 @@ class SimonGame extends Component<any,any> {
 
     pushComplete(buttonId:string) {
         let self:any = this;
-        const winCount = 5;
+        const winCount = 4;
 
         let button:GamePadButton = this.findButton(buttonId);
         this.game.userInput.push(button.props.index); //add user selection
 
         let index = this.game.userInput.length - 1; //get current position in sequence
+
+        let callback:any;
         if (this.game.userInput[index] === this.game.sequence[index]) {
             //correct button pushed
 
             if (this.game.userInput.length == winCount) { 
                 //user won the game
-                this.gamePad.countDisplay = "**";
-
-                //pause for a moment
-                setTimeout(function() {
-                    self.start(); //re-start the game
-                }, 3000);
+                this.count = "**";
+                this.blink(function() {
+                    self.game.userTurn = false;
+                });
+                
             } else if (this.game.userInput.length === this.game.sequence.length) {
                 //add new step to sequence
                 this.game.addStep();
 
-                this.gamePad.updateCountDisplay(this.game.count);
+                this.updateCountDisplay(this.game.count);
                 
                 //pause for a moment
-                setTimeout(function() {
+                this.playSequenceTimeout = setTimeout(function() {
                     //play the sequence
                     self.playSequence();
-                }, 1000);
+                }, 250);
             }
             
         } else {
-            this.gamePad.countDisplay = "!!";
-            clearTimeout(this.game.timeoutHandle); //stop current playSequence
+            this.clearTimeouts();
             
+            this.count = "!!";
+                      
             if (this.game.strictMode) {
-               
-               //pause for a moment
-                setTimeout(function() {
-                    self.start(); //re-start the game
-                }, 2000);
+               callback = function() {
+                    //pause for a moment
+                    setTimeout(function() {
+                        self.start(); //re-start the game
+                    }, 2000);
+               };
             } else {
-                 //pause for a moment
                 
-                 setTimeout(function() { 
-                    //play the sequence again
-                    self.gamePad.updateCountDisplay(self.game.count);
-                    self.playSequence();
-                }, 2000);
+                callback = function() {
+                    //pause for a moment
+                    setTimeout(function() { 
+                        //play the sequence again
+                        self.updateCountDisplay(self.game.count);
+                        self.playSequence();
+                    }, 2000);
+                };
             }
+
+             this.blink(callback);
         }
     }
 
@@ -290,20 +357,18 @@ class SimonGame extends Component<any,any> {
     }
 
     switch(e) {
-        this.gamePad.on = !this.gamePad.on;
+        this.on = !this.on;
 
-        this.gamePad.countDisplay = this.defaultCountDisplay;
-    }
-
-    off() {
-        this.reset();
-        this.game.strictMode = false;
+        if (!this.on) {
+           this.reset();
+           this.game.strictMode = false;
+        }        
     }
 
     render() {
         return (
             <div id="control-text">
-                <h1>Simon<h4>&reg;</h4></h1>
+                <h1>Simon<span id="reg">&reg;</span></h1>
                 <div className="row">
                     <div className="col-xs-4 col-xs-offset-8">
                         <div className={"block-center strict " + (this.game.strictMode ? "strict-on" : "strict-off")}>
@@ -311,36 +376,35 @@ class SimonGame extends Component<any,any> {
                     </div>
                 </div>
                 <div className="row">
-                <div className="col-xs-5 text-center">
-                    <CountDisplay count={this.gamePad.countDisplay} on={this.gamePad.on}/>
-                </div>
-                <div className="col-xs-3">
-                    <ControlButton handleClick={this.start} color="red" label="start"/>
-                </div>
-                <div className="col-xs-4">
-                    <ControlButton handleClick={this.setStrictMode} color="yellow" label="strict"/>
-                </div>
-                </div>
+                    <div className="col-xs-5 text-center">
+                    <CountDisplay count={this.count} on={this.on} countVisible={this.countVisible}/>
+                    </div>
+                    <div className="col-xs-3">
+                        <ControlButton handleClick={this.start} color="red" label="start"/>
+                    </div>
+                    <div className="col-xs-4">
+                        <ControlButton handleClick={this.setStrictMode} color="yellow" label="strict"/>
+                    </div>
+               </div>
                <div className="row">
                     <div className="col-xs-12">
-                        <PowerSwitch on={this.gamePad.on} switchHandler={this.switch}/>
+                        <PowerSwitch on={this.on} switchHandler={this.switch}/>
                     </div>
                 </div>
-
             </div>
         );
     }
 }
 
 class CountDisplay extends Component<any,any> {
-    constructor(props) {
+   constructor(props) {
        super(props);
    }
 
    render() {
         return (<div className="block-center">
                 <div id="count">
-                    <span className={this.props.on ? "countDisplay-on" : "countDisplay-off"}>{this.props.count}</span>
+                    <span className={this.props.on && this.props.countVisible ? "countDisplay-on" : "countDisplay-off"}>{this.props.count}</span>
                 </div>
                 <div>count</div>
             </div>);
@@ -386,31 +450,6 @@ interface ISimonButtonProps
     clickColor: string;
     clickHandler: any;
     index: number;
-}
-
-class GamePad {
-    gameCanvas: any;
-    buttons: GamePadButton[];
-    @observable on: boolean;
-    @observable countDisplay:string;
-
-    constructor() {
-        this.countDisplay = "--";
-        this.gameCanvas = Raphael("gameCanvas");
-        this.gameCanvas.setViewBox(0, 0, 600, 600, true); //decrease numbers to increase size
-        this.gameCanvas.canvas.setAttribute('preserveAspectRatio', 'none');
-        this.gameCanvas.circle(300,300,275).glow();
-
-        this.buttons = [];
-    }
-
-    updateCountDisplay(count: number) {        
-        if (count < 10) {
-            this.countDisplay = "0" + count;
-        } else {
-            this.countDisplay = count.toString();
-        }
-    }
 }
 
 class Game {

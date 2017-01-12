@@ -10,8 +10,8 @@ h1 {
     text-transform: none;
 }
 
-h4 {
-    display: inline;
+#reg {
+    font-size: 16pt;
 }
 
 .controlButton {
