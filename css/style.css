@@ -1,18 +1,17 @@
 body {
-    font: 16pt 'Roboto Condensed', sans-serif;
+    font: 14pt 'Roboto Condensed', sans-serif;
     text-transform: uppercase;
     background-image: url("../11.jpg"); 
     margin: 20px;
 }
 
-@font-face {
-  font-family: 'Digital-7 Mono';
-  src: url('../digital-7-mono.ttf');
-}
-
 h1 {    
     font: 40pt 'Alfa Slab One', serif;
     text-transform: none;
+}
+
+h4 {
+    display: inline;
 }
 
 .controlButton {
@@ -28,16 +27,29 @@ h1 {
 }
 
 #count {
-    background-color: #5D0F0D;
+    background-color: #32050c;
     border-radius: 10px;
     border: 5px solid black;
-    color: red;
     width: 75px;
     height: 50px;
+    font: 30pt 'VT323';
+    margin: 0px auto 10px auto;    
+}
+
+.countDisplay-on {
+    color: red;
+}
+
+.countDisplay-off {
+    color: #430710;
+}
+
+#countDisplay {
+    top: 50%;
+    left: 50%;
     text-align: center;
-    font: 28pt 'Digital-7 Mono';
-    margin: 0px auto 10px auto;
-    vertical-align: middle;
+    position: absolute;
+    margin: -37px 0 0 -17px;
 }
 
 .strict {
@@ -67,7 +79,6 @@ h1 {
     top:50%;
     left:50%;
     margin: -175px 0 0 -175px;
-    
 }
 
 #gameCanvas {
@@ -80,6 +91,33 @@ h1 {
     cursor: pointer;
 }
 
+.powerSwitch-on {
+    height: 30px;
+    width: 30px;
+    position: absolute;
+    top: 50%;
+    margin-top: -15px;
+}
+
+.powerSwitch-off {
+    height: 30px;
+    width: 30px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: -15px 0 0 -65px;
+}
+
 #powerSwitch {
-    margin-top: 30px;
+    padding: 20px;
+    position: relative;
+}
+
+.example-appear {
+   color: #430710
+}
+
+.example-appear.example-appear-active {
+   color: #32050c;
+   transition: color 500ms ease-in;
 }

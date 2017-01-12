@@ -32,13 +32,12 @@ class GamePadButton {
             src: "https://s3.amazonaws.com/freecodecamp/" + props.soundFile,
             volume: 0.25,
             onend: function () {
-                self.release();
+                self.release(); //do not animate to base color until finished playing
             }
         };
         this.sound = new Howl(howlProps);
     }
     push(callback = undefined) {
-        debugger;
         this.path.animate({ fill: this.props.clickColor }, 0);
         this.sound.play();
         if (callback !== undefined) {
@@ -46,7 +45,6 @@ class GamePadButton {
         }
     }
     release() {
-        debugger;
         this.path.animate({ fill: this.props.color }, 0);
         if (this.callback !== undefined) {
             this.callback();
@@ -59,6 +57,7 @@ class GamePadButton {
 let SimonGame = class SimonGame extends react_1.Component {
     constructor() {
         super();
+        this.defaultCountDisplay = "--";
         this.handleClick = this.handleClick.bind(this);
         this.pushComplete = this.pushComplete.bind(this);
         this.setStrictMode = this.setStrictMode.bind(this);
@@ -110,12 +109,14 @@ let SimonGame = class SimonGame extends react_1.Component {
         props.push(buttonProps);
         this.addButtons(props);
     }
+    //add all the buttons to the game pad
     addButtons(buttonProps) {
         buttonProps.map(props => {
             let button = new GamePadButton(this.gamePad.gameCanvas, props);
             this.gamePad.buttons.push(button);
         });
     }
+    //get the button the user clicked
     findButton(id) {
         let button = this.gamePad.buttons.filter(button => {
             return button.pathId === id;
@@ -123,75 +124,109 @@ let SimonGame = class SimonGame extends react_1.Component {
         return button[0];
     }
     reset() {
+        if (this.game.timeoutHandle !== undefined) {
+            clearTimeout(this.game.timeoutHandle);
+        }
+        //set count to 0 and show "--"
+        this.game.count = 0;
+        this.gamePad.countDisplay = this.defaultCountDisplay;
+        //clear both sequences
         this.game.sequence = [];
         this.game.userInput = [];
-        this.game.count = 0;
     }
     start() {
         if (this.gamePad.on) {
-            this.game.addStep();
-            this.gamePad.updateCountDisplay(this.game.count);
-            this.playSequence();
+            //when a reset pause for a moment
+            let wait = 0;
+            if (this.game.sequence !== undefined) {
+                wait = 2000;
+            }
+            this.reset(); //start button also acts as reste button
+            let self = this;
+            setTimeout(function () {
+                self.game.addStep(); //add the first step to sequence
+                //show new count
+                self.gamePad.updateCountDisplay(self.game.count);
+                //play the sequence
+                self.game.timeoutHandle = self.playSequence(); //enables us to stop playSequence
+                //when user presses incorrect button
+            }, wait);
         }
     }
     playSequence(index = 0) {
+        //runs recursively until the final sequence item is ran
         if (index < this.game.sequence.length) {
+            this.game.userTurn = false;
             let buttonIndex = this.game.sequence[index];
             index++;
             let self = this;
             let callback = function () {
-                self.playSequence(index);
+                self.game.timeoutHandle = self.playSequence(index);
             };
-            this.gamePad.buttons[buttonIndex].push(callback);
+            setTimeout(function () {
+                self.gamePad.buttons[buttonIndex].push(callback);
+            }, 500);
         }
-        this.game.userInput = [];
+        else {
+            //user may now play
+            this.game.userInput = [];
+            this.game.userTurn = true;
+        }
     }
     handleClick(e) {
-        debugger;
-        let id = eval("$(e.target)[0].raphaelid"); //jQuery typing does not have raphaelid as property
-        let self = this;
-        let callback = function () {
-            self.pushComplete(id);
-        };
-        let button = this.findButton(id);
-        button.push(callback);
+        if (this.gamePad.on && this.game.userTurn) {
+            let id = eval("$(e.target)[0].raphaelid"); //jQuery typing does not have raphaelid as property
+            let self = this;
+            let callback = function () {
+                self.pushComplete(id);
+            };
+            let button = this.findButton(id);
+            button.push(callback);
+        }
     }
     pushComplete(buttonId) {
-        let button = this.findButton(buttonId);
-        this.game.addUserInput(button.props.index);
-        let index = this.game.userInput.length - 1;
         let self = this;
-        const winCount = 2;
+        const winCount = 5;
+        let button = this.findButton(buttonId);
+        this.game.userInput.push(button.props.index); //add user selection
+        let index = this.game.userInput.length - 1; //get current position in sequence
         if (this.game.userInput[index] === this.game.sequence[index]) {
+            //correct button pushed
             if (this.game.userInput.length == winCount) {
-                this.gamePad.countDisplay = "* *";
+                //user won the game
+                this.gamePad.countDisplay = "**";
                 //pause for a moment
                 setTimeout(function () {
-                    self.start();
-                }, 1000);
+                    self.start(); //re-start the game
+                }, 3000);
             }
             else if (this.game.userInput.length === this.game.sequence.length) {
+                //add new step to sequence
                 this.game.addStep();
+                this.gamePad.updateCountDisplay(this.game.count);
                 //pause for a moment
                 setTimeout(function () {
+                    //play the sequence
                     self.playSequence();
                 }, 1000);
             }
         }
         else {
             this.gamePad.countDisplay = "!!";
+            clearTimeout(this.game.timeoutHandle); //stop current playSequence
             if (this.game.strictMode) {
                 //pause for a moment
                 setTimeout(function () {
-                    self.start();
-                }, 1000);
+                    self.start(); //re-start the game
+                }, 2000);
             }
             else {
                 //pause for a moment
                 setTimeout(function () {
-                    self.game.count = self.game.getCountDisplay();
+                    //play the sequence again
+                    self.gamePad.updateCountDisplay(self.game.count);
                     self.playSequence();
-                }, 1000);
+                }, 2000);
             }
         }
     }
@@ -200,51 +235,46 @@ let SimonGame = class SimonGame extends react_1.Component {
     }
     switch(e) {
         this.gamePad.on = !this.gamePad.on;
-        this.reset();
-        if (this.gamePad.on) {
-            this.gamePad.countDisplay = "- -";
-        }
-        else {
-            this.off();
-        }
+        this.gamePad.countDisplay = this.defaultCountDisplay;
     }
     off() {
-        this.gamePad.countDisplay = "";
+        this.reset();
         this.game.strictMode = false;
     }
     render() {
         return (React.createElement("div", { id: "control-text" },
-            React.createElement("h1", null, "Simon"),
+            React.createElement("h1", null,
+                "Simon",
+                React.createElement("h4", null, "\u00AE")),
             React.createElement("div", { className: "row" },
                 React.createElement("div", { className: "col-xs-4 col-xs-offset-8" },
-                    React.createElement("div", { className: "strict " + (this.game.strictMode ? "strict-on" : "strict-off") }))),
+                    React.createElement("div", { className: "block-center strict " + (this.game.strictMode ? "strict-on" : "strict-off") }))),
             React.createElement("div", { className: "row" },
                 React.createElement("div", { className: "col-xs-5 text-center" },
-                    React.createElement(CountDisplay, { count: this.gamePad.countDisplay }),
-                    "Count"),
+                    React.createElement(CountDisplay, { count: this.gamePad.countDisplay, on: this.gamePad.on })),
                 React.createElement("div", { className: "col-xs-3" },
-                    React.createElement(ControlButton, { handleClick: this.start, color: "red" }),
-                    "Start"),
+                    React.createElement(ControlButton, { handleClick: this.start, color: "red", label: "start" })),
                 React.createElement("div", { className: "col-xs-4" },
-                    React.createElement(ControlButton, { handleClick: this.setStrictMode, color: "yellow" }),
-                    "Strict")),
-            React.createElement(PowerSwitch, { state: this.gamePad.on, switch: this.switch })));
+                    React.createElement(ControlButton, { handleClick: this.setStrictMode, color: "yellow", label: "strict" }))),
+            React.createElement("div", { className: "row" },
+                React.createElement("div", { className: "col-xs-12" },
+                    React.createElement(PowerSwitch, { on: this.gamePad.on, switchHandler: this.switch })))));
     }
 };
 SimonGame = __decorate([
     mobx_react_1.observer
 ], SimonGame);
-let CountDisplay = class CountDisplay extends react_1.Component {
+class CountDisplay extends react_1.Component {
     constructor(props) {
         super(props);
     }
     render() {
-        return (React.createElement("div", { id: "count" }, this.props.countDisplay));
+        return (React.createElement("div", { className: "block-center" },
+            React.createElement("div", { id: "count" },
+                React.createElement("span", { className: this.props.on ? "countDisplay-on" : "countDisplay-off" }, this.props.count)),
+            React.createElement("div", null, "count")));
     }
-};
-CountDisplay = __decorate([
-    mobx_react_1.observer
-], CountDisplay);
+}
 class ControlButton extends react_1.Component {
     constructor(props) {
         super(props);
@@ -253,29 +283,27 @@ class ControlButton extends react_1.Component {
         let backgroundColor = {
             background: this.props.color
         };
-        return (React.createElement("div", { onClick: this.props.handleClick, className: "controlButton", style: backgroundColor }));
+        return (React.createElement("div", { className: "block-center" },
+            React.createElement("div", { onClick: this.props.handleClick, className: "controlButton", style: backgroundColor }),
+            this.props.label));
     }
 }
-let PowerSwitch = class PowerSwitch extends react_1.Component {
+class PowerSwitch extends react_1.Component {
     constructor(props) {
         super(props);
     }
     render() {
         return (React.createElement("div", { id: "powerSwitch" },
-            React.createElement("span", { className: "status" }, "Off"),
-            "\u00A0",
+            React.createElement("span", { className: "powerSwitch-off" }, "Off"),
             React.createElement("label", { className: "switch" },
-                React.createElement("input", { type: "checkbox", checked: this.props.state, onChange: this.props.switch }),
+                React.createElement("input", { type: "checkbox", checked: this.props.on, onChange: this.props.switchHandler }),
                 React.createElement("div", { className: "slider" })),
-            "  ",
-            React.createElement("span", { className: "status" }, "On")));
+            React.createElement("span", { className: "powerSwitch-on" }, "On")));
     }
-};
-PowerSwitch = __decorate([
-    mobx_react_1.observer
-], PowerSwitch);
+}
 class GamePad {
     constructor() {
+        this.countDisplay = "--";
         this.gameCanvas = Raphael("gameCanvas");
         this.gameCanvas.setViewBox(0, 0, 600, 600, true); //decrease numbers to increase size
         this.gameCanvas.canvas.setAttribute('preserveAspectRatio', 'none');
@@ -286,7 +314,9 @@ class GamePad {
         if (count < 10) {
             this.countDisplay = "0" + count;
         }
-        this.countDisplay = count.toString();
+        else {
+            this.countDisplay = count.toString();
+        }
     }
 }
 __decorate([
@@ -297,27 +327,17 @@ __decorate([
 ], GamePad.prototype, "countDisplay", void 0);
 class Game {
     constructor() {
+        this.userTurn = false;
+        this.count = 0;
         this.strictMode = false;
     }
+    //randomly select a button index and add to sequence
     addStep() {
         let chance = new Chance();
         let randomNum = chance.integer({ min: 0, max: 3 });
         this.sequence.push(randomNum);
         this.count++;
         return randomNum;
-    }
-    addUserInput(buttonIndex) {
-        this.userInput.push(buttonIndex);
-    }
-    isCorrect() {
-        let diff = this.sequenceDifference();
-        return diff.length === 0;
-    }
-    sequenceDifference() {
-        var differences = this.sequence.filter((item) => {
-            return this.userInput.indexOf(item) < 0;
-        });
-        return differences;
     }
 }
 __decorate([
