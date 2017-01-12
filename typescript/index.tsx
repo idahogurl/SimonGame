@@ -166,7 +166,7 @@ class SimonGame extends Component<any,any> {
     }
 
     blink(callback:any, count:number = 1) {
-        
+       
         //callback to self 6 times to make display flash
         let self:any = this;
         if (count < 6) {
@@ -215,7 +215,8 @@ class SimonGame extends Component<any,any> {
         }
     }
 
-    reset() {       
+    reset() {
+        this.game.userTurn = false;
         this.clearTimeouts();
 
         //set count to 0 and show "--"
@@ -234,10 +235,6 @@ class SimonGame extends Component<any,any> {
             let self: any = this;
 
             let callback: any = function() {
-                //when a reset pause for a moment
-              
-                debugger;
-                 
                 self.startTimeout = setTimeout(function() {
                     self.game.addStep(); //add the first step to sequence
                     
@@ -247,7 +244,7 @@ class SimonGame extends Component<any,any> {
                     //play the sequence
                     self.playSequenceTimeout = self.playSequence(); //enables us to stop playSequence
                                                                     //when user presses incorrect button
-                    }, 250);
+                    }, 500);
             };
             
             this.blinkTimeout = this.blink(callback);            
@@ -279,6 +276,8 @@ class SimonGame extends Component<any,any> {
 
     handleClick(e) {
         if (this.on && this.game.userTurn) { //need to wait until sequence is played            
+            this.game.userTurn = false;
+
             let id:string = eval("$(e.target)[0].raphaelid"); //jQuery typing does not have raphaelid as property
 
             let self:any = this;
@@ -304,12 +303,10 @@ class SimonGame extends Component<any,any> {
         if (this.game.userInput[index] === this.game.sequence[index]) {
             //correct button pushed
 
-            if (this.game.userInput.length == winCount) { 
+            if (this.game.userInput.length == this.props.winCount) { 
                 //user won the game
                 this.count = "**";
-                this.blink(function() {
-                    self.game.userTurn = false;
-                });
+                this.blink(null);
                 
             } else if (this.game.userInput.length === this.game.sequence.length) {
                 //add new step to sequence
@@ -322,33 +319,34 @@ class SimonGame extends Component<any,any> {
                     //play the sequence
                     self.playSequence();
                 }, 250);
+            } else {
+                this.game.userTurn = true;
             }
             
         } else {
             this.clearTimeouts();
-            
             this.count = "!!";
                       
             if (this.game.strictMode) {
                callback = function() {
                     //pause for a moment
                     setTimeout(function() {
-                        self.start(); //re-start the game
-                    }, 2000);
+                        self.startTimeout = self.start(); //re-start the game
+                    }, 1000);
                };
             } else {
                 
                 callback = function() {
                     //pause for a moment
-                    setTimeout(function() { 
+                    self.playSequenceTimeout = setTimeout(function() { 
                         //play the sequence again
                         self.updateCountDisplay(self.game.count);
                         self.playSequence();
-                    }, 2000);
+                    }, 1000);
                 };
             }
 
-             this.blink(callback);
+            this.blink(callback);
         }
     }
 
@@ -478,4 +476,4 @@ class Game {
     }
 }
 
-ReactDOM.render(<SimonGame />, document.getElementById("gameControls"));
+ReactDOM.render(<SimonGame winCount="5" />, document.getElementById("gameControls"));

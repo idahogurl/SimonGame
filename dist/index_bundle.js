@@ -222,6 +222,7 @@
 	        }
 	    }
 	    reset() {
+	        this.game.userTurn = false;
 	        this.clearTimeouts();
 	        //set count to 0 and show "--"
 	        this.game.count = 0;
@@ -235,8 +236,6 @@
 	            this.reset(); //start button also acts as reset button
 	            let self = this;
 	            let callback = function () {
-	                //when a reset pause for a moment
-	                debugger;
 	                self.startTimeout = setTimeout(function () {
 	                    self.game.addStep(); //add the first step to sequence
 	                    //show new count
@@ -244,7 +243,7 @@
 	                    //play the sequence
 	                    self.playSequenceTimeout = self.playSequence(); //enables us to stop playSequence
 	                    //when user presses incorrect button
-	                }, 250);
+	                }, 500);
 	            };
 	            this.blinkTimeout = this.blink(callback);
 	        }
@@ -271,6 +270,7 @@
 	    }
 	    handleClick(e) {
 	        if (this.on && this.game.userTurn) {
+	            this.game.userTurn = false;
 	            let id = eval("$(e.target)[0].raphaelid"); //jQuery typing does not have raphaelid as property
 	            let self = this;
 	            let callback = function () {
@@ -289,12 +289,10 @@
 	        let callback;
 	        if (this.game.userInput[index] === this.game.sequence[index]) {
 	            //correct button pushed
-	            if (this.game.userInput.length == winCount) {
+	            if (this.game.userInput.length == this.props.winCount) {
 	                //user won the game
 	                this.count = "**";
-	                this.blink(function () {
-	                    self.game.userTurn = false;
-	                });
+	                this.blink(null);
 	            }
 	            else if (this.game.userInput.length === this.game.sequence.length) {
 	                //add new step to sequence
@@ -306,6 +304,9 @@
 	                    self.playSequence();
 	                }, 250);
 	            }
+	            else {
+	                this.game.userTurn = true;
+	            }
 	        }
 	        else {
 	            this.clearTimeouts();
@@ -314,18 +315,18 @@
 	                callback = function () {
 	                    //pause for a moment
 	                    setTimeout(function () {
-	                        self.start(); //re-start the game
-	                    }, 2000);
+	                        self.startTimeout = self.start(); //re-start the game
+	                    }, 1000);
 	                };
 	            }
 	            else {
 	                callback = function () {
 	                    //pause for a moment
-	                    setTimeout(function () {
+	                    self.playSequenceTimeout = setTimeout(function () {
 	                        //play the sequence again
 	                        self.updateCountDisplay(self.game.count);
 	                        self.playSequence();
-	                    }, 2000);
+	                    }, 1000);
 	                };
 	            }
 	            this.blink(callback);
@@ -428,7 +429,7 @@
 	__decorate([
 	    mobx_1.observable
 	], Game.prototype, "strictMode", void 0);
-	ReactDOM.render(React.createElement(SimonGame, null), document.getElementById("gameControls"));
+	ReactDOM.render(React.createElement(SimonGame, { winCount: "5" }), document.getElementById("gameControls"));
 
 
 /***/ },
