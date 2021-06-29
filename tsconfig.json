@@ -6,13 +6,6 @@
         "sourceMap": false,
         "jsx": "react",
         "moduleResolution": "node",
-        "experimentalDecorators": true,
-        "outDir": "app"
+        "esModuleInterop": true
     },
-    "include": [
-        "typescript"
-    ],
-    "exclude": [
-        "node_modules"
-    ]
 }

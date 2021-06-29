@@ -1,22 +1,50 @@
-// In webpack.config.js
-var HtmlWebpackPlugin = require('html-webpack-plugin')
-var HTMLWebpackPluginConfig = new HtmlWebpackPlugin({
-  template: __dirname + '/app/index.html',
-  filename: 'index.html',
-  inject: 'body'
-});
-module.exports = {
+const webpack = require('webpack');
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+const config = {
   entry: [
-    './app/index.js'
+    'react-hot-loader/patch',
+    './app/index.tsx'
+  ],
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'bundle.js'
+  },
+  devServer: {
+    //contentBase: './dist',
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
+    }
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: __dirname + '/app/index.html',
+      filename: 'index.html',
+      inject: 'body'
+    })
   ],
   module: {
-    loaders: [
-      {test: /\.tsx$/, include: __dirname + '/typescript', exclude: /node_modules/, loader: "typescript-loader"}
+    rules: [
+      {
+        test: /\.ts(x)?$/,
+        loader: 'ts-loader',
+        exclude: /node_modules/
+      }
     ]
   },
-  output: {
-    filename: "index_bundle.js",
-    path: __dirname + '/dist'
-  },
-  plugins: [HTMLWebpackPluginConfig]
-}
+  resolve: {
+    extensions: [
+      '.tsx',
+      '.ts',
+      '.js'
+    ],
+    alias: {
+      'react-dom': '@hot-loader/react-dom'
+    }
+  }
+};
+
+module.exports = config;
